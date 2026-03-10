@@ -1,0 +1,76 @@
+# export_roles.yaml — Phase 5
+#
+# Defines the seven export roles and their default assignment by feature_type.
+#
+# ── Role catalogue ────────────────────────────────────────────────────────────
+#
+#   hatch_and_export   Region polygon is hatched and written to the export layer.
+#   keep_linework      Line geometry is preserved as-is in the export layer.
+#   keep_markings      Surface marking geometry is preserved in the markings layer.
+#   keep_symbols       Point / block objects are preserved in the symbols layer.
+#   keep_text          Text / annotation is preserved in the text layer.
+#   review             Geometry is flagged for human review; not auto-exported.
+#   remove             Geometry is discarded from output entirely.
+#
+# ── Role definitions ──────────────────────────────────────────────────────────
+
+roles:
+  hatch_and_export:
+    description: >
+      Closed polygon region: apply hatch fill and write to the site-export
+      layer.  Requires a material code in semantic_taxonomy.yaml.
+    geometry: region
+
+  keep_linework:
+    description: >
+      Linear edge or boundary: preserve geometry in the linework export layer
+      without hatch fill.
+    geometry: linear
+
+  keep_markings:
+    description: >
+      Surface marking (paint, thermoplastic): preserve in the markings export
+      layer.
+    geometry: marking
+
+  keep_symbols:
+    description: >
+      Point object or inserted CAD block: preserve in the symbols export layer.
+    geometry: symbol
+
+  keep_text:
+    description: >
+      Text entity (MTEXT, TEXT, dimension): preserve in the text export layer.
+    geometry: text
+
+  review:
+    description: >
+      Ambiguous or unrecognised geometry: route to the review layer for manual
+      inspection.  No automatic export action is taken.
+    geometry: any
+
+  remove:
+    description: >
+      Survey administration content (title blocks, notes, survey references):
+      discard entirely from output.  This role is terminal for the `noise`
+      feature_type — TaxonomyLoader will not allow a per-class override to
+      promote a noise class away from `remove`.
+    geometry: any
+
+# ── Default role by feature_type ─────────────────────────────────────────────
+#
+#   These are the fallback roles used by TaxonomyLoader when a taxonomy entry
+#   does not carry an explicit `export_role:` field.
+#
+#   Adding a new feature_type here automatically makes it available to
+#   TaxonomyLoader without code changes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+default_by_type:
+  region:  hatch_and_export
+  linear:  keep_linework
+  marking: keep_markings
+  symbol:  keep_symbols
+  text:    keep_text
+  noise:   remove
+  unknown: review

@@ -1,0 +1,160 @@
+# semantic_taxonomy.yaml — Phase 5
+#
+# Canonical site-plan semantic taxonomy.
+#
+# ── Entry schema ─────────────────────────────────────────────────────────────
+#
+#   label:       str  — canonical semantic_class name (required)
+#   material:    str  — hatch material code; present only on region entries
+#                       (optional; omit for all non-region feature types)
+#   export_role: str  — per-class override of the feature_type default (optional)
+#                       If absent, TaxonomyLoader uses default_by_type from
+#                       export_roles.yaml.  Only add when a class genuinely
+#                       needs a different role from its type's default.
+#
+# ── Feature-type defaults (from export_roles.yaml → default_by_type) ─────────
+#
+#   region  → hatch_and_export   (closed polygon, filled + exported as area)
+#   linear  → keep_linework      (edge / boundary line, no fill)
+#   marking → keep_markings      (surface marking on hard material)
+#   symbol  → keep_symbols       (point object / CAD block)
+#   text    → keep_text          (annotation, dimension, label)
+#   noise   → remove             (see NOTE below)
+#   unknown → review
+#
+# ── NOTE: the noise feature_type ─────────────────────────────────────────────
+#
+#   `noise` is a genuine feature_type, not a loose grouping.  It represents
+#   survey administration content that exists in the DXF but must never appear
+#   in any site output: title blocks, hand-written notes, survey control marks.
+#
+#   Key distinctions from other types:
+#   • Its default_by_type is `remove` — classes in noise are always discarded.
+#   • The noise → remove mapping is semantically terminal: a noise class cannot
+#     be promoted to another export role via a per-class export_role override.
+#     (TaxonomyLoader enforces this; see taxonomy.py.)
+#   • Using a dedicated noise type (rather than leaving such layers as
+#     "unknown → review") makes the discard intent explicit in audit logs.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# Alias bridge: maps Phase 4B coarse class_guess names → canonical label.
+# Used by TaxonomyLoader.classify() to resolve legacy hatch-pipeline names.
+#
+# NOTE: `path` aliases to `path` (paved pedestrian area polygon).
+#       If a linear path-edge class is ever needed, use `path_edge` or
+#       `path_edging` as a distinct linear entry — do not collapse the two.
+# ─────────────────────────────────────────────────────────────────────────────
+
+aliases:
+  parking:  parking_bay
+  garden:   soft_landscape
+  building: building
+  path:     path
+  driveway: driveway
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Region: closed polygons filled with hatching and exported as areas.
+#
+# All region entries MUST carry a `material:` field.
+# Entries marked  # placeholder  are reserved for future use;
+# material codes may be refined once the drawing standard is confirmed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+region:
+  # ── Hard / built surfaces ─────────────────────────────────
+  - label:    building
+    material: MAT_BUILDING
+  - label:    driveway
+    material: MAT_TARMAC
+  - label:    parking_bay
+    material: MAT_PARKING
+  - label:    road_carriageway        # placeholder
+    material: MAT_TARMAC
+  - label:    patio                   # placeholder
+    material: MAT_PAVING
+  - label:    path                    # paved pedestrian area (polygon)
+    material: MAT_PAVING
+  - label:    footway                 # placeholder
+    material: MAT_PAVING
+  - label:    hard_landscape
+    material: MAT_PAVING
+
+  # ── Soft / planted surfaces ───────────────────────────────
+  - label:    soft_landscape
+    material: MAT_GRASS
+  - label:    front_garden            # placeholder
+    material: MAT_GRASS
+  - label:    rear_garden             # placeholder
+    material: MAT_GRASS
+  - label:    public_open_space       # placeholder
+    material: MAT_GRASS
+  - label:    planting_bed            # placeholder
+    material: MAT_PLANTING
+
+  # ── Water features ────────────────────────────────────────
+  - label:    water
+    material: MAT_WATER
+  - label:    attenuation_basin       # placeholder
+    material: MAT_WATER
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Linear: edge / boundary line features (no area fill).
+# kerb = edge of carriageway; path_edge = boundary of a paved path polygon
+# (distinct from the `path` region above).
+# ─────────────────────────────────────────────────────────────────────────────
+
+linear:
+  - label: road
+  - label: kerb
+  - label: path_edge
+  - label: fence
+  - label: wall
+  - label: hedge
+  - label: drain
+  - label: retaining_wall
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Marking: surface markings painted / applied to a hard surface.
+# ─────────────────────────────────────────────────────────────────────────────
+
+marking:
+  - label: parking_line
+  - label: crossing_marking
+  - label: bus_stop_marking
+  - label: road_marking
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Symbol: point objects or CAD blocks (discrete, not linear edges or areas).
+# bollards and gates are point / inserted-block objects → symbol, not linear.
+# ─────────────────────────────────────────────────────────────────────────────
+
+symbol:
+  - label: tree
+  - label: shrub
+  - label: bollard
+  - label: gate
+  - label: lamp_post
+  - label: signage
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Text: annotation, dimensions, and labelled text entities.
+# ─────────────────────────────────────────────────────────────────────────────
+
+text:
+  - label: annotation
+  - label: dimension
+  - label: label
+  - label: plot_number
+  - label: parking_number
+  - label: street_name
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Noise: survey admin content that must not appear in site output.
+# Default export_role: remove  (terminal — cannot be overridden per-class).
+# Add entries here whenever new survey-admin layer types are identified.
+# ─────────────────────────────────────────────────────────────────────────────
+
+noise:
+  - label: titleblock
+  - label: notes
+  - label: survey_reference
