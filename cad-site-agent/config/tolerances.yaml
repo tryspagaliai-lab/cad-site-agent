@@ -1,0 +1,42 @@
+# ============================================================
+# CAD Site Agent — Tolerances Config
+# ============================================================
+# All distances are in DRAWING UNITS.
+# For mm DXF (typical architectural): 1 unit = 1 mm
+# For m DXF (typical planning):       1 unit = 1 m
+#
+# Override per-run with CLI flags (--tol, --snap-tol, etc.)
+# ============================================================
+
+gap_close:
+  # Maximum endpoint distance to attempt closing (drawing units)
+  # 1000 = 1m for mm-based DXFs — good default for Roman Gardens
+  tolerance: 1000.0
+
+  # Maximum gap distance for bridge-line insertion (drawing units)
+  # Gaps > bridge_max are left open (too risky to bridge)
+  bridge_max: 5000.0
+
+  # Only merge chains on the same layer (safer, avoids cross-layer stitching)
+  same_layer_only: false
+
+cleanup:
+  # Minimum segment length — shorter segments are removed (drawing units)
+  min_segment_length: 0.5
+
+  # Endpoint snapping: nodes within this distance are merged (drawing units)
+  snap_tolerance: 1.0
+
+  # Remove exact-duplicate entities
+  remove_duplicates: true
+
+hatch:
+  # Phase 5: minimum area to hatch (drawing units squared)
+  # Prevents tiny sliver polygons from getting hatches
+  min_area: 100.0
+
+  # Default hatch pattern for solid fills
+  pattern: SOLID
+
+  # Scale for non-SOLID hatch patterns
+  pattern_scale: 500.0

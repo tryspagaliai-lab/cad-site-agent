@@ -1,0 +1,95 @@
+{
+  "generated": "2026-03-10",
+  "assessment": "All core CAD processing libraries already available in existing Python installations. No new installs required for PHASE 0-5 MVP.",
+  "core_cad_geometry": {
+    "ezdxf": {
+      "version": "1.4.3",
+      "available_in": ["py310", "py312", "autocad-mcp-venv"],
+      "role": "PRIMARY — DXF read/write, entity iteration, hatch generation, drawing render",
+      "key_modules": [
+        "ezdxf.readfile / ezdxf.new",
+        "ezdxf.addons.drawing (RenderContext, Frontend, MatplotlibBackend)",
+        "ezdxf.addons.drawing.properties (LayoutProperties)",
+        "ezdxf.entities (LWPOLYLINE, LINE, HATCH, TEXT, MTEXT, INSERT)",
+        "ezdxf.math (Vec2, Vec3, BoundingBox, BoundingBox2d)"
+      ],
+      "known_working_apis": [
+        "doc.layers — layer table",
+        "msp — modelspace entity iterator",
+        "e.dxftype() — entity type",
+        "e.dxf.layer — layer name",
+        "e.dxf.true_color — 24-bit RGB color",
+        "e.closed — LWPOLYLINE closed flag",
+        "e.get_points() — LWPOLYLINE vertices",
+        "doc.saveas() — save modified DXF"
+      ]
+    },
+    "shapely": {
+      "version": "2.1.2",
+      "available_in": ["py310", "py312"],
+      "role": "Polygon operations, region closure, spatial predicates (contains, intersects, buffer)",
+      "phase": "PHASE 3, 5"
+    },
+    "networkx": {
+      "version": "3.4.2 (py310) / 3.6.1 (py312)",
+      "available_in": ["py310", "py312"],
+      "role": "Graph topology for region/boundary detection",
+      "phase": "PHASE 5"
+    },
+    "scipy": {
+      "version": "1.15.3 (py310) / 1.16.3 (py312)",
+      "available_in": ["py310", "py312"],
+      "role": "Spatial KD-tree for nearest-neighbour endpoint snapping",
+      "key": "scipy.spatial.cKDTree",
+      "phase": "PHASE 3"
+    },
+    "rtree": {
+      "version": "1.4.1",
+      "available_in": ["py312"],
+      "role": "Spatial index for large drawings (fast bbox queries)",
+      "phase": "PHASE 3, 5 (optional optimisation)"
+    },
+    "trimesh": {
+      "version": "4.11.1",
+      "available_in": ["py310"],
+      "role": "3D mesh, possible future use for site model",
+      "phase": "optional / future"
+    }
+  },
+  "output_rendering": {
+    "matplotlib": {
+      "version": "3.10.8",
+      "role": "DXF rendering to PNG via ezdxf MatplotlibBackend",
+      "phase": "PHASE 2 (reports)"
+    },
+    "pillow": {
+      "version": "12.0.0",
+      "role": "Image post-processing for preview generation",
+      "phase": "PHASE 2"
+    }
+  },
+  "config_serialisation": {
+    "PyYAML": {"version": "6.0.3", "role": "Layer alias config, export schema YAML"},
+    "pydantic": {"version": "2.12.5", "role": "Config models, report schemas, validation"},
+    "toml": {"version": "0.10.2", "role": "pyproject.toml support"}
+  },
+  "cli": {
+    "click": {
+      "version": "8.3.1",
+      "available_in": ["py310"],
+      "NOT_in": ["py312"],
+      "role": "CLI entry points",
+      "fallback": "argparse (stdlib) — works in py312 without click install"
+    }
+  },
+  "missing_packages": {
+    "for_py312": ["click (8.x) — only if using py312 for CLI"],
+    "for_py310": ["rtree — only needed for large drawing spatial index (>50k entities)"],
+    "overall": "None blocking for MVP. All core geometry/topology libraries present."
+  },
+  "install_suggestions_if_needed": {
+    "click_in_py312": "uv pip install click --python C:\\Users\\zilva\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "rtree_in_py310": "uv pip install rtree --python \"C:\\Program Files\\Python310\\python.exe\"",
+    "note": "Do NOT install yet. Use py310 first — it has both click AND all geo libs."
+  }
+}

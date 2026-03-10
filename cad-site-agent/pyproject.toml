@@ -1,0 +1,46 @@
+[project]
+name = "cad-site-agent"
+version = "0.1.0"
+description = "Local CAD Site Agent — DXF analysis, cleanup, semantic normalisation, region/hatch generation, MAX-prep export"
+readme = "README.md"
+requires-python = ">=3.10"
+
+# ALL dependencies already installed in py310 env — no install needed for MVP
+dependencies = [
+    "ezdxf>=1.4.0",        # installed: 1.4.3
+    "shapely>=2.0.0",      # installed: 2.1.2
+    "networkx>=3.0",       # installed: 3.4.2 / 3.6.1
+    "scipy>=1.10.0",       # installed: 1.15.3 / 1.16.3
+    "numpy>=1.24.0",       # installed: 2.2.6
+    "matplotlib>=3.7.0",   # installed: 3.10.8
+    "Pillow>=10.0.0",      # installed: 12.0.0
+    "pydantic>=2.0.0",     # installed: 2.12.5
+    "PyYAML>=6.0.0",       # installed: 6.0.3
+    "click>=8.0.0",        # installed in py310: 8.3.1
+]
+
+# Optional: only needed for spatial-index optimisation on very large drawings
+# rtree>=1.0.0 — installed in py312, NOT in py310
+
+[project.scripts]
+analyze-dxf      = "cad_site_agent.cli:analyze_dxf"
+classify-drawing = "cad_site_agent.cli:classify_drawing"
+export-report    = "cad_site_agent.cli:export_report"
+clean-dxf        = "cad_site_agent.cli:clean_dxf"
+close-gaps       = "cad_site_agent.cli:close_gaps"
+normalize-layers = "cad_site_agent.cli:normalize_layers"
+hatch-candidates = "cad_site_agent.cli:hatch_candidates"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cad_site_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[project.optional-dependencies]
+rtree = ["rtree>=1.0.0"]
+dev = ["pytest>=7.0"]

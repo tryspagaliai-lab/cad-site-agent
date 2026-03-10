@@ -1,0 +1,114 @@
+{
+  "generated": "2026-03-10",
+  "audit_scope": "Full Python interpreter discovery — all installations on the machine",
+  "python_installations": [
+    {
+      "id": "py310-comfyui",
+      "version": "3.10.11",
+      "executable": "C:\\Program Files\\Python310\\python.exe",
+      "in_path": true,
+      "is_default": true,
+      "role": "ComfyUI / heavy ML env — default PATH python",
+      "notable_packages": ["comfyui", "torch", "diffusers", "chromadb", "gpt4all", "ollama", "ezdxf", "shapely", "networkx", "scipy", "click", "trimesh"],
+      "cad_site_agent_usable": true,
+      "status": "USABLE — recommended for running cad-site-agent (has click + all geo libs)"
+    },
+    {
+      "id": "py312-clean",
+      "version": "3.12.10",
+      "executable": "C:\\Users\\zilva\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "in_path": false,
+      "is_default": false,
+      "role": "Clean geo/diffusers env",
+      "notable_packages": ["ezdxf", "shapely", "networkx", "scipy", "numpy", "rtree", "pydantic", "PyYAML", "matplotlib", "pillow"],
+      "cad_site_agent_usable": true,
+      "status": "USABLE — has rtree + all core libs, missing click (use argparse fallback in CLI)"
+    },
+    {
+      "id": "py313-comfyui13",
+      "version": "3.13.7",
+      "executable": "C:\\Python313\\python.exe",
+      "in_path": false,
+      "is_default": false,
+      "role": "ComfyUI-13 / heavy ML env",
+      "notable_packages": ["ezdxf", "shapely", "networkx", "scipy", "numpy", "typer", "rich", "click", "trimesh", "pydantic", "PyYAML", "matplotlib", "pillow"],
+      "cad_site_agent_usable": true,
+      "status": "USABLE — complete CLI + geo libs, missing rtree and geopandas"
+    },
+    {
+      "id": "py313-chocolatey",
+      "version": "3.13.7",
+      "executable": "C:\\ProgramData\\chocolatey\\bin\\python3.13.exe",
+      "in_path": false,
+      "is_default": false,
+      "role": "Chocolatey-managed Python 3.13",
+      "notable_packages": [],
+      "cad_site_agent_usable": false,
+      "status": "SKIP — likely bare install, use C:\\Python313 instead"
+    },
+    {
+      "id": "py311-broken",
+      "version": "3.11.x",
+      "executable": "E:\\SHAKESPEARE_SYSTEM\\Python311\\python.exe",
+      "in_path": false,
+      "is_default": false,
+      "role": "Referenced by py.exe launcher but executable missing",
+      "notable_packages": [],
+      "cad_site_agent_usable": false,
+      "status": "BROKEN — py.exe has entry but E:\\SHAKESPEARE_SYSTEM\\Python311 does not exist"
+    }
+  ],
+  "virtual_envs": [
+    {
+      "path": "C:\\Users\\zilva\\mcp-servers\\autocad-mcp\\.venv",
+      "base_python": "3.13.x",
+      "manager": "uv",
+      "cad_packages": ["ezdxf 1.4.3", "matplotlib", "numpy", "pillow", "pydantic", "rich", "click"],
+      "mcp_packages": ["mcp 1.26.0"],
+      "notes": "autocad-mcp dedicated venv — no pip module (uv-managed)"
+    },
+    {
+      "path": "C:\\Users\\zilva\\mcp-servers\\3dsmax-mcp\\.venv",
+      "base_python": "3.12.x",
+      "manager": "uv",
+      "cad_packages": [],
+      "mcp_packages": ["mcp", "click", "httpx", "pydantic", "jsonschema"],
+      "notes": "3ds Max MCP venv — no DXF libs"
+    },
+    {
+      "path": "C:\\Users\\zilva\\mcp-servers\\illustrator-mcp\\.venv",
+      "base_python": "unknown",
+      "manager": "unknown",
+      "cad_packages": [],
+      "mcp_packages": [],
+      "notes": "Illustrator MCP venv — packages not audited"
+    },
+    {
+      "path": "C:\\Users\\zilva\\marker\\venv",
+      "base_python": "unknown",
+      "manager": "unknown",
+      "cad_packages": [],
+      "mcp_packages": [],
+      "notes": "PDF/document marker tool — not relevant to CAD pipeline"
+    }
+  ],
+  "package_managers": {
+    "uv": {
+      "version": "0.10.2",
+      "path": "C:\\Program Files\\Python310\\Scripts\\uv.exe",
+      "sees_pythons": ["py310", "py312", "py313"],
+      "status": "Available globally — recommended for any new venv creation"
+    },
+    "conda": {
+      "installed": true,
+      "in_path": false,
+      "path": "C:\\Users\\zilva\\AppData\\Local\\conda",
+      "notes": "conda present but not in PATH — ignore for this project"
+    },
+    "pip": {
+      "available_in": ["py310", "py312", "py313"],
+      "notes": "Standard pip available in all 3 main envs"
+    }
+  },
+  "recommendation": "Use py310 as default run environment for cad-site-agent — it has click, all geometry libs, and no missing MVP dependencies. Use uv if a new isolated venv is ever needed."
+}

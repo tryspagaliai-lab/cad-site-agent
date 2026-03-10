@@ -1,0 +1,87 @@
+# ============================================================
+# Hatch Rules — CAD Site Agent
+# ============================================================
+# Used by hatch/semantic_hatch.py and hatch/confidence.py
+# ============================================================
+
+# ── Confidence thresholds ─────────────────────────────────
+thresholds:
+  auto:   0.75   # score >= auto   → status "auto"   (proceed without review)
+  review: 0.45   # score >= review → status "review" (human check needed)
+  # score < review → status "skip" (too uncertain)
+
+# ── Additive scoring contributions ───────────────────────
+scoring:
+  strong_layer_signal:       0.45   # layer name matches a known site class
+  hatch_in_layer_family:     0.15   # layer already has HATCH entities
+  shape_heuristic_match:     0.20   # area/size fits expected range for class
+  suspicious_size_penalty:  -0.15   # area outside expected range for class
+  ambiguous_overlap_penalty: -0.20  # layer name matches multiple classes
+
+# ── Region filter thresholds ─────────────────────────────
+region:
+  min_area:     100.0    # mm² — skip tiny slivers
+  max_vertices: 5000     # skip degenerate / over-complex regions
+
+# ── Site class → material class mapping ──────────────────
+# These are the output identifiers written to hatch_candidates.json
+class_to_material:
+  building:  MAT_BUILDING
+  driveway:  MAT_DRIVEWAY
+  parking:   MAT_PARKING
+  path:      MAT_PATH
+  road:      MAT_ROAD
+  garden:    MAT_LAWN
+  planting:  MAT_PLANTING
+  water:     MAT_WATER
+  boundary:  REVIEW_BOUNDARY
+  unknown:   REVIEW_UNKNOWN
+
+# ── Layer keyword hints ───────────────────────────────────
+# Case-insensitive substring search.  First class whose ANY keyword
+# matches the layer name wins.  More specific patterns should come first.
+# These supplement (and may override) layer_aliases.yaml rules.
+layer_hints:
+  building:  ["building", "bldg", "dwh", "bh", "struct", "wall", "roof", "house"]
+  driveway:  ["driveway", "asphalt", "tarmac", "carriageway", "hardstanding"]
+  parking:   ["parking", "carpark", "car-park", "bay", "fcs-parking"]
+  path:      ["footpath", "fcs-path", "path", "pavement", "paving", "hoggin",
+               "grasscrete", "block pav", "walkway", "pedestrian"]
+  road:      ["road", "highway", "kerb", "kerbline", "street"]
+  garden:    ["garden", "lawn", "turf", "grass", "fcs-grass", "soft-land"]
+  planting:  ["planting", "plant", "shrub", "tree", "hedge", "landscape"]
+  water:     ["water", "pond", "lake", "river", "drain", "swale"]
+  boundary:  ["boundary", "site-bound", "fence", "plot", "curtilage", "wall-ext"]
+
+# ── Area heuristics (mm², assuming mm-unit DXF) ──────────
+# Used as a secondary confidence signal.
+# A region whose area falls within [min, max] gains +shape_heuristic_match.
+# A region outside the range gains +suspicious_size_penalty.
+area_hints:
+  building:
+    min: 5000         # ~2 m × 2.5 m
+    max: 5000000      # 5000 m²
+  parking:
+    min: 6000         # ~2.4 m × 2.5 m (half-bay min)
+    max: 500000       # 500 m²
+  path:
+    min: 500
+    max: 200000
+  driveway:
+    min: 1000
+    max: 1000000
+  road:
+    min: 5000
+    max: 50000000
+  garden:
+    min: 100
+    max: 10000000
+  planting:
+    min: 100
+    max: 5000000
+  water:
+    min: 1000
+    max: 100000000
+  boundary:
+    min: 1000
+    max: 100000000

@@ -1,0 +1,143 @@
+# DXF Analysis Report: ST-23-01S Planning Layout.dxf
+
+**File:** `E:\SHAKESPEARE\RAW_DATA\ST-23-01S Planning Layout.dxf`  
+**Size:** 89806 KB  
+**ezdxf:** 1.4.3  
+
+---
+
+## Classification
+
+| Field | Value |
+|-------|-------|
+| Drawing type | **planning_layout** |
+| Confidence | 70.0% |
+| Detected themes | block, boundary, building, detail, drainage, driveway, existing, footpath, garden, grass, kerb, layout, parking, path, paving, planning, plot, proposed, road, site, tree |
+
+**Notes:**
+- Very high layer count (1008) — likely planning/master layout
+- Site keywords found: boundary, building, driveway, footpath, garden, grass, parking, path, paving, road, tree
+- Planning keywords found: block, existing, layout, planning, plot, proposed, site
+
+---
+
+## Summary
+
+| Metric | Value |
+|--------|-------|
+| Total entities | 51,164 |
+| Total layers | 1,008 |
+| Text entries | 8,208 |
+| Closed polylines | 1,278 |
+| Open polylines | 17,265 |
+| Line segments | 179,802 |
+| Has hatches | No |
+| Has blocks | Yes |
+| Has splines | No |
+| Has 3D | Yes |
+| Likely unit | unknown |
+
+## Extents
+
+| | X | Y |
+|--|---|---|
+| Min | 492041.7 | 102634.6 |
+| Max | 494457.3 | 104634.6 |
+| Size | 2415.5 × 2000.0 (unknown) |
+
+## Entity Types
+
+| Entity Type | Count |
+|-------------|-------|
+| POLYLINE | 18,543 |
+| LINE | 15,193 |
+| TEXT | 8,208 |
+| POINT | 6,550 |
+| INSERT | 1,500 |
+| CIRCLE | 590 |
+| DIMENSION | 329 |
+| ARC | 251 |
+
+## Layer Summary (top 50 by entity count)
+
+| Layer | Entities | Entity Types | Closed Poly | Open Poly |
+|-------|----------|--------------|-------------|-----------|
+| `17681120_HEIGHT` | 12,873 | LINE:12873 | 0 | 0 |
+| `17681120_TIN` | 11,909 | POLYLINE:11909 | 0 | 0 |
+| `17681120_HTEXT` | 6,461 | TEXT:6457, POLYLINE:2, LINE:2 | 0 | 0 |
+| `17681120_ZPOINT` | 6,184 | POINT:6184 | 0 | 0 |
+| `17681120_PM_G01610_GENERAL` | 2,118 | POLYLINE:1070, LINE:1048 | 0 | 0 |
+| `17681120_PM_G01010_BUILDIN` | 1,058 | POLYLINE:728, LINE:330 | 0 | 0 |
+| `17681120_STEXT` | 759 | TEXT:726, POLYLINE:23, INSERT:9, CIRCLE:1 | 0 | 0 |
+| `P_BUILT_FORM_FOOTPATH` | 512 | POLYLINE:473, INSERT:39 | 0 | 0 |
+| `P_BUILT_FORM_DRIVEWAYS` | 511 | POLYLINE:487, INSERT:12, ARC:11, LINE:1 | 0 | 0 |
+| `17681120_WHITELINEMARKING` | 441 | POLYLINE:410, INSERT:21, TEXT:6, ARC:4 | 0 | 0 |
+| `17681120_TREE` | 417 | CIRCLE:403, POLYLINE:14 | 0 | 0 |
+| `17681120_TREE-CANOPY` | 343 | POLYLINE:343 | 0 | 0 |
+| `P_ENCLOSURE_1_8M_CLOSE_BOA` | 340 | POLYLINE:329, LINE:9, INSERT:2 | 0 | 0 |
+| `P_ANNOTATION_PARKING_SPACE` | 334 | INSERT:334 | 0 | 0 |
+| `P_ANNOTATION_PARKING_NUMBE` | 331 | TEXT:331 | 0 | 0 |
+| `P_INFRA_ROAD_KERB` | 313 | POLYLINE:202, ARC:97, LINE:14 | 0 | 0 |
+| `17681120_OLS_ANNOTATION_CO` | 308 | LINE:154, TEXT:154 | 0 | 0 |
+| `17681120_ZPOINT_FEATURE` | 300 | POINT:300 | 0 | 0 |
+| `SYMBOL` | 278 | POLYLINE:278 | 0 | 0 |
+| `0` | 269 | INSERT:253, POLYLINE:15, ARC:1 | 0 | 0 |
+| `17681120_PM_G01650_NETWORK` | 252 | LINE:214, POLYLINE:38 | 0 | 0 |
+| `17681120_STATION` | 245 | LINE:210, TEXT:35 | 0 | 0 |
+| `P_INFRA_FOOTPATH` | 235 | POLYLINE:138, ARC:79, LINE:18 | 0 | 0 |
+| `17681120_GARDENWALL` | 200 | POLYLINE:191, LINE:9 | 0 | 0 |
+| `17681120_BUILDING` | 165 | POLYLINE:148, LINE:17 | 0 | 0 |
+| `P_BOUNDARY_TREATMENT_-_181` | 162 | INSERT:162 | 0 | 0 |
+| `P_REFUSE_STRATEGY_-_BINS` | 160 | INSERT:160 | 0 | 0 |
+| `P_GARDEN_DIMS` | 157 | DIMENSION:156, POLYLINE:1 | 0 | 0 |
+| `P_ANNOTATION_PLOT_NUMBERS` | 156 | TEXT:155, POLYLINE:1 | 0 | 0 |
+| `GARDEN_DEPTH_COMPLIANCE` | 156 | DIMENSION:155, POLYLINE:1 | 0 | 0 |
+| `17681120_ORDNANCESURVEY` | 148 | POLYLINE:144, LINE:4 | 0 | 0 |
+| `17681120_FENCE` | 119 | POLYLINE:119 | 0 | 0 |
+| `17681120_OLS_ANNOTATION_EL` | 114 | LINE:114 | 0 | 0 |
+| `17681120_CONTOUR` | 103 | POLYLINE:103 | 0 | 0 |
+| `17681120_PM_G01410_ROAD_OR` | 103 | POLYLINE:81, LINE:22 | 0 | 0 |
+| `17681120_DITCH` | 93 | POLYLINE:87, LINE:6 | 0 | 0 |
+| `17681120_CONTOURMAJOR` | 93 | POLYLINE:93 | 0 | 0 |
+| `17681120_CONTOURMAJORTXT` | 93 | TEXT:93 | 0 | 0 |
+| `17681120_ROAD` | 91 | POLYLINE:91 | 0 | 0 |
+| `CYCLE_STORE_LOCATION` | 90 | TEXT:90 | 0 | 0 |
+| `CYCLE_STORE` | 90 | INSERT:90 | 0 | 0 |
+| `17681120_CONTOURTXT` | 84 | TEXT:84 | 0 | 0 |
+| `P_INFRA_CENTRELINE` | 69 | POLYLINE:36, ARC:28, LINE:5 | 0 | 0 |
+| `P_PARKING_HATCH_VISITOR` | 68 | INSERT:34, POLYLINE:34 | 0 | 0 |
+| `P_INFRA_SERVICE_VERGE` | 66 | POLYLINE:53, ARC:11, LINE:2 | 0 | 0 |
+| `17681120_DRAINAGE` | 64 | POLYLINE:43, LINE:20, CIRCLE:1 | 0 | 0 |
+| `XREF_COLOURED_LAYOUT` | 64 | POLYLINE:64 | 0 | 0 |
+| `17681120_FENCE-GATE` | 62 | POLYLINE:38, LINE:24 | 0 | 0 |
+| `P_MOBILITY_HATCH` | 60 | INSERT:43, POLYLINE:17 | 0 | 0 |
+| `17681120_BT` | 56 | CIRCLE:24, TEXT:19, POLYLINE:13 | 0 | 0 |
+
+## Text Sample (first 20)
+
+| Type | Layer | Content |
+|------|-------|---------|
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493150m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493150m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493200m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493200m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493250m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493250m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493300m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493300m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493350m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493350m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493400m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493400m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493450m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 493450m.E |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 103800m.N |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 103800m.N |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 103850m.N |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 103850m.N |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 103900m.N |
+| TEXT | `17681120_OLS_ANNOTATION_CO` | 103900m.N |
+
+## Block Names (first 30)
+
+`*U1060`, `*U1205`, `*U1206`, `*U1207`, `*U1211`, `*U1214`, `*U1246`, `*U1265`, `*U1268`, `*U1269`, `*U1302`, `*U1303`, `*U1304`, `*U1305`, `*U1306`, `*U1307`, `*U2254`, `*U2255`, `*U2256`, `*U2257`, `*U2258`, `*U2259`, `*U2260`, `*U2261`, `*U2262`, `*U2263`, `*U2264`, `*U2265`, `*U2266`, `*U2267`

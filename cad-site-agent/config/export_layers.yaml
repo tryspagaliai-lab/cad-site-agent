@@ -1,0 +1,113 @@
+# ============================================================
+# Export Layer Schema — MAX-prep DXF
+# ============================================================
+# Defines the target layer names and visual properties for
+# Phase 6 export (3ds Max material-style layer schema).
+#
+# Each canonical class maps to:
+#   layer_name   — DXF layer name in output
+#   color_aci    — ACI index (1-255) or -1 for true_color
+#   true_color   — hex RGB string (overrides color_aci if set)
+#   linetype     — DXF linetype name
+#   lineweight   — in mm (0.09 to 2.11)
+#   description  — human-readable
+# ============================================================
+
+version: "1.0"
+
+layers:
+  building:
+    layer_name: "SITE_BUILDING"
+    color_aci: 1         # red
+    true_color: null
+    linetype: "Continuous"
+    lineweight: 0.5
+    description: "Building footprints and walls"
+
+  driveway:
+    layer_name: "SITE_DRIVEWAY"
+    color_aci: -1
+    true_color: "#808080"   # grey
+    linetype: "Continuous"
+    lineweight: 0.35
+    description: "Asphalt driveways and tarmac surfaces"
+
+  parking:
+    layer_name: "SITE_PARKING"
+    color_aci: -1
+    true_color: "#FFCC66"   # amber
+    linetype: "Continuous"
+    lineweight: 0.25
+    description: "Parking bays and associated markings"
+
+  path:
+    layer_name: "SITE_PATH"
+    color_aci: -1
+    true_color: "#C8A882"   # buff/tan
+    linetype: "Continuous"
+    lineweight: 0.25
+    description: "Footpaths, paving, hoggin, block paving"
+
+  road:
+    layer_name: "SITE_ROAD"
+    color_aci: -1
+    true_color: "#555555"   # dark grey
+    linetype: "Continuous"
+    lineweight: 0.5
+    description: "Roads, carriageways, kerbs"
+
+  boundary:
+    layer_name: "SITE_BOUNDARY"
+    color_aci: 3         # green
+    true_color: null
+    linetype: "DASHED"
+    lineweight: 0.35
+    description: "Site and plot boundaries, fences"
+
+  planting:
+    layer_name: "SITE_PLANTING"
+    color_aci: -1
+    true_color: "#4CAF50"   # green
+    linetype: "Continuous"
+    lineweight: 0.18
+    description: "Grass, lawn, trees, shrubs, planting beds"
+
+  water:
+    layer_name: "SITE_WATER"
+    color_aci: -1
+    true_color: "#2196F3"   # blue
+    linetype: "Continuous"
+    lineweight: 0.25
+    description: "Ponds, rivers, drainage"
+
+  text:
+    layer_name: "SITE_TEXT"
+    color_aci: 7         # white/black
+    true_color: null
+    linetype: "Continuous"
+    lineweight: 0.0        # use default
+    description: "Parking numbers, labels, text annotations"
+
+  annotation:
+    layer_name: "SITE_ANNO"
+    color_aci: 8         # grey
+    true_color: null
+    linetype: "Continuous"
+    lineweight: 0.0
+    description: "Dimensions, notes, leaders, hatches (annotation only)"
+
+  symbols:
+    layer_name: "SITE_SYMBOLS"
+    color_aci: 6         # magenta
+    true_color: null
+    linetype: "Continuous"
+    lineweight: 0.18
+    description: "North point, logos, title blocks"
+
+  unknown:
+    layer_name: "SITE_UNKNOWN"
+    color_aci: 2         # yellow
+    true_color: null
+    linetype: "Continuous"
+    lineweight: 0.18
+    description: "Unclassified entities — review required"

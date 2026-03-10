@@ -1,0 +1,87 @@
+{
+  "generated": "2026-03-10",
+  "success_criteria": [
+    "Less manual cleanup",
+    "Less Illustrator workarounds",
+    "More closed boundaries",
+    "More reliable 3ds Max import",
+    "Faster repeatable workflow across different site layout files"
+  ],
+  "recommended_python": "py310 (C:\\Program Files\\Python310\\python.exe) — has click + all geometry libs. No install needed.",
+  "run_command": "C:\\Program Files\\Python310\\python.exe -m src.cad_site_agent.cli",
+
+  "tier_1_available_now": {
+    "description": "Already installed and working. Run these phases with ZERO installs.",
+    "libraries": [
+      {"package": "ezdxf", "version": "1.4.3", "env": "py310/py312/py313", "phase": "ALL", "note": "DXF I/O, entity iteration, hatch, render"},
+      {"package": "scipy.spatial.cKDTree", "version": "1.15.3", "env": "py310", "phase": "3", "note": "Gap closer endpoint detection"},
+      {"package": "numpy", "version": "2.2.6", "env": "py310", "phase": "3", "note": "Coordinate arrays"},
+      {"package": "shapely", "version": "2.1.2", "env": "py310", "phase": "5", "note": "Polygon topology, region closure"},
+      {"package": "networkx", "version": "3.4.2", "env": "py310", "phase": "5", "note": "Graph-based region detection"},
+      {"package": "pydantic", "version": "2.12.5", "env": "py310", "phase": "ALL", "note": "Config and schema validation"},
+      {"package": "PyYAML", "version": "6.0.3", "env": "py310", "phase": "4", "note": "Layer alias config"},
+      {"package": "click", "version": "8.3.1", "env": "py310", "phase": "1", "note": "CLI entry points"},
+      {"package": "matplotlib", "version": "3.10.8", "env": "py310", "phase": "2", "note": "DXF preview images"},
+      {"package": "pillow", "version": "12.0.0", "env": "py310", "phase": "2", "note": "Image post-processing"}
+    ],
+    "tools": [
+      {"tool": "Ollama server", "models": ["nomic-embed-text (274MB)", "qwen2.5:1.5b (986MB)", "granite3.3:8b (4.9GB)"], "use": "Layer name classification, semantic matching — Phase 4 AI enhancement"},
+      {"tool": "chromadb 1.4.0 (py310)", "use": "Vector search for layer alias lookup — Phase 4"},
+      {"tool": "autocad-mcp (ezdxf headless)", "use": "Alternative DXF output pipeline — Phase 6"}
+    ],
+    "scripts_reusable": [
+      {"script": "E:\\rotate_v5_final.py", "pattern": "Color detection + expanding-radius spatial search -> reuse in layer classification"},
+      {"script": "E:\\render_layers_v3.py", "pattern": "Correct ezdxf 1.4.x render API -> base for report preview"},
+      {"script": "E:\\add_hatch.py", "pattern": "SOLID hatch pattern -> base for Phase 5 hatch gen"}
+    ]
+  },
+
+  "tier_2_missing_essential_mvp": {
+    "description": "Required for MVP phases 1-6, NOT yet installed — but very few gaps.",
+    "verdict": "NONE BLOCKING. All core phases (1-5) are unblocked on py310.",
+    "items": []
+  },
+
+  "tier_3_missing_deferrable": {
+    "description": "Useful for later phases or optimisation — NOT needed for phases 1-5.",
+    "items": [
+      {
+        "package": "rtree",
+        "why_deferrable": "Spatial index speedup for large drawings. Only blocks Phase 3 on very large files (>100k entities). py312 already has rtree 1.4.1; py310 can use cKDTree which is sufficient.",
+        "install_if_needed": "uv pip install rtree --python \"C:\\Program Files\\Python310\\python.exe\""
+      },
+      {
+        "package": "geopandas",
+        "why_deferrable": "Geographic coordinate transforms (CRS). Not needed for pure DXF processing without geo-referencing. Only relevant if drawings need WGS84/BNG coordinate output.",
+        "install_if_needed": "uv pip install geopandas"
+      },
+      {
+        "package": "typer + rich (in py312)",
+        "why_deferrable": "Better CLI UX. argparse fallback is complete — every command works. Cosmetic improvement only.",
+        "install_if_needed": "uv pip install typer rich --python \"C:\\Users\\zilva\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\""
+      },
+      {
+        "package": "click (in py312)",
+        "why_deferrable": "py310 already has click. argparse fallback covers py312. Only needed if py312 becomes the primary run env.",
+        "install_if_needed": "uv pip install click --python \"C:\\Users\\zilva\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\""
+      },
+      {
+        "package": "trimesh / open3d",
+        "why_deferrable": "3D mesh processing. Needed for Phase 6 3ds Max / site model preparation only. py310 already has trimesh 4.11.1.",
+        "install_if_needed": "N/A — py310 already has trimesh"
+      }
+    ]
+  },
+
+  "phase_readiness": {
+    "phase_0_inventory": "COMPLETE",
+    "phase_1_scaffold": "COMPLETE",
+    "phase_2_analyzer": "COMPLETE",
+    "phase_3_gap_closer": "COMPLETE — 6310 -> 2022 open polys on Roman Gardens at 1m tolerance",
+    "phase_4_normalizer": "READY TO START — PyYAML, pydantic, ezdxf all present",
+    "phase_5_hatch": "READY TO START — shapely, networkx, ezdxf all present",
+    "phase_6_max_export": "NOT YET STARTED — 3dsmax-mcp installed, needs design work"
+  },
+
+  "next_action": "Run Phase 4: normalize-layers on roman_gardens_gapclosed.dxf. Check unknown-layer coverage. Expand config/layer_aliases.yaml."
+}

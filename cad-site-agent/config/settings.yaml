@@ -1,0 +1,60 @@
+# ============================================================
+# CAD Site Agent — Settings Config
+# ============================================================
+
+project:
+  name: "CAD Site Agent"
+  version: "0.1.0"
+
+paths:
+  # Default output root for reports (relative to project dir)
+  reports_dir: "reports/analysis"
+
+  # Default config dir (relative to project dir)
+  config_dir: "config"
+
+  # Layer alias rules file
+  layer_aliases: "config/layer_aliases.yaml"
+
+  # DXF source files root
+  raw_data_dir: "E:/SHAKESPEARE/RAW_DATA"
+
+analysis:
+  # Maximum text entries to include in report
+  max_text_sample: 50
+
+  # Maximum block names to include in report
+  max_block_names: 100
+
+  # Top N layers by entity count to show in markdown report
+  max_layers_in_report: 50
+
+  # Render a PNG preview when running analyze-dxf
+  default_preview: false
+
+  # PNG preview max size (inches, square)
+  preview_max_size_inches: 20
+
+classification:
+  # Minimum confidence to assign a non-unknown label
+  confidence_threshold: 0.25
+
+  # Active classifier: "new" (rich_site_layout taxonomy) or "legacy" (site_layout taxonomy)
+  active_classifier: "new"
+
+hatch:
+  # Rules file for hatch candidate scoring
+  rules_file: "config/hatch_rules.yaml"
+
+  # Minimum region area in mm² (overrides hatch_rules.yaml if set)
+  min_area: 100.0
+
+  # Maximum vertices per region (skip degenerate polys)
+  max_vertices: 5000
+
+  # Default output directory for hatch candidate reports
+  output_dir: "reports/analysis"
+
+logging:
+  # Verbosity: quiet | normal | verbose
+  level: "normal"

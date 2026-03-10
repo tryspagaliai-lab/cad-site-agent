@@ -1,0 +1,213 @@
+{
+  "generated": "2026-03-10",
+  "dxf_files": [
+    {
+      "name": "BDW Eastern Counties - DWH & BH Roman Gardens2.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\BDW Eastern Counties - DWH & BH Roman Gardens2.dxf",
+      "size_kb": 14427,
+      "entities": 38072,
+      "layers": 180,
+      "units": "millimetres",
+      "status": "PRIMARY SOURCE — analysed, gap-closed",
+      "known_layers_sample": [
+        "FCS-GRASS", "FCS-PATH", "FCS-DRIVEWAY", "FCS-BLOCK PAVING-GREY",
+        "FCS-HOGGIN", "F Front Path", "GLS-DWG-PATH", "BBS-EX-ASPHALT",
+        "FCS-GRASSCRETE", "GLS-HARD-PAVING-T1-H", "GLS-HARD-PAVING-T2",
+        "FCS-PARKING-NO", "FCS-PARKING-NO SALES OFF"
+      ],
+      "known_issues": [
+        "Many open LWPOLYLINES — gap closer reduces from 6310 to 2022 at 1m tolerance",
+        "Parking number texts need rotation (done via rotate_v5_final.py)",
+        "Coordinates in mm (not metres)"
+      ]
+    },
+    {
+      "name": "ST-23-01S Planning Layout.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\ST-23-01S Planning Layout.dxf",
+      "size_kb": 89806,
+      "entities": 51164,
+      "layers": 1008,
+      "units": "unknown — needs analysis",
+      "status": "NOT YET ANALYSED — HIGH PRIORITY for Phase 4",
+      "known_layers_sample": [],
+      "known_issues": [
+        "1008 layers — likely xref-heavy or block-inflated",
+        "17265 open polylines at last count",
+        "Unit (mm vs m) not confirmed — manual check needed before gap closer"
+      ]
+    },
+    {
+      "name": "parking_rotated.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\parking_rotated.dxf",
+      "size_kb": 13904,
+      "entities": 38072,
+      "layers": 180,
+      "units": "millimetres",
+      "status": "DERIVED — parking text rotated to match bay angles",
+      "source_script": "E:\\rotate_v5_final.py",
+      "known_issues": []
+    },
+    {
+      "name": "parking_hatched.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\parking_hatched.dxf",
+      "size_kb": 13960,
+      "entities": 38197,
+      "layers": 183,
+      "units": "millimetres",
+      "status": "DERIVED — SOLID hatches on FCS-PATH, FCS-DRIVEWAY, BBS-EX-ASPHALT",
+      "source_script": "E:\\add_hatch.py",
+      "known_issues": [
+        "Only closed polylines hatched — many open polylines left unhatched",
+        "Phase 5 re-hatch should fix this after gap-closer"
+      ]
+    },
+    {
+      "name": "roman_gardens_gapclosed.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\roman_gardens_gapclosed.dxf",
+      "size_kb": null,
+      "entities": null,
+      "layers": 180,
+      "units": "millimetres",
+      "status": "PHASE 3 OUTPUT — gap-closed at 1m tolerance",
+      "source_script": "E:\\cad-site-agent\\scripts\\test_gap_close.py",
+      "gap_close_stats": {
+        "tolerance_mm": 1000,
+        "open_before": 6310,
+        "open_after": 2022,
+        "closed_before": 1434,
+        "closed_after": 2305,
+        "self_closed": 559,
+        "merged_pairs": 3417,
+        "reduction_pct": 68
+      }
+    }
+  ],
+  "cad_scripts": {
+    "e_root_adhoc": {
+      "location": "E:\\",
+      "count": 16,
+      "purpose": "Ad-hoc exploration scripts — NOT packaged, kept as reference implementations",
+      "scripts": [
+        {"file": "add_hatch.py", "purpose": "Add SOLID hatch to closed LWPOLYLINE by layer"},
+        {"file": "analyze_by_color.py", "purpose": "Find entities by RGB true_color (254,204,102 = parking)"},
+        {"file": "check_ezdxf.py", "purpose": "ezdxf version check and drawing addon API inspection"},
+        {"file": "check_ezdxf2.py", "purpose": "RenderContext / Frontend API inspection"},
+        {"file": "check_ezdxf3.py", "purpose": "LayerProperties / LayoutProperties inspection"},
+        {"file": "check_asphalt.py", "purpose": "Inspect BBS-EX-ASPHALT entities"},
+        {"file": "check_layers.py", "purpose": "Count entity types per target layer"},
+        {"file": "diagnose_notfound.py", "purpose": "Find texts not rotated — search surrounding context"},
+        {"file": "diagnose_rects.py", "purpose": "Analyse LWPOLYLINE bounding-box as parking bays"},
+        {"file": "list_layers.py", "purpose": "Print all layer names"},
+        {"file": "render_dxf.py", "purpose": "Render DXF to PNG via ezdxf Frontend"},
+        {"file": "render_layers_v3.py", "purpose": "Layer-coloured render, ezdxf 1.4.x API"},
+        {"file": "render_hatched_preview.py", "purpose": "Preview hatched DXF"},
+        {"file": "rotate_v5_final.py", "purpose": "BEST: rotate parking text via long-bay-line angle detection, expanding-radius search"},
+        {"file": "tmp_find_parking_polys.py", "purpose": "Find 4-vertex polys matching parking bay dimensions"},
+        {"file": "tmp_spatial.py", "purpose": "Spatial analysis of entities"}
+      ]
+    },
+    "shakespeare_scripts": {
+      "location": "E:\\SHAKESPEARE\\scripts\\",
+      "count_approx": 60,
+      "purpose": "Broader SHAKESPEARE project scripts — CAD parsing, AI validation, etc.",
+      "notable_scripts": [
+        {"file": "dxf_parser.py", "purpose": "DXF parsing utilities"},
+        {"file": "dwg_cleaner.py", "purpose": "DWG/DXF cleaning"},
+        {"file": "pdf_to_dxf.py", "purpose": "PDF to DXF conversion"},
+        {"file": "parking_bays.py", "purpose": "Parking bay detection"},
+        {"file": "ollama_validator.py", "purpose": "AI-based validation using Ollama"},
+        {"file": "chromadb_init.py", "purpose": "ChromaDB vector store init for embedding search"}
+      ]
+    },
+    "cad_site_agent": {
+      "location": "E:\\cad-site-agent\\",
+      "status": "STRUCTURED PROJECT — primary work target",
+      "modules": [
+        "src/cad_site_agent/analyzer/dxf_analyzer.py",
+        "src/cad_site_agent/analyzer/drawing_classifier.py",
+        "src/cad_site_agent/analyzer/report_writer.py",
+        "src/cad_site_agent/cleanup/cleaner.py",
+        "src/cad_site_agent/cleanup/gap_closer.py",
+        "src/cad_site_agent/semantic/normalizer.py",
+        "src/cad_site_agent/cli.py"
+      ],
+      "pyproject_toml": "E:\\cad-site-agent\\pyproject.toml"
+    }
+  },
+  "mcp_integrations": [
+    {
+      "name": "autocad-mcp",
+      "version": "3.0.0",
+      "path": "C:\\Users\\zilva\\mcp-servers\\autocad-mcp",
+      "python_env": ".venv (py313, uv-managed)",
+      "backends": {
+        "file_ipc": "Requires AutoCAD LT 2024+ running + mcp_dispatch.lsp APPLOAD",
+        "ezdxf_headless": "Works without AutoCAD — generates DXF directly"
+      },
+      "tools": ["drawing", "entity", "layer", "block", "annotation", "pid", "view", "system"],
+      "mcp_package": "mcp 1.26.0",
+      "dxf_packages": ["ezdxf 1.4.3", "matplotlib", "numpy", "pillow"],
+      "status": "INSTALLED — headless backend usable now"
+    },
+    {
+      "name": "3dsmax-mcp",
+      "version": "unknown",
+      "path": "C:\\Users\\zilva\\mcp-servers\\3dsmax-mcp",
+      "python_env": ".venv (py312, uv-managed)",
+      "tools": ["unknown — not yet audited"],
+      "mcp_package": "mcp (version unknown)",
+      "dxf_packages": [],
+      "status": "INSTALLED — no DXF libs; useful for 3ds Max output stage (Phase 6)"
+    },
+    {
+      "name": "illustrator-mcp",
+      "version": "unknown",
+      "path": "C:\\Users\\zilva\\mcp-servers\\illustrator-mcp",
+      "python_env": ".venv (unknown)",
+      "tools": ["unknown — not yet audited"],
+      "mcp_package": "unknown",
+      "dxf_packages": [],
+      "status": "INSTALLED — useful for final visual output stage"
+    }
+  ],
+  "local_ai": {
+    "ollama": {
+      "installed": true,
+      "running": true,
+      "api": "http://localhost:11434",
+      "models": [
+        {"name": "llama3:8b", "size_gb": 4.7, "type": "LLM"},
+        {"name": "qwen2.5:1.5b", "size_gb": 0.986, "type": "LLM"},
+        {"name": "qwen-image-edit:latest", "size_gb": 13.0, "type": "vision-LLM"},
+        {"name": "glm-4.6:cloud", "size_gb": null, "type": "cloud-routed"},
+        {"name": "nomic-embed-text:latest", "size_gb": 0.274, "type": "embedding"},
+        {"name": "ibm/granite3.3:2b-base", "size_gb": 1.5, "type": "LLM"},
+        {"name": "granite3.3:8b", "size_gb": 4.9, "type": "LLM"},
+        {"name": "qwen25-vl-3b:latest", "size_gb": 2.4, "type": "vision-LLM"},
+        {"name": "glm4-9b-chat:latest", "size_gb": 6.3, "type": "LLM"}
+      ],
+      "best_for_cad": "nomic-embed-text:latest (layer name embeddings), qwen2.5:1.5b (fast classification), granite3.3:8b (reasoning)"
+    },
+    "lm_studio": {
+      "installed": false,
+      "notes": "Not found at standard paths"
+    },
+    "openwebui": {
+      "installed": false,
+      "notes": "Not found"
+    },
+    "chromadb": {
+      "installed": true,
+      "version": "1.4.0",
+      "env": "py310",
+      "notes": "Available for vector search if needed for semantic layer matching"
+    }
+  },
+  "project_files": {
+    "pyproject_toml": ["E:\\cad-site-agent\\pyproject.toml"],
+    "requirements_txt": [],
+    "poetry_lock": [],
+    "uv_lock": ["C:\\Users\\zilva\\mcp-servers\\3dsmax-mcp\\uv.lock"],
+    "package_json": []
+  }
+}

@@ -1,0 +1,115 @@
+# ============================================================
+# Layer Alias Rules — CAD Site Agent
+# ============================================================
+# Rules are evaluated in order, FIRST MATCH wins.
+# Rule types:
+#   exact      — full case-insensitive match
+#   prefix     — layer name starts with pattern
+#   substring  — pattern found anywhere in layer name (DEFAULT)
+#   regex      — Python regex, case-insensitive
+#
+# Canonical classes:
+#   building, driveway, parking, path, road, boundary,
+#   planting, water, text, annotation, symbols, unknown
+# ============================================================
+
+rules:
+
+  # ── BUILDING ──────────────────────────────────────────────
+  - { type: substring, pattern: "building",    class: building }
+  - { type: substring, pattern: "bldg",        class: building }
+  - { type: substring, pattern: "struct",      class: building }
+  - { type: substring, pattern: "wall",        class: building }
+  - { type: substring, pattern: "roof",        class: building }
+  - { type: substring, pattern: "dwh",         class: building }   # show home
+  - { type: substring, pattern: "bh",          class: building }   # branding home
+
+  # ── DRIVEWAY ──────────────────────────────────────────────
+  - { type: substring, pattern: "driveway",    class: driveway }
+  - { type: substring, pattern: "drive",       class: driveway }
+  - { type: substring, pattern: "fcs-driveway",class: driveway }
+  - { type: substring, pattern: "asphalt",     class: driveway }
+  - { type: substring, pattern: "tarmac",      class: driveway }
+  - { type: substring, pattern: "carriageway", class: driveway }
+  - { type: substring, pattern: "bbs-ex-asp",  class: driveway }
+
+  # ── PARKING ───────────────────────────────────────────────
+  - { type: substring, pattern: "parking",     class: parking }
+  - { type: substring, pattern: "park-no",     class: parking }
+  - { type: substring, pattern: "fcs-parking", class: parking }
+  - { type: substring, pattern: "bay",         class: parking }
+  - { type: regex,     pattern: "p-\\d+",      class: parking }   # P-01, P-02 etc
+
+  # ── PATH ──────────────────────────────────────────────────
+  - { type: substring, pattern: "fcs-path",    class: path }
+  - { type: substring, pattern: "footpath",    class: path }
+  - { type: substring, pattern: "path",        class: path }
+  - { type: substring, pattern: "pavement",    class: path }
+  - { type: substring, pattern: "paving",      class: path }
+  - { type: substring, pattern: "hoggin",      class: path }
+  - { type: substring, pattern: "grasscrete",  class: path }
+  - { type: substring, pattern: "block pav",   class: path }
+  - { type: substring, pattern: "gls-dwg-path",class: path }
+  - { type: substring, pattern: "gls-hard-pav",class: path }
+
+  # ── ROAD ──────────────────────────────────────────────────
+  - { type: substring, pattern: "road",        class: road }
+  - { type: substring, pattern: "highway",     class: road }
+  - { type: substring, pattern: "carriageway", class: road }
+  - { type: substring, pattern: "kerb",        class: road }
+  - { type: substring, pattern: "kerbline",    class: road }
+
+  # ── BOUNDARY ──────────────────────────────────────────────
+  - { type: substring, pattern: "boundary",    class: boundary }
+  - { type: substring, pattern: "site-bound",  class: boundary }
+  - { type: substring, pattern: "plot",        class: boundary }
+  - { type: substring, pattern: "curtilage",   class: boundary }
+  - { type: substring, pattern: "fence",       class: boundary }
+  - { type: substring, pattern: "wall-ext",    class: boundary }
+
+  # ── PLANTING ──────────────────────────────────────────────
+  - { type: substring, pattern: "grass",       class: planting }
+  - { type: substring, pattern: "lawn",        class: planting }
+  - { type: substring, pattern: "planting",    class: planting }
+  - { type: substring, pattern: "plant",       class: planting }
+  - { type: substring, pattern: "tree",        class: planting }
+  - { type: substring, pattern: "shrub",       class: planting }
+  - { type: substring, pattern: "garden",      class: planting }
+  - { type: substring, pattern: "fcs-grass",   class: planting }
+  - { type: substring, pattern: "soft-land",   class: planting }
+
+  # ── WATER ─────────────────────────────────────────────────
+  - { type: substring, pattern: "water",       class: water }
+  - { type: substring, pattern: "pond",        class: water }
+  - { type: substring, pattern: "lake",        class: water }
+  - { type: substring, pattern: "river",       class: water }
+  - { type: substring, pattern: "drain",       class: water }
+  - { type: substring, pattern: "swale",       class: water }
+
+  # ── TEXT ──────────────────────────────────────────────────
+  - { type: substring, pattern: "text",        class: text }
+  - { type: substring, pattern: "label",       class: text }
+  - { type: regex,     pattern: "-no$",        class: text }     # FCS-PARKING-NO
+  - { type: regex,     pattern: "-no\\s",      class: text }
+
+  # ── ANNOTATION ────────────────────────────────────────────
+  - { type: substring, pattern: "dim",         class: annotation }
+  - { type: substring, pattern: "anno",        class: annotation }
+  - { type: substring, pattern: "note",        class: annotation }
+  - { type: substring, pattern: "hatch",       class: annotation }
+  - { type: substring, pattern: "leader",      class: annotation }
+  - { type: substring, pattern: "revision",    class: annotation }
+  - { type: exact,     pattern: "defpoints",   class: annotation }
+
+  # ── SYMBOLS ───────────────────────────────────────────────
+  - { type: substring, pattern: "symbol",      class: symbols }
+  - { type: substring, pattern: "north",       class: symbols }
+  - { type: substring, pattern: "logo",        class: symbols }
+  - { type: substring, pattern: "sign",        class: symbols }
+  - { type: substring, pattern: "title",       class: symbols }
+  - { type: substring, pattern: "border",      class: symbols }
+  - { type: substring, pattern: "frame",       class: symbols }
+
+  # ── UNKNOWN (catch-all — leave at bottom) ─────────────────
+  # Anything not matched above → unknown
+  # (no rule needed — normalizer assigns 'unknown' automatically)

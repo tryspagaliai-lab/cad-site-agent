@@ -1,0 +1,106 @@
+{
+  "generated": "2026-03-10",
+  "dxf_files": [
+    {
+      "name": "BDW Eastern Counties - DWH & BH Roman Gardens2.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\BDW Eastern Counties - DWH & BH Roman Gardens2.dxf",
+      "size_kb": 14427,
+      "entities": 38072,
+      "layers": 180,
+      "notes": "Primary site layout. Contains parking, paths, driveways, grass, text. Coordinates in mm (divide by 1000 for metres).",
+      "known_layers": [
+        "FCS-GRASS", "FCS-PATH", "FCS-DRIVEWAY", "FCS-BLOCK PAVING-GREY",
+        "FCS-HOGGIN", "F Front Path", "GLS-DWG-PATH", "BBS-EX-ASPHALT",
+        "FCS-GRASSCRETE", "GLS-HARD-PAVING-T1-H", "GLS-HARD-PAVING-T2",
+        "FCS-PARKING-NO", "FCS-PARKING-NO SALES OFF"
+      ],
+      "known_issues": [
+        "Parking number texts need rotation to match bay orientation",
+        "Some polylines not closed (gaps)",
+        "Coordinates in mm (not standard metres)"
+      ]
+    },
+    {
+      "name": "ST-23-01S Planning Layout.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\ST-23-01S Planning Layout.dxf",
+      "size_kb": 89806,
+      "entities": 51164,
+      "layers": 1008,
+      "notes": "Large planning layout. 1008 layers — complex, possibly xref-heavy. Not yet analysed in detail.",
+      "known_layers": [],
+      "known_issues": ["Large file. High layer count suggests xrefs or blocks. Not yet analysed."]
+    },
+    {
+      "name": "parking_rotated.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\parking_rotated.dxf",
+      "size_kb": 13904,
+      "entities": 38072,
+      "layers": 180,
+      "notes": "Derived from primary DXF — parking text rotated to match bay angles using rotate_v5_final.py",
+      "known_issues": []
+    },
+    {
+      "name": "parking_hatched.dxf",
+      "path": "E:\\SHAKESPEARE\\RAW_DATA\\parking_hatched.dxf",
+      "size_kb": 13960,
+      "entities": 38197,
+      "layers": 183,
+      "notes": "Derived from parking_rotated.dxf — solid HATCH fills added to FCS-PATH, FCS-DRIVEWAY, BBS-EX-ASPHALT",
+      "known_issues": ["Only closed polylines hatched — many open polylines left unhatched"]
+    }
+  ],
+  "existing_scripts": {
+    "root_path": "E:\\",
+    "scripts": [
+      {"file": "check_ezdxf.py", "purpose": "ezdxf version check and drawing addon inspection"},
+      {"file": "check_ezdxf2.py", "purpose": "RenderContext / Frontend API inspection"},
+      {"file": "check_ezdxf3.py", "purpose": "LayerProperties / LayoutProperties inspection"},
+      {"file": "check_layers.py", "purpose": "Count entity types per target layer"},
+      {"file": "check_asphalt.py", "purpose": "Inspect BBS-EX-ASPHALT entities"},
+      {"file": "list_layers.py", "purpose": "Print all layer names"},
+      {"file": "analyze_by_color.py", "purpose": "Find entities by true RGB color (254,204,102 = parking)"},
+      {"file": "diagnose_notfound.py", "purpose": "Find texts not rotated — search what's around them"},
+      {"file": "diagnose_rects.py", "purpose": "Analyse LWPOLYLINE rectangles as parking bays"},
+      {"file": "tmp_find_parking_polys.py", "purpose": "Find 4-vertex polylines matching parking bay dimensions"},
+      {"file": "tmp_parking.py", "purpose": "Parking analysis"},
+      {"file": "tmp_spatial.py", "purpose": "Spatial analysis of entities"},
+      {"file": "render_dxf.py", "purpose": "Render full DXF to PNG using ezdxf Frontend"},
+      {"file": "render_hd.py", "purpose": "HD render with white background"},
+      {"file": "render_layers.py", "purpose": "Render with unique color per layer (manual matplotlib)"},
+      {"file": "render_layers_v2.py", "purpose": "Layer render using ezdxf Frontend"},
+      {"file": "render_layers_v3.py", "purpose": "ezdxf 1.4.x compatible layer render"},
+      {"file": "render_preview.py", "purpose": "Small preview render"},
+      {"file": "render_tiny_preview.py", "purpose": "Tiny preview"},
+      {"file": "render_hatched_preview.py", "purpose": "Preview of hatched DXF"},
+      {"file": "render_hd.py", "purpose": "HD render"},
+      {"file": "add_hatch.py", "purpose": "Add SOLID hatch to closed polylines by layer"},
+      {"file": "rotate_parking_numbers.py", "purpose": "Rotate parking number texts (early attempt)"},
+      {"file": "rotate_parking_final.py", "purpose": "Rotate parking numbers (stable version)"},
+      {"file": "rotate_v2.py", "purpose": "Rotation attempt v2"},
+      {"file": "rotate_v3.py", "purpose": "Rotation attempt v3"},
+      {"file": "rotate_v4.py", "purpose": "Rotation attempt v4"},
+      {"file": "rotate_v5_final.py", "purpose": "Final rotation: long bay lines (4.5-7m), expanding radii 15/30/60m"}
+    ]
+  },
+  "mcp_integrations": [
+    {
+      "name": "autocad-mcp",
+      "path": "C:\\Users\\zilva\\mcp-servers\\autocad-mcp",
+      "version": "3.0.0",
+      "backend_file_ipc": "Requires AutoCAD LT 2024+ + mcp_dispatch.lsp APPLOAD",
+      "backend_ezdxf": "Headless DXF generation, no AutoCAD needed",
+      "tools": ["drawing", "entity", "layer", "block", "annotation", "pid", "view", "system"],
+      "status": "Installed, uv-managed venv. Not confirmed running."
+    },
+    {
+      "name": "illustrator-mcp",
+      "path": "C:\\Users\\zilva\\mcp-servers\\illustrator-mcp",
+      "status": "Installed"
+    },
+    {
+      "name": "3dsmax-mcp",
+      "path": "C:\\Users\\zilva\\mcp-servers\\3dsmax-mcp",
+      "status": "Installed"
+    }
+  ]
+}

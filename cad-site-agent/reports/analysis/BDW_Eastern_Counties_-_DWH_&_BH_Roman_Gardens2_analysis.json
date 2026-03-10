@@ -1,0 +1,2514 @@
+{
+  "analysis": {
+    "source_file": "E:\\SHAKESPEARE\\RAW_DATA\\BDW Eastern Counties - DWH & BH Roman Gardens2.dxf",
+    "file_size_kb": 14427,
+    "ezdxf_version": "1.4.3",
+    "total_entities": 38072,
+    "entity_type_counts": {
+      "LINE": 23094,
+      "ARC": 1144,
+      "TEXT": 743,
+      "MTEXT": 1273,
+      "LWPOLYLINE": 7744,
+      "MLINE": 116,
+      "SPLINE": 449,
+      "POLYLINE": 836,
+      "CIRCLE": 358,
+      "ELLIPSE": 1746,
+      "INSERT": 223,
+      "LEADER": 2,
+      "DIMENSION": 2,
+      "ATTDEF": 297,
+      "HATCH": 27,
+      "3DFACE": 14,
+      "REGION": 4
+    },
+    "total_layers": 180,
+    "layers": {
+      "0": {
+        "name": "0",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2872,
+        "entity_types": {
+          "LWPOLYLINE": 16,
+          "LINE": 1254,
+          "ARC": 9,
+          "CIRCLE": 57,
+          "ELLIPSE": 1507,
+          "HATCH": 21,
+          "POLYLINE": 8
+        },
+        "has_closed_polylines": 9,
+        "has_open_polylines": 7
+      },
+      "CB-P-FOOTPATH": {
+        "name": "CB-P-FOOTPATH",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 9,
+        "entity_types": {
+          "LINE": 4,
+          "LWPOLYLINE": 5
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 5
+      },
+      "CB-P-PARKING": {
+        "name": "CB-P-PARKING",
+        "color_aci": 1,
+        "true_color": null,
+        "linetype": "DASHED",
+        "entity_count": 44,
+        "entity_types": {
+          "LWPOLYLINE": 44
+        },
+        "has_closed_polylines": 44,
+        "has_open_polylines": 0
+      },
+      "CB-P-FENCE": {
+        "name": "CB-P-FENCE",
+        "color_aci": -5,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 10,
+        "entity_types": {
+          "ARC": 1,
+          "LWPOLYLINE": 5,
+          "LINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 5
+      },
+      "FCS-PLOT-No": {
+        "name": "FCS-PLOT-No",
+        "color_aci": -6,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 303,
+        "entity_types": {
+          "TEXT": 303
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-PARKING-NO": {
+        "name": "FCS-PARKING-NO",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 774,
+        "entity_types": {
+          "MTEXT": 773,
+          "TEXT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "CB-P-ANNOTATION": {
+        "name": "CB-P-ANNOTATION",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 54,
+        "entity_types": {
+          "MTEXT": 54
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "CB-H-ROOF": {
+        "name": "CB-H-ROOF",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 11,
+        "entity_types": {
+          "LWPOLYLINE": 11
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 11
+      },
+      "CB-H-EXTWALL": {
+        "name": "CB-H-EXTWALL",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 3,
+        "entity_types": {
+          "LWPOLYLINE": 3
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 3
+      },
+      "F Text AsOpp": {
+        "name": "F Text AsOpp",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "TEXT": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "F Text Colour Opp": {
+        "name": "F Text Colour Opp",
+        "color_aci": -30,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "HATCH": 2,
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 2,
+        "has_open_polylines": 0
+      },
+      "F Text Code": {
+        "name": "F Text Code",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "TEXT": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "F Text Sales": {
+        "name": "F Text Sales",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "TEXT": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "F Ext Wall": {
+        "name": "F Ext Wall",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 6,
+        "entity_types": {
+          "LWPOLYLINE": 6
+        },
+        "has_closed_polylines": 2,
+        "has_open_polylines": 4
+      },
+      "F Ext Wall Pres": {
+        "name": "F Ext Wall Pres",
+        "color_aci": -15,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 6,
+        "entity_types": {
+          "LWPOLYLINE": 6
+        },
+        "has_closed_polylines": 2,
+        "has_open_polylines": 4
+      },
+      "F Crossing": {
+        "name": "F Crossing",
+        "color_aci": -8,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 10,
+        "entity_types": {
+          "LWPOLYLINE": 10
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 10
+      },
+      "F Roof": {
+        "name": "F Roof",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 18,
+        "entity_types": {
+          "LINE": 14,
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "F Services Flue": {
+        "name": "F Services Flue",
+        "color_aci": -30,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "HATCH": 2,
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 2
+      },
+      "F Front Path": {
+        "name": "F Front Path",
+        "color_aci": -6,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 2
+      },
+      "F Patio": {
+        "name": "F Patio",
+        "color_aci": -6,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 2,
+        "has_open_polylines": 0
+      },
+      "F Door": {
+        "name": "F Door",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "HATCH": 2,
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 2,
+        "has_open_polylines": 0
+      },
+      "F Canopy": {
+        "name": "F Canopy",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 2
+      },
+      "F Text Space Standard": {
+        "name": "F Text Space Standard",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "TEXT": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-Party Wall": {
+        "name": "FCS-Party Wall",
+        "color_aci": -5,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 104,
+        "entity_types": {
+          "LWPOLYLINE": 60,
+          "LINE": 44
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 60
+      },
+      "F Garage Opening": {
+        "name": "F Garage Opening",
+        "color_aci": -6,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "LINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "PARKING-NO": {
+        "name": "PARKING-NO",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 39,
+        "entity_types": {
+          "TEXT": 25,
+          "MTEXT": 14
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "F Door Surround": {
+        "name": "F Door Surround",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "WH comments": {
+        "name": "WH comments",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "LINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "CB-E-FOOTPATH POS": {
+        "name": "CB-E-FOOTPATH POS",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "DASHED",
+        "entity_count": 2,
+        "entity_types": {
+          "ARC": 1,
+          "LINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "LNT_B_LAUNDRY": {
+        "name": "LNT_B_LAUNDRY",
+        "color_aci": -5,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 17,
+        "entity_types": {
+          "LINE": 17
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "Building Outline": {
+        "name": "Building Outline",
+        "color_aci": -10,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 1
+      },
+      "0 Care Home Boundary": {
+        "name": "0 Care Home Boundary",
+        "color_aci": -10,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "0 Care Home Access": {
+        "name": "0 Care Home Access",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 3,
+        "entity_types": {
+          "ARC": 3
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "PARKING No.": {
+        "name": "PARKING No.",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 11,
+        "entity_types": {
+          "MTEXT": 11
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "CB-LANDUSE-CARE-HOME-HATCH": {
+        "name": "CB-LANDUSE-CARE-HOME-HATCH",
+        "color_aci": -253,
+        "true_color": 10263708,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "MTEXT": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "CB-LANDUSE-EDUCATION-HATCH OPTION A TEXT": {
+        "name": "CB-LANDUSE-EDUCATION-HATCH OPTION A TEXT",
+        "color_aci": -254,
+        "true_color": 15448819,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "MTEXT": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "CB-SITE-BOUNDARY-NOT PART OF SUBMISSION": {
+        "name": "CB-SITE-BOUNDARY-NOT PART OF SUBMISSION",
+        "color_aci": -150,
+        "true_color": 689663,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "PM_G01070_Structure_Text": {
+        "name": "PM_G01070_Structure_Text",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "MTEXT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "PM_G01470_Roadside_Text": {
+        "name": "PM_G01470_Roadside_Text",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "MTEXT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "PM_G01230_Inland_Water_Text": {
+        "name": "PM_G01230_Inland_Water_Text",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 5,
+        "entity_types": {
+          "MTEXT": 5
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "PM_G01210_Inland_Water_Line": {
+        "name": "PM_G01210_Inland_Water_Line",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 34,
+        "entity_types": {
+          "LINE": 13,
+          "LWPOLYLINE": 21
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 21
+      },
+      "PM_G01250_Landform_Line": {
+        "name": "PM_G01250_Landform_Line",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 14,
+        "entity_types": {
+          "LWPOLYLINE": 13,
+          "LINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 13
+      },
+      "PM_G01610_General_Feature_Line": {
+        "name": "PM_G01610_General_Feature_Line",
+        "color_aci": -30,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 392,
+        "entity_types": {
+          "LINE": 226,
+          "LWPOLYLINE": 166
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 166
+      },
+      "PM_G01090_General_Surface_Line": {
+        "name": "PM_G01090_General_Surface_Line",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 5,
+        "entity_types": {
+          "LWPOLYLINE": 2,
+          "LINE": 3
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 2
+      },
+      "PM_G01430_Road_Or_Track_Text": {
+        "name": "PM_G01430_Road_Or_Track_Text",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "MTEXT": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "PM_G01750_Built_Environment_Text": {
+        "name": "PM_G01750_Built_Environment_Text",
+        "color_aci": -8,
+        "true_color": 8421504,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "MTEXT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "PM_G01010_Building_Line": {
+        "name": "PM_G01010_Building_Line",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 232,
+        "entity_types": {
+          "LWPOLYLINE": 137,
+          "LINE": 95
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 137
+      },
+      "PM_G01710_Buildings_Or_Structure_Text": {
+        "name": "PM_G01710_Buildings_Or_Structure_Text",
+        "color_aci": -8,
+        "true_color": 8421504,
+        "linetype": "Continuous",
+        "entity_count": 35,
+        "entity_types": {
+          "MTEXT": 35
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "PM_G01650_Network_Or_Polygon_Closing_Geometry_Line": {
+        "name": "PM_G01650_Network_Or_Polygon_Closing_Geometry_Line",
+        "color_aci": -8,
+        "true_color": 8421504,
+        "linetype": "Continuous",
+        "entity_count": 62,
+        "entity_types": {
+          "LINE": 55,
+          "LWPOLYLINE": 7
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 7
+      },
+      "PM_G01410_Road_Or_Track_Line": {
+        "name": "PM_G01410_Road_Or_Track_Line",
+        "color_aci": -253,
+        "true_color": 10066329,
+        "linetype": "Continuous",
+        "entity_count": 52,
+        "entity_types": {
+          "LINE": 24,
+          "LWPOLYLINE": 28
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 28
+      },
+      "BBS-EX-DITCHES": {
+        "name": "BBS-EX-DITCHES",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 61,
+        "entity_types": {
+          "POLYLINE": 54,
+          "LWPOLYLINE": 7
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 7
+      },
+      "BBS-EX-TRACKS": {
+        "name": "BBS-EX-TRACKS",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 6,
+        "entity_types": {
+          "POLYLINE": 6
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-ASPHALT": {
+        "name": "BBS-EX-ASPHALT",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "DASHED",
+        "entity_count": 4,
+        "entity_types": {
+          "POLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-VERGES": {
+        "name": "BBS-EX-VERGES",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "POLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-VERGES-LVL": {
+        "name": "BBS-EX-VERGES-LVL",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 12,
+        "entity_types": {
+          "TEXT": 12
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "7_TREES_C_CANOPY": {
+        "name": "7_TREES_C_CANOPY",
+        "color_aci": -114,
+        "true_color": 39244,
+        "linetype": "Continuous",
+        "entity_count": 912,
+        "entity_types": {
+          "LINE": 912
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "7_TREES_B_CANOPY": {
+        "name": "7_TREES_B_CANOPY",
+        "color_aci": -114,
+        "true_color": 39244,
+        "linetype": "Continuous",
+        "entity_count": 913,
+        "entity_types": {
+          "LINE": 912,
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "7_TREES_A_CANOPY": {
+        "name": "7_TREES_A_CANOPY",
+        "color_aci": -114,
+        "true_color": 39244,
+        "linetype": "Continuous",
+        "entity_count": 76,
+        "entity_types": {
+          "LINE": 76
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "7_TREES_A_RPA": {
+        "name": "7_TREES_A_RPA",
+        "color_aci": -6,
+        "true_color": null,
+        "linetype": "DGN Style 3",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 0
+      },
+      "7_TREEGROUP_B_CANOPY": {
+        "name": "7_TREEGROUP_B_CANOPY",
+        "color_aci": -114,
+        "true_color": 39244,
+        "linetype": "Continuous",
+        "entity_count": 90,
+        "entity_types": {
+          "LINE": 83,
+          "ARC": 6,
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "7_TREEGROUP_B_RPA": {
+        "name": "7_TREEGROUP_B_RPA",
+        "color_aci": -6,
+        "true_color": null,
+        "linetype": "DGN Style 3",
+        "entity_count": 8,
+        "entity_types": {
+          "LWPOLYLINE": 8
+        },
+        "has_closed_polylines": 6,
+        "has_open_polylines": 2
+      },
+      "7_TREEGROUP_C_CANOPY": {
+        "name": "7_TREEGROUP_C_CANOPY",
+        "color_aci": -114,
+        "true_color": 39244,
+        "linetype": "Continuous",
+        "entity_count": 157,
+        "entity_types": {
+          "LINE": 128,
+          "ARC": 23,
+          "LWPOLYLINE": 6
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 6
+      },
+      "7_TREEGROUP_A_CANOPY": {
+        "name": "7_TREEGROUP_A_CANOPY",
+        "color_aci": -114,
+        "true_color": 39244,
+        "linetype": "Continuous",
+        "entity_count": 24,
+        "entity_types": {
+          "LINE": 24
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "7_TREEGROUP_A_RPA": {
+        "name": "7_TREEGROUP_A_RPA",
+        "color_aci": -6,
+        "true_color": null,
+        "linetype": "DGN Style 3",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 0
+      },
+      "5_R-Channel": {
+        "name": "5_R-Channel",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 405,
+        "entity_types": {
+          "ARC": 147,
+          "LINE": 248,
+          "LWPOLYLINE": 10
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 10
+      },
+      "Puffin 5_R-Diag 1055": {
+        "name": "Puffin 5_R-Diag 1055",
+        "color_aci": -8,
+        "true_color": 8421504,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "LINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "5_R-Footpath": {
+        "name": "5_R-Footpath",
+        "color_aci": -2,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 357,
+        "entity_types": {
+          "LINE": 219,
+          "ARC": 123,
+          "LWPOLYLINE": 15
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 15
+      },
+      "5_R-Ramp": {
+        "name": "5_R-Ramp",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 7,
+        "entity_types": {
+          "LINE": 5,
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 2
+      },
+      "Puffin 5_R-Diag 1001": {
+        "name": "Puffin 5_R-Diag 1001",
+        "color_aci": -8,
+        "true_color": 8421504,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "LINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "5_R-Channel Dashed": {
+        "name": "5_R-Channel Dashed",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "DGN Style 3",
+        "entity_count": 40,
+        "entity_types": {
+          "ARC": 3,
+          "LINE": 26,
+          "LWPOLYLINE": 11
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 11
+      },
+      "5_D-FW Pump Station": {
+        "name": "5_D-FW Pump Station",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 152,
+        "entity_types": {
+          "CIRCLE": 10,
+          "LINE": 75,
+          "LWPOLYLINE": 16,
+          "ARC": 12,
+          "INSERT": 21,
+          "3DFACE": 14,
+          "REGION": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 16
+      },
+      "5_R-Diag 1023": {
+        "name": "5_R-Diag 1023",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "INSERT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "5_R-On Road Parking": {
+        "name": "5_R-On Road Parking",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "DGN Style 3",
+        "entity_count": 43,
+        "entity_types": {
+          "LINE": 39,
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "5_R-Verge": {
+        "name": "5_R-Verge",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 163,
+        "entity_types": {
+          "LINE": 118,
+          "ARC": 41,
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "Puffin 5_R-Diag 1004": {
+        "name": "Puffin 5_R-Diag 1004",
+        "color_aci": -8,
+        "true_color": 8421504,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "LINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "Puffin 5_R-Diag 1025": {
+        "name": "Puffin 5_R-Diag 1025",
+        "color_aci": -8,
+        "true_color": 8421504,
+        "linetype": "Continuous",
+        "entity_count": 48,
+        "entity_types": {
+          "LINE": 47,
+          "INSERT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "5_D-Attenuation Basin": {
+        "name": "5_D-Attenuation Basin",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "DASHED",
+        "entity_count": 1836,
+        "entity_types": {
+          "LINE": 1816,
+          "SPLINE": 4,
+          "ARC": 15,
+          "DIMENSION": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "5_E-Banking": {
+        "name": "5_E-Banking",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "5_R-Kerb Detail": {
+        "name": "5_R-Kerb Detail",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 14,
+        "entity_types": {
+          "LINE": 10,
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "TOP-OF-BANK": {
+        "name": "TOP-OF-BANK",
+        "color_aci": -252,
+        "true_color": null,
+        "linetype": "DASHED2",
+        "entity_count": 7,
+        "entity_types": {
+          "LINE": 7
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "A-DETL": {
+        "name": "A-DETL",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 819,
+        "entity_types": {
+          "LINE": 523,
+          "ARC": 296
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "L-SITE": {
+        "name": "L-SITE",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 52,
+        "entity_types": {
+          "LINE": 52
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "A-FLOR-OVHD": {
+        "name": "A-FLOR-OVHD",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 5,
+        "entity_types": {
+          "LINE": 5
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "HA REF DWH": {
+        "name": "HA REF DWH",
+        "color_aci": -140,
+        "true_color": 49151,
+        "linetype": "Continuous",
+        "entity_count": 56,
+        "entity_types": {
+          "MTEXT": 28,
+          "CIRCLE": 28
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "HA REF BARRATT": {
+        "name": "HA REF BARRATT",
+        "color_aci": -76,
+        "true_color": 3896576,
+        "linetype": "Continuous",
+        "entity_count": 176,
+        "entity_types": {
+          "MTEXT": 88,
+          "CIRCLE": 88
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "GLS-ANNO-TEXT": {
+        "name": "GLS-ANNO-TEXT",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "MTEXT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-POST & RAIL": {
+        "name": "FCS-POST & RAIL",
+        "color_aci": -42,
+        "true_color": 14065920,
+        "linetype": "FENCELINE1",
+        "entity_count": 17,
+        "entity_types": {
+          "LWPOLYLINE": 15,
+          "LINE": 2
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 14
+      },
+      "FCS-EASTATE RAIILINGS": {
+        "name": "FCS-EASTATE RAIILINGS",
+        "color_aci": -185,
+        "true_color": 6245529,
+        "linetype": "FENCELINE2",
+        "entity_count": 18,
+        "entity_types": {
+          "LWPOLYLINE": 17,
+          "LINE": 1
+        },
+        "has_closed_polylines": 2,
+        "has_open_polylines": 15
+      },
+      "GLS-FURN-BENCH": {
+        "name": "GLS-FURN-BENCH",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 11,
+        "entity_types": {
+          "LWPOLYLINE": 11
+        },
+        "has_closed_polylines": 11,
+        "has_open_polylines": 0
+      },
+      "GLS-FURN-BIN": {
+        "name": "GLS-FURN-BIN",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 7,
+        "entity_types": {
+          "CIRCLE": 7
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "GLS-FURN-PLAY": {
+        "name": "GLS-FURN-PLAY",
+        "color_aci": -30,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 8629,
+        "entity_types": {
+          "SPLINE": 430,
+          "LINE": 7636,
+          "ARC": 226,
+          "ELLIPSE": 219,
+          "CIRCLE": 107,
+          "TEXT": 11
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "GLS-FURN-SIGNAGE": {
+        "name": "GLS-FURN-SIGNAGE",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 4,
+        "has_open_polylines": 0
+      },
+      "FCS-BOLLARDS": {
+        "name": "FCS-BOLLARDS",
+        "color_aci": -32,
+        "true_color": 13395456,
+        "linetype": "Continuous",
+        "entity_count": 18,
+        "entity_types": {
+          "INSERT": 3,
+          "CIRCLE": 15
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "GLS-SOFT-GRASS-LINE": {
+        "name": "GLS-SOFT-GRASS-LINE",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "ACAD_ISO02W100",
+        "entity_count": 9,
+        "entity_types": {
+          "LWPOLYLINE": 9
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 9
+      },
+      "GLS-DWG-PLAY AREA EXTENT": {
+        "name": "GLS-DWG-PLAY AREA EXTENT",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "ACAD_ISO02W100",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "GLS-DWG-CONTOURS-N": {
+        "name": "GLS-DWG-CONTOURS-N",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "ACAD_ISO02W100",
+        "entity_count": 170,
+        "entity_types": {
+          "LWPOLYLINE": 5,
+          "POLYLINE": 165
+        },
+        "has_closed_polylines": 4,
+        "has_open_polylines": 1
+      },
+      "GLS-DWG-PATH": {
+        "name": "GLS-DWG-PATH",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 82,
+        "entity_types": {
+          "CIRCLE": 10,
+          "LWPOLYLINE": 18,
+          "LINE": 14,
+          "ARC": 40
+        },
+        "has_closed_polylines": 5,
+        "has_open_polylines": 13
+      },
+      "GLS-DWG-MOWN PATH": {
+        "name": "GLS-DWG-MOWN PATH",
+        "color_aci": -97,
+        "true_color": 3116591,
+        "linetype": "ACAD_ISO02W100",
+        "entity_count": 12,
+        "entity_types": {
+          "LWPOLYLINE": 6,
+          "POLYLINE": 2,
+          "MTEXT": 2,
+          "LEADER": 2
+        },
+        "has_closed_polylines": 3,
+        "has_open_polylines": 3
+      },
+      "GLS-DWG-BOARDWALK-BRIDGE": {
+        "name": "GLS-DWG-BOARDWALK-BRIDGE",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 11,
+        "entity_types": {
+          "LWPOLYLINE": 7,
+          "ARC": 2,
+          "LINE": 2
+        },
+        "has_closed_polylines": 4,
+        "has_open_polylines": 3
+      },
+      "GLS-HARD-BOULDERS": {
+        "name": "GLS-HARD-BOULDERS",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 10,
+        "entity_types": {
+          "LWPOLYLINE": 10
+        },
+        "has_closed_polylines": 10,
+        "has_open_polylines": 0
+      },
+      "FCS-GRASS": {
+        "name": "FCS-GRASS",
+        "color_aci": -6,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2641,
+        "entity_types": {
+          "LWPOLYLINE": 2581,
+          "CIRCLE": 25,
+          "SPLINE": 15,
+          "ELLIPSE": 20
+        },
+        "has_closed_polylines": 532,
+        "has_open_polylines": 2049
+      },
+      "GLS-HARD-PAVING-T1-H": {
+        "name": "GLS-HARD-PAVING-T1-H",
+        "color_aci": -22,
+        "true_color": 12726272,
+        "linetype": "Continuous",
+        "entity_count": 431,
+        "entity_types": {
+          "LWPOLYLINE": 431
+        },
+        "has_closed_polylines": 66,
+        "has_open_polylines": 365
+      },
+      "GLS-HARD-PAVING-T2": {
+        "name": "GLS-HARD-PAVING-T2",
+        "color_aci": -9,
+        "true_color": 12105912,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 2,
+        "has_open_polylines": 0
+      },
+      "FCS-BLOCK PAVING-GREY": {
+        "name": "FCS-BLOCK PAVING-GREY",
+        "color_aci": -43,
+        "true_color": 13217406,
+        "linetype": "Continuous",
+        "entity_count": 767,
+        "entity_types": {
+          "LINE": 2,
+          "LWPOLYLINE": 765
+        },
+        "has_closed_polylines": 19,
+        "has_open_polylines": 746
+      },
+      "AECFROZEN": {
+        "name": "AECFROZEN",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 195,
+        "entity_types": {
+          "INSERT": 195
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-GATE": {
+        "name": "FCS-GATE",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 287,
+        "entity_types": {
+          "LINE": 287
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-EARTHWORKS": {
+        "name": "BBS-EX-EARTHWORKS",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 9,
+        "entity_types": {
+          "POLYLINE": 9
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-FENCES": {
+        "name": "BBS-EX-FENCES",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 47,
+        "entity_types": {
+          "POLYLINE": 39,
+          "TEXT": 8
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-BUILDINGS": {
+        "name": "BBS-EX-BUILDINGS",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "POLYLINE": 2,
+          "TEXT": 1,
+          "LINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-LINES": {
+        "name": "BBS-EX-LINES",
+        "color_aci": -253,
+        "true_color": 10592673,
+        "linetype": "Continuous",
+        "entity_count": 485,
+        "entity_types": {
+          "POLYLINE": 485
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-PATHS": {
+        "name": "BBS-EX-PATHS",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 31,
+        "entity_types": {
+          "POLYLINE": 31
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-CHANNELS": {
+        "name": "BBS-EX-CHANNELS",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 343,
+        "entity_types": {
+          "POLYLINE": 15,
+          "LINE": 328
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-CONCRETE": {
+        "name": "BBS-EX-CONCRETE",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 10,
+        "entity_types": {
+          "POLYLINE": 8,
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 2
+      },
+      "BBS-EX-ROADTEXT": {
+        "name": "BBS-EX-ROADTEXT",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "TEXT": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-STREETFURN": {
+        "name": "BBS-EX-STREETFURN",
+        "color_aci": -30,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 9,
+        "entity_types": {
+          "POLYLINE": 4,
+          "TEXT": 5
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-CROSSOVER": {
+        "name": "FCS-CROSSOVER",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 18,
+        "entity_types": {
+          "LINE": 5,
+          "LWPOLYLINE": 12,
+          "DIMENSION": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 12
+      },
+      "BBS-EX-WATER": {
+        "name": "BBS-EX-WATER",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 3,
+        "entity_types": {
+          "TEXT": 3
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS - BOARDWALK": {
+        "name": "FCS - BOARDWALK",
+        "color_aci": -254,
+        "true_color": 15585993,
+        "linetype": "Continuous",
+        "entity_count": 14,
+        "entity_types": {
+          "LWPOLYLINE": 14
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 14
+      },
+      "FCS-SCREEN WALL": {
+        "name": "FCS-SCREEN WALL",
+        "color_aci": -202,
+        "true_color": 10289361,
+        "linetype": "Continuous",
+        "entity_count": 391,
+        "entity_types": {
+          "LINE": 327,
+          "ARC": 40,
+          "LWPOLYLINE": 24
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 24
+      },
+      "FCS-CFENCE": {
+        "name": "FCS-CFENCE",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "ZIGZAG",
+        "entity_count": 640,
+        "entity_types": {
+          "LWPOLYLINE": 639,
+          "LINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 639
+      },
+      "NOISE REDUCTION REQUIRED": {
+        "name": "NOISE REDUCTION REQUIRED",
+        "color_aci": -183,
+        "true_color": 8349388,
+        "linetype": "Continuous",
+        "entity_count": 48,
+        "entity_types": {
+          "TEXT": 48
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-PART M4-3 DETAIL": {
+        "name": "FCS-PART M4-3 DETAIL",
+        "color_aci": -42,
+        "true_color": 14649382,
+        "linetype": "Continuous",
+        "entity_count": 22,
+        "entity_types": {
+          "LWPOLYLINE": 8,
+          "CIRCLE": 10,
+          "MTEXT": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 8
+      },
+      "FCS-PATH": {
+        "name": "FCS-PATH",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2722,
+        "entity_types": {
+          "LINE": 2132,
+          "ARC": 8,
+          "MLINE": 114,
+          "LWPOLYLINE": 467,
+          "CIRCLE": 1
+        },
+        "has_closed_polylines": 104,
+        "has_open_polylines": 363
+      },
+      "FCS -HT NAMES": {
+        "name": "FCS -HT NAMES",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 170,
+        "entity_types": {
+          "TEXT": 170
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-HTFOOTPRINT": {
+        "name": "FCS-HTFOOTPRINT",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 780,
+        "entity_types": {
+          "LINE": 355,
+          "LWPOLYLINE": 425
+        },
+        "has_closed_polylines": 220,
+        "has_open_polylines": 205
+      },
+      "FCS-RIDGE": {
+        "name": "FCS-RIDGE",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2092,
+        "entity_types": {
+          "LINE": 1532,
+          "LWPOLYLINE": 560
+        },
+        "has_closed_polylines": 10,
+        "has_open_polylines": 550
+      },
+      "FCS-HT REF": {
+        "name": "FCS-HT REF",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 308,
+        "entity_types": {
+          "TEXT": 107,
+          "MTEXT": 201
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-HT CODE": {
+        "name": "FCS-HT CODE",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 309,
+        "entity_types": {
+          "ATTDEF": 297,
+          "TEXT": 12
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "Sails Railings": {
+        "name": "Sails Railings",
+        "color_aci": -5,
+        "true_color": 255,
+        "linetype": "FENCELINE1",
+        "entity_count": 4,
+        "entity_types": {
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "5-Care Home Boundary": {
+        "name": "5-Care Home Boundary",
+        "color_aci": -10,
+        "true_color": null,
+        "linetype": "( Dashdot )",
+        "entity_count": 15,
+        "entity_types": {
+          "LWPOLYLINE": 15
+        },
+        "has_closed_polylines": 11,
+        "has_open_polylines": 4
+      },
+      "Sales Knee Rail": {
+        "name": "Sales Knee Rail",
+        "color_aci": -10,
+        "true_color": null,
+        "linetype": "FENCELINE1",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "Sales Signs": {
+        "name": "Sales Signs",
+        "color_aci": -10,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 6,
+        "entity_types": {
+          "LWPOLYLINE": 1,
+          "MTEXT": 5
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "5-New plot numbers": {
+        "name": "5-New plot numbers",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "MTEXT": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "Sales Fencing": {
+        "name": "Sales Fencing",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "DASHDOT",
+        "entity_count": 1,
+        "entity_types": {
+          "MTEXT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "A020_Drg_Frame": {
+        "name": "A020_Drg_Frame",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 14,
+        "entity_types": {
+          "LWPOLYLINE": 14
+        },
+        "has_closed_polylines": 5,
+        "has_open_polylines": 9
+      },
+      "A600_Electrical": {
+        "name": "A600_Electrical",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 30,
+        "entity_types": {
+          "LINE": 30
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-ASHP": {
+        "name": "FCS-ASHP",
+        "color_aci": -252,
+        "true_color": 9408399,
+        "linetype": "Continuous",
+        "entity_count": 98,
+        "entity_types": {
+          "LWPOLYLINE": 98
+        },
+        "has_closed_polylines": 98,
+        "has_open_polylines": 0
+      },
+      "G-ANNO-TEXT": {
+        "name": "G-ANNO-TEXT",
+        "color_aci": -231,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 8,
+        "entity_types": {
+          "TEXT": 7,
+          "MTEXT": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "5_R-Headwall": {
+        "name": "5_R-Headwall",
+        "color_aci": -5,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 91,
+        "entity_types": {
+          "LINE": 91
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "5_R-Construction": {
+        "name": "5_R-Construction",
+        "color_aci": -253,
+        "true_color": null,
+        "linetype": "( Dashed )",
+        "entity_count": 4,
+        "entity_types": {
+          "LINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-DRAINS-LVL": {
+        "name": "BBS-EX-DRAINS-LVL",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 5,
+        "entity_types": {
+          "TEXT": 5
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "BBS-EX-DRAINS": {
+        "name": "BBS-EX-DRAINS",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 5,
+        "entity_types": {
+          "TEXT": 5
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "A210_External_Walls": {
+        "name": "A210_External_Walls",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 6,
+        "entity_types": {
+          "LINE": 2,
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 4,
+        "has_open_polylines": 0
+      },
+      "FCS-SALES PARKING": {
+        "name": "FCS-SALES PARKING",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 12,
+        "entity_types": {
+          "LWPOLYLINE": 1,
+          "MTEXT": 11
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "FCS-SALES PLANTING": {
+        "name": "FCS-SALES PLANTING",
+        "color_aci": -95,
+        "true_color": 5019980,
+        "linetype": "Continuous",
+        "entity_count": 6,
+        "entity_types": {
+          "LWPOLYLINE": 6
+        },
+        "has_closed_polylines": 6,
+        "has_open_polylines": 0
+      },
+      "F 25m Offset": {
+        "name": "F 25m Offset",
+        "color_aci": -8,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 46,
+        "entity_types": {
+          "LINE": 46
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FECS-WELD MESH FENCE": {
+        "name": "FECS-WELD MESH FENCE",
+        "color_aci": -150,
+        "true_color": 32767,
+        "linetype": "TRACKS",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 0
+      },
+      "FCS-PALISADE FENCE": {
+        "name": "FCS-PALISADE FENCE",
+        "color_aci": -162,
+        "true_color": 2176437,
+        "linetype": "FENCELINE1",
+        "entity_count": 2,
+        "entity_types": {
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 2
+      },
+      "FCS-PART M": {
+        "name": "FCS-PART M",
+        "color_aci": -30,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 289,
+        "entity_types": {
+          "LINE": 289
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "CB-P-PARKING-NO": {
+        "name": "CB-P-PARKING-NO",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 6,
+        "entity_types": {
+          "TEXT": 6
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "GLS-FURN-BOLLARD": {
+        "name": "GLS-FURN-BOLLARD",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "INSERT": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-shared access": {
+        "name": "FCS-shared access",
+        "color_aci": -2,
+        "true_color": 16776960,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "LINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-BOUNDARY": {
+        "name": "FCS-BOUNDARY",
+        "color_aci": -5,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 847,
+        "entity_types": {
+          "LWPOLYLINE": 98,
+          "LINE": 749
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 97
+      },
+      "FCS-SHED": {
+        "name": "FCS-SHED",
+        "color_aci": -2,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 169,
+        "entity_types": {
+          "LWPOLYLINE": 169
+        },
+        "has_closed_polylines": 169,
+        "has_open_polylines": 0
+      },
+      "FCS-HOGGIN": {
+        "name": "FCS-HOGGIN",
+        "color_aci": -252,
+        "true_color": 9211020,
+        "linetype": "Continuous",
+        "entity_count": 202,
+        "entity_types": {
+          "LWPOLYLINE": 202
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 201
+      },
+      "1-1000 NOTES": {
+        "name": "1-1000 NOTES",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 4,
+        "entity_types": {
+          "MTEXT": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "1-500 NOTES": {
+        "name": "1-500 NOTES",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 2,
+        "entity_types": {
+          "MTEXT": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-DRIVEDIM": {
+        "name": "FCS-DRIVEDIM",
+        "color_aci": -40,
+        "true_color": null,
+        "linetype": "HIDDEN",
+        "entity_count": 4,
+        "entity_types": {
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "FCS-POST & MESH FENCE": {
+        "name": "FCS-POST & MESH FENCE",
+        "color_aci": -102,
+        "true_color": 1817400,
+        "linetype": "FENCELINE1",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "FCS-PATH SALES OFF": {
+        "name": "FCS-PATH SALES OFF",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 18,
+        "entity_types": {
+          "LINE": 15,
+          "MLINE": 2,
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "FCS-DRIVEWAY SALES OFF": {
+        "name": "FCS-DRIVEWAY SALES OFF",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 22,
+        "entity_types": {
+          "LINE": 16,
+          "ARC": 4,
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 1
+      },
+      "FCS-PARKING-NO SALES OFF": {
+        "name": "FCS-PARKING-NO SALES OFF",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 20,
+        "entity_types": {
+          "MTEXT": 20
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-PATH SALES": {
+        "name": "FCS-PATH SALES",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 31,
+        "entity_types": {
+          "LWPOLYLINE": 12,
+          "LINE": 19
+        },
+        "has_closed_polylines": 3,
+        "has_open_polylines": 9
+      },
+      "FCS-POST & RAIL SALES OFF": {
+        "name": "FCS-POST & RAIL SALES OFF",
+        "color_aci": -42,
+        "true_color": 14065920,
+        "linetype": "FENCELINE1",
+        "entity_count": 2,
+        "entity_types": {
+          "LWPOLYLINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 2
+      },
+      "A-DOOR": {
+        "name": "A-DOOR",
+        "color_aci": -31,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 5,
+        "entity_types": {
+          "LINE": 5
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-ROOF EDGE": {
+        "name": "FCS-ROOF EDGE",
+        "color_aci": -1,
+        "true_color": 16711680,
+        "linetype": "Continuous",
+        "entity_count": 23,
+        "entity_types": {
+          "LWPOLYLINE": 20,
+          "LINE": 3
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 20
+      },
+      "X-Basex$0$01-RSK-Detention Basin": {
+        "name": "X-Basex$0$01-RSK-Detention Basin",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 39,
+        "entity_types": {
+          "LINE": 39
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "X-Basex$0$PGM-BATTER-TOE": {
+        "name": "X-Basex$0$PGM-BATTER-TOE",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 1
+      },
+      "X-Basex$0$PGM-BATTER-BERM": {
+        "name": "X-Basex$0$PGM-BATTER-BERM",
+        "color_aci": -4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 230,
+        "entity_types": {
+          "LINE": 230
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "X-Basex$0$PGM-BATTER-FILL": {
+        "name": "X-Basex$0$PGM-BATTER-FILL",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 260,
+        "entity_types": {
+          "LINE": 260
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "01-LDE-Speed Cushion": {
+        "name": "01-LDE-Speed Cushion",
+        "color_aci": -5,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 220,
+        "entity_types": {
+          "LWPOLYLINE": 220
+        },
+        "has_closed_polylines": 44,
+        "has_open_polylines": 176
+      },
+      "01-LDE-Ramp": {
+        "name": "01-LDE-Ramp",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 63,
+        "entity_types": {
+          "LINE": 63
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "01-LDE-Channel": {
+        "name": "01-LDE-Channel",
+        "color_aci": -3,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 3,
+        "entity_types": {
+          "LINE": 3
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "X-Basex$0$GLS-DWG-PATH": {
+        "name": "X-Basex$0$GLS-DWG-PATH",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 11,
+        "entity_types": {
+          "ARC": 5,
+          "LINE": 6
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "01-LDE-driveway": {
+        "name": "01-LDE-driveway",
+        "color_aci": -231,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "LINE": 1
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "01-LDE-Verge": {
+        "name": "01-LDE-Verge",
+        "color_aci": -1,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 9,
+        "entity_types": {
+          "LINE": 5,
+          "LWPOLYLINE": 4
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 4
+      },
+      "01-LDE-crossover": {
+        "name": "01-LDE-crossover",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "DASHED",
+        "entity_count": 2,
+        "entity_types": {
+          "LINE": 2
+        },
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      },
+      "FCS-GRASSCRETE": {
+        "name": "FCS-GRASSCRETE",
+        "color_aci": -30,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 1,
+        "entity_types": {
+          "LWPOLYLINE": 1
+        },
+        "has_closed_polylines": 1,
+        "has_open_polylines": 0
+      },
+      "FCS-DRIVEWAY": {
+        "name": "FCS-DRIVEWAY",
+        "color_aci": 4,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 1803,
+        "entity_types": {
+          "LINE": 1496,
+          "LWPOLYLINE": 168,
+          "ARC": 139
+        },
+        "has_closed_polylines": 20,
+        "has_open_polylines": 148
+      },
+      "Defpoints": {
+        "name": "Defpoints",
+        "color_aci": -7,
+        "true_color": null,
+        "linetype": "Continuous",
+        "entity_count": 0,
+        "entity_types": {},
+        "has_closed_polylines": 0,
+        "has_open_polylines": 0
+      }
+    },
+    "geometry": {
+      "has_hatches": true,
+      "has_blocks": true,
+      "has_splines": true,
+      "has_3d": true,
+      "closed_polyline_count": 1475,
+      "open_polyline_count": 7105,
+      "total_line_segments": 58282
+    },
+    "extents": {
+      "min": [
+        -585736703.517713,
+        -8097.779189253895
+      ],
+      "max": [
+        585905749.5123655,
+        218885228.25214937
+      ],
+      "width": 1171642453.0300784,
+      "height": 218893326.03133863
+    },
+    "likely_unit": "mm",
+    "text_count": 2016,
+    "text_sample": [
+      {
+        "type": "TEXT",
+        "layer": "G-ANNO-TEXT",
+        "content": "AMBULANCE PICK UP BAY",
+        "x": 585613321.332,
+        "y": 218162945.202
+      },
+      {
+        "type": "MTEXT",
+        "layer": "G-ANNO-TEXT",
+        "content": "STAFF ONLY",
+        "x": 585606721.833,
+        "y": 218126096.21
+      },
+      {
+        "type": "TEXT",
+        "layer": "G-ANNO-TEXT",
+        "content": "ENCLOSED",
+        "x": 585635246.318,
+        "y": 218166628.675
+      },
+      {
+        "type": "TEXT",
+        "layer": "G-ANNO-TEXT",
+        "content": "STAFF",
+        "x": 585635103.24,
+        "y": 218165996.145
+      },
+      {
+        "type": "TEXT",
+        "layer": "G-ANNO-TEXT",
+        "content": "GARDEN",
+        "x": 585634937.173,
+        "y": 218165369.532
+      },
+      {
+        "type": "TEXT",
+        "layer": "G-ANNO-TEXT",
+        "content": "WASTE REFUGE",
+        "x": 585617700.031,
+        "y": 218162327.672
+      },
+      {
+        "type": "TEXT",
+        "layer": "G-ANNO-TEXT",
+        "content": "BIN COLLECTION / DELIVERIES",
+        "x": 585613988.439,
+        "y": 218162060.319
+      },
+      {
+        "type": "TEXT",
+        "layer": "G-ANNO-TEXT",
+        "content": "CYCLE SHELTER",
+        "x": 585618090.456,
+        "y": 218160859.485
+      },
+      {
+        "type": "TEXT",
+        "layer": "PARKING-NO",
+        "content": "Size 5 (8 x 8m)",
+        "x": 585262398.893,
+        "y": 218212150.933
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "5",
+        "x": 585498679.691,
+        "y": 217971454.465
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "6",
+        "x": 585505547.913,
+        "y": 217978713.011
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "7",
+        "x": 585512521.949,
+        "y": 217987227.011
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "8",
+        "x": 585518662.33,
+        "y": 217993516.964
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "9",
+        "x": 585524894.304,
+        "y": 218001301.837
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "10",
+        "x": 585529703.944,
+        "y": 218006791.639
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "11",
+        "x": 585536888.997,
+        "y": 218013551.747
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "12",
+        "x": 585542962.88,
+        "y": 218019832.172
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "13",
+        "x": 585549222.647,
+        "y": 218025614.891
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "14",
+        "x": 585555819.934,
+        "y": 218032463.526
+      },
+      {
+        "type": "TEXT",
+        "layer": "FCS-PLOT-No",
+        "content": "15",
+        "x": 585562539.254,
+        "y": 218039631.093
+      }
+    ],
+    "block_names": [
+      "*U11",
+      "*U14",
+      "*U16",
+      "*U2",
+      "*U5",
+      "*U7",
+      "*U9",
+      "Bollard",
+      "Bollard_1",
+      "GIVE-WAY",
+      "IGV_AECCFG"
+    ]
+  },
+  "classification": {
+    "drawing_type": "site_layout",
+    "confidence": 0.9,
+    "detected_themes": [
+      "asphalt",
+      "block",
+      "boundary",
+      "building",
+      "detail",
+      "driveway",
+      "footpath",
+      "garden",
+      "grass",
+      "grasscrete",
+      "hoggin",
+      "kerb",
+      "parking",
+      "path",
+      "paving",
+      "planting",
+      "plot",
+      "road",
+      "site",
+      "tree"
+    ],
+    "layer_count": 180,
+    "entity_count": 38072,
+    "text_count": 2016,
+    "annotation_layer_count": 35,
+    "geometry_layer_count": 145,
+    "notes": [
+      "Hatch entities present — consistent with site layout fill areas",
+      "Coordinates likely in mm (typical for architectural/site DXF)",
+      "Site keywords found: asphalt, boundary, building, driveway, footpath, garden, grass, grasscrete, hoggin, parking, path, paving, planting, road, tree",
+      "Planning keywords found: block, plot, site"
+    ]
+  }
+}

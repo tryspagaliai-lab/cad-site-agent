@@ -1,0 +1,160 @@
+{
+  "generated": "2026-03-10",
+  "note": "Package versions verified via pip list. 'null' = not installed in that env. 'present' = installed but __version__ not exposed via attribute (use importlib.metadata.version() to query).",
+  "environments": {
+    "py310": {
+      "executable": "C:\\Program Files\\Python310\\python.exe",
+      "version": "3.10.11",
+      "label": "ComfyUI / heavy ML"
+    },
+    "py312": {
+      "executable": "C:\\Users\\zilva\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "version": "3.12.10",
+      "label": "Clean geo/diffusers"
+    },
+    "py313": {
+      "executable": "C:\\Python313\\python.exe",
+      "version": "3.13.7",
+      "label": "ComfyUI-13 / heavy ML"
+    }
+  },
+  "packages": {
+    "ezdxf": {
+      "py310": "1.4.3",
+      "py312": "1.4.3",
+      "py313": "1.4.3",
+      "role": "PRIMARY — DXF read/write/analyse/hatch/render",
+      "phase_needed": "ALL"
+    },
+    "shapely": {
+      "py310": "2.1.2",
+      "py312": "2.1.2",
+      "py313": "2.1.2",
+      "role": "Polygon ops, region closure, spatial predicates (contains, intersects, buffer)",
+      "phase_needed": "5"
+    },
+    "networkx": {
+      "py310": "3.4.2",
+      "py312": "3.6.1",
+      "py313": "3.5.0",
+      "role": "Graph topology for region/boundary detection, connected component analysis",
+      "phase_needed": "5"
+    },
+    "scipy": {
+      "py310": "1.15.3",
+      "py312": "1.16.3",
+      "py313": "1.16.3",
+      "role": "cKDTree for endpoint snapping and gap detection",
+      "key_module": "scipy.spatial.cKDTree",
+      "phase_needed": "3"
+    },
+    "numpy": {
+      "py310": "2.2.6",
+      "py312": "2.2.6",
+      "py313": "2.2.6",
+      "role": "Array math, coordinate transforms",
+      "phase_needed": "3"
+    },
+    "pydantic": {
+      "py310": "2.12.5",
+      "py312": "2.12.5",
+      "py313": "2.12.5",
+      "role": "Config models, report schemas, validated data classes",
+      "phase_needed": "ALL"
+    },
+    "matplotlib": {
+      "py310": "3.10.8",
+      "py312": "3.10.8",
+      "py313": "3.10.6",
+      "role": "DXF rendering to PNG via ezdxf MatplotlibBackend",
+      "phase_needed": "2"
+    },
+    "pillow": {
+      "py310": "12.0.0",
+      "py312": "12.0.0",
+      "py313": "12.0.0",
+      "role": "Image post-processing for preview generation",
+      "phase_needed": "2"
+    },
+    "PyYAML": {
+      "py310": "6.0.3",
+      "py312": "6.0.3",
+      "py313": "6.0.2",
+      "role": "Layer alias config, export schema YAML",
+      "phase_needed": "4"
+    },
+    "click": {
+      "py310": "8.3.1",
+      "py312": null,
+      "py313": "8.1.8",
+      "role": "CLI entry points",
+      "fallback": "argparse (stdlib) — works in py312 without install",
+      "phase_needed": "1"
+    },
+    "typer": {
+      "py310": "0.21.1",
+      "py312": null,
+      "py313": "0.15.4",
+      "role": "Rich CLI — not currently used (using click directly)",
+      "phase_needed": "optional"
+    },
+    "rich": {
+      "py310": "present",
+      "py312": null,
+      "py313": "present",
+      "role": "Rich terminal output (tables, progress bars)",
+      "phase_needed": "optional"
+    },
+    "rtree": {
+      "py310": null,
+      "py312": "1.4.1",
+      "py313": null,
+      "role": "R-tree spatial index for fast bbox queries on large drawings (>50k entities)",
+      "phase_needed": "3 (optional optimisation)"
+    },
+    "trimesh": {
+      "py310": "4.11.1",
+      "py312": null,
+      "py313": "4.8.2",
+      "role": "3D mesh — future use for site model / MAX prep",
+      "phase_needed": "6+ (future)"
+    },
+    "geopandas": {
+      "py310": null,
+      "py312": null,
+      "py313": null,
+      "role": "Geographic data frames, CRS transforms — only needed if geo-referencing required",
+      "phase_needed": "6+ (optional / if geo-referencing)"
+    },
+    "chromadb": {
+      "py310": "1.4.0",
+      "py312": null,
+      "py313": null,
+      "role": "Vector database — for semantic layer embedding search",
+      "phase_needed": "4+ (AI-assisted normalisation, future)"
+    },
+    "ollama": {
+      "py310": "present",
+      "py312": null,
+      "py313": null,
+      "role": "Ollama Python client — for LLM-assisted annotation/classification",
+      "phase_needed": "4+ (AI features, future)"
+    },
+    "gpt4all": {
+      "py310": "present",
+      "py312": null,
+      "py313": null,
+      "role": "Local LLM inference — alternative to Ollama",
+      "phase_needed": "future"
+    }
+  },
+  "summary": {
+    "all_envs_have": ["ezdxf", "shapely", "networkx", "scipy", "numpy", "pydantic", "matplotlib", "pillow", "PyYAML"],
+    "py310_only": ["click", "trimesh", "chromadb", "ollama", "gpt4all"],
+    "py312_only": ["rtree"],
+    "py313_only": [],
+    "py310_and_py313": ["typer", "rich", "trimesh", "click"],
+    "missing_all_envs": ["geopandas"],
+    "blocking_for_mvp": "NONE — all phases 1-5 can run on py310 as-is"
+  }
+}
