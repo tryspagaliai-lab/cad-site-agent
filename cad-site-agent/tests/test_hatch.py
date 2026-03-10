@@ -32,6 +32,7 @@ from cad_site_agent.hatch.semantic_hatch import (
     summarise_candidates,
 )
 from cad_site_agent.export.review_writer import write_hatch_report
+from cad_site_agent.semantic.taxonomy import SemanticLabel
 
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -437,6 +438,12 @@ class TestHatchCandidateToDict:
         assert set(d.keys()) == {
             "region", "class_guess", "hatch_class",
             "confidence", "status", "reasons",
+            "semantic_label",
         }
         assert d["class_guess"] == "parking"
         assert d["confidence"] == 0.8
+        # semantic_label must be a dict with the four canonical taxonomy keys
+        assert isinstance(d["semantic_label"], dict)
+        assert set(d["semantic_label"].keys()) == {
+            "feature_type", "semantic_class", "export_role", "material_class"
+        }

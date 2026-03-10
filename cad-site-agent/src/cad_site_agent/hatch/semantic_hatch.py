@@ -21,6 +21,7 @@ import yaml
 from ..analyzer.dxf_analyzer import AnalysisReport
 from .closed_regions import ClosedRegion, extract_closed_regions
 from .confidence import score_candidate
+from ..semantic.taxonomy import SemanticLabel, TaxonomyLoader
 
 
 # ─── Default paths ──────────────────────────────────────────────────────────
@@ -37,21 +38,23 @@ _DEFAULT_ALIASES = _ROOT / "config" / "layer_aliases.yaml"
 class HatchCandidate:
     """A single scored hatch candidate for one closed region."""
 
-    region:      ClosedRegion
-    class_guess: str           # e.g. "parking", "building", "unknown"
-    hatch_class: str           # e.g. "MAT_PARKING", "REVIEW_UNKNOWN"
-    confidence:  float         # 0.0 – 1.0
-    status:      str           # "auto" | "review" | "skip"
-    reasons:     list[str] = field(default_factory=list)
+    region:         ClosedRegion
+    class_guess:    str           # e.g. "parking", "building", "unknown"
+    hatch_class:    str           # e.g. "MAT_PARKING", "REVIEW_UNKNOWN"
+    confidence:     float         # 0.0 – 1.0
+    status:         str           # "auto" | "review" | "skip"
+    reasons:        list[str]     = field(default_factory=list)
+    semantic_label: SemanticLabel = field(default_factory=SemanticLabel.unknown)
 
     def to_dict(self) -> dict:
         return {
-            "region":      self.region.to_dict(),
-            "class_guess": self.class_guess,
-            "hatch_class": self.hatch_class,
-            "confidence":  self.confidence,
-            "status":      self.status,
-            "reasons":     self.reasons,
+            "region":         self.region.to_dict(),
+            "class_guess":    self.class_guess,
+            "hatch_class":    self.hatch_class,
+            "confidence":     self.confidence,
+            "status":         self.status,
+            "reasons":        self.reasons,
+            "semantic_label": self.semantic_label.to_dict(),
         }
 
 
