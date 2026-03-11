@@ -1,0 +1,65 @@
+=== PHASE 5 AUDIT SUMMARY ===
+DXF           : E:\cad-site-agent\..\SHAKESPEARE\RAW_DATA\roman_gardens_gapclosed.dxf
+Total candidates: 1721
+
+--- BY STATUS (Phase 4B) ---
+  review       343
+  skip        1378
+
+--- BY FEATURE TYPE (Phase 5) ---
+  region                     1022
+  unknown                     699
+
+--- BY EXPORT ROLE (Phase 5) ---
+  hatch_and_export            982
+  review                      739
+
+--- BY SEMANTIC CLASS (Phase 5, top 20) ---
+  unknown                          699
+  soft_landscape                   555
+  path                             281
+  building                          55
+  parking_bay                       44
+  site_boundary                     40
+  driveway                          22
+  planting_bed                      17
+  road_carriageway                   6
+  water                              2
+
+--- BACKWARD COMPAT ---
+  class_guess present in ALL candidates : True  (1721/1721)
+  semantic_label resolved (non-unknown) : 1022  (1022/1721)
+
+--- SAMPLE CANDIDATE (first with non-unknown semantic_label) ---
+{
+  "region": {
+    "id": 175,
+    "source_layer": "5-Care Home Boundary",
+    "handle": "1633F",
+    "area": 15950000.0,
+    "perimeter": 16800.0,
+    "bbox": [
+      585454100.58,
+      217926672.13,
+      585459943.29,
+      217932694.61
+    ],
+    "vertex_count": 4,
+    "is_closed": true,
+    "source_type": "LWPOLYLINE"
+  },
+  "class_guess": "boundary",
+  "hatch_class": "MAT_BOUNDARY",
+  "confidence": 0.65,
+  "status": "review",
+  "reasons": [
+    "Layer name matches class 'boundary'",
+    "Area 15,950,000 mm\u00b2 is within expected range for 'boundary' [1,000\u2013100,000,000]"
+  ],
+  "semantic_label": {
+    "feature_type": "region",
+    "semantic_class": "site_boundary",
+    "export_role": "review",
+    "material_class": "MAT_BOUNDARY"
+  }
+}
