@@ -49,13 +49,18 @@ cad_site_agent/
 │   └── semantic_hatch.py       Phase 4B: classify_hatch_candidates() orchestrator
 ├── export/
 │   └── review_writer.py        Phase 4B: write_hatch_report() → JSON + MD
-└── layer_normaliser/           Future phase (Phase 5)
+├── semantic/
+│   ├── normalizer.py           Pre-Phase 5: layer name normalisation helpers
+│   └── taxonomy.py             Phase 5: SemanticLabel dataclass + TaxonomyLoader
+└── layer_normaliser/           Future phase
 
 config/
 ├── settings.yaml               Global settings (paths, thresholds)
 ├── tolerances.yaml             Gap-close and cleanup tolerances
 ├── layer_aliases.yaml          Layer name → canonical class mapping
-└── hatch_rules.yaml            Phase 4B: scoring weights, class→material map, layer hints
+├── hatch_rules.yaml            Phase 4B: scoring weights, class→material map, layer hints
+├── semantic_taxonomy.yaml      Phase 5: 40+ canonical site classes, 5 feature types, aliases
+└── export_roles.yaml           Phase 5: 7 export roles + default-by-type mapping
 
 reports/
 └── analysis/                   All output files (flat, <stem>.analysis.{json,md})
@@ -112,6 +117,7 @@ reports/
 | `confidence` | float | 0.0 – 1.0 additive score |
 | `status` | str | `"auto"` (≥0.75) \| `"review"` (≥0.45) \| `"skip"` |
 | `reasons` | list[str] | Human-readable scoring evidence |
+| `semantic_label` | SemanticLabel | Phase 5: feature_type, semantic_class, export_role, material_class |
 
 ---
 
@@ -200,5 +206,5 @@ area_hints:           # mm² expected range per class
 | 3 — Gap Closer | ✅ Complete | `gap_closer/` module |
 | 4A — Classifier | ✅ Complete | `classify/drawing_type.py`, new CLI flags |
 | 4B — Hatch Gen | ✅ Complete | `hatch/` + `export/`: closed-region scoring + hatch candidate reports |
-| 5 — Layer Norm | 🔜 Future | `layer_normaliser/`: canonical class assignment |
+| 5 — Semantic Taxonomy | ✅ Complete | `semantic/taxonomy.py`: SemanticLabel + TaxonomyLoader; `config/semantic_taxonomy.yaml` + `export_roles.yaml` |
 | 6 — Export | 🔜 Future | SVG / PNG / GeoJSON export |
