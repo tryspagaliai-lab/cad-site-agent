@@ -27,14 +27,15 @@ region:
 # These are the output identifiers written to hatch_candidates.json
 class_to_material:
   building:  MAT_BUILDING
-  driveway:  MAT_DRIVEWAY
+  driveway:  MAT_TARMAC
   parking:   MAT_PARKING
-  path:      MAT_PATH
-  road:      MAT_ROAD
-  garden:    MAT_LAWN
+  path:      MAT_PAVING
+  road:      MAT_TARMAC
+  garden:    MAT_GRASS
+  lawn:      MAT_GRASS
   planting:  MAT_PLANTING
   water:     MAT_WATER
-  boundary:  REVIEW_BOUNDARY
+  boundary:  MAT_BOUNDARY
   unknown:   REVIEW_UNKNOWN
 
 # ── Layer keyword hints ───────────────────────────────────

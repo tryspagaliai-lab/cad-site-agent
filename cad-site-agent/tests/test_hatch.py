@@ -573,3 +573,26 @@ class TestClassifyHatchCandidatesTaxonomy:
         assert c.hatch_class == "MAT_PAVING", (
             f"Expected MAT_PAVING from taxonomy, got {c.hatch_class!r}"
         )
+
+
+# ─── 11. hatch_rules.yaml config alignment ───────────────────────────────────
+
+
+class TestHatchRulesConfig:
+    def test_hatch_rules_class_to_material_uses_canonical_codes(self):
+        """Legacy class_to_material codes must match canonical taxonomy material codes.
+
+        When taxonomy is unavailable (fallback path), hatch_class must still use the
+        same canonical codes that taxonomy would return.
+        """
+        import yaml
+        rules_path = Path(__file__).resolve().parents[1] / "config" / "hatch_rules.yaml"
+        with open(rules_path) as f:
+            rules = yaml.safe_load(f)
+        c2m = rules["class_to_material"]
+
+        assert c2m.get("driveway") == "MAT_TARMAC",    f"driveway: got {c2m.get('driveway')!r}"
+        assert c2m.get("path")     == "MAT_PAVING",    f"path: got {c2m.get('path')!r}"
+        assert c2m.get("road")     == "MAT_TARMAC",    f"road: got {c2m.get('road')!r}"
+        assert c2m.get("lawn")     == "MAT_GRASS",     f"lawn: got {c2m.get('lawn')!r}"
+        assert c2m.get("boundary") == "MAT_BOUNDARY",  f"boundary: got {c2m.get('boundary')!r}"
