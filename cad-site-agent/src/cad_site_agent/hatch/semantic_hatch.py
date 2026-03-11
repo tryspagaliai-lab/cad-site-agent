@@ -267,8 +267,11 @@ def classify_hatch_candidates(
             thresholds=thresholds,
         )
 
-        hatch_class    = class_to_mat.get(class_guess, "REVIEW_UNKNOWN")
         semantic_label = taxonomy.classify(class_guess) if taxonomy else SemanticLabel.unknown()
+        if semantic_label.material_class:
+            hatch_class = semantic_label.material_class
+        else:
+            hatch_class = class_to_mat.get(class_guess, "REVIEW_UNKNOWN")
 
         candidates.append(
             HatchCandidate(

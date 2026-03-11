@@ -518,3 +518,58 @@ class TestClassifyHatchCandidatesTaxonomy:
         assert c.semantic_label.semantic_class == "building"
         assert c.semantic_label.export_role    == "hatch_and_export"
         assert c.semantic_label.material_class == "MAT_BUILDING"
+
+    def test_hatch_class_derives_from_taxonomy_material(self, monkeypatch, tmp_path):
+        """When taxonomy resolves a class with material_class, hatch_class must use it.
+
+        'path' resolves to SemanticLabel(region, 'path', 'hatch_and_export', 'MAT_PAVING')
+        via the real semantic_taxonomy.yaml.
+        The legacy class_to_material map maps 'path' → 'MAT_PATH'.
+        After the fix, hatch_class must be 'MAT_PAVING' (from taxonomy), not 'MAT_PATH'.
+        """
+        import yaml
+        from cad_site_agent.hatch.semantic_hatch import classify_hatch_candidates
+        from cad_site_agent.hatch.closed_regions import ClosedRegion
+
+        # Use a rules yaml where path → MAT_PATH (legacy), so taxonomy must win
+        rules_yaml = tmp_path / "hatch_rules.yaml"
+        rules_yaml.write_text(yaml.dump({
+            "thresholds": {"auto": 0.75, "review": 0.45},
+            "scoring": {"strong_layer_signal": 0.45},
+            "region": {"min_area": 100, "max_vertices": 5000},
+            "class_to_material": {"path": "MAT_PATH"},
+            "layer_hints": {"path": ["path", "footpath"]},
+            "area_hints": {"path": {"min": 500, "max": 200000}},
+        }), encoding="utf-8")
+
+        fake_region = ClosedRegion(
+            id=0, source_layer="HARD_PATH",
+            handle="A1", area=10_000.0, perimeter=400.0,
+            bbox=(0, 0, 100, 100), vertex_count=4,
+            is_closed=True, source_type="LWPOLYLINE",
+        )
+        monkeypatch.setattr(
+            "cad_site_agent.hatch.semantic_hatch.extract_closed_regions",
+            lambda *a, **kw: [fake_region],
+        )
+
+        report = _make_report()
+
+        # Use the real taxonomy files so 'path' → MAT_PAVING
+        config = Path("E:/cad-site-agent/config")
+        candidates = classify_hatch_candidates(
+            "fake.dxf",
+            report,
+            rules_path=str(rules_yaml),
+            aliases_path=str(tmp_path / "nonexistent_aliases.yaml"),
+            taxonomy_path=str(config / "semantic_taxonomy.yaml"),
+            roles_path=str(config / "export_roles.yaml"),
+        )
+
+        assert len(candidates) == 1
+        c = candidates[0]
+        # taxonomy resolves 'path' → region/path/MAT_PAVING
+        assert c.semantic_label.material_class == "MAT_PAVING"
+        assert c.hatch_class == "MAT_PAVING", (
+            f"Expected MAT_PAVING from taxonomy, got {c.hatch_class!r}"
+        )
