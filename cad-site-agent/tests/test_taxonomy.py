@@ -244,6 +244,8 @@ class TestTaxonomyLoaderAliases:
         label = loader.classify("planting")
         assert label.semantic_class == "planting_bed"
         assert label.feature_type == "region"
+        assert label.material_class == "MAT_PLANTING"
+        assert label.export_role == "hatch_and_export"
 
     def test_road_alias_resolves_to_road_carriageway(self, loader):
         label = loader.classify("road")
@@ -251,11 +253,17 @@ class TestTaxonomyLoaderAliases:
         assert label.feature_type == "region"
         assert label.export_role == "hatch_and_export"
 
+    def test_road_edge_linear_class_is_reachable(self, loader):
+        """road_edge must be directly reachable in linear: section (not shadowed by alias)."""
+        label = loader.classify("road_edge")
+        assert label.semantic_class == "road_edge"
+        assert label.feature_type == "linear"
+
     def test_site_boundary_direct_lookup_has_material(self, loader):
         """site_boundary must be in the class map with a non-empty material."""
         label = loader.classify("site_boundary")
         assert label.semantic_class == "site_boundary"
-        assert label.material_class != ""
+        assert label.material_class == "MAT_BOUNDARY"
 
 
 # ─── 8. TaxonomyLoader — noise terminal enforcement ──────────────────────────

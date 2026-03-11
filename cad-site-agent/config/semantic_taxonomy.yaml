@@ -65,10 +65,10 @@ aliases:
 
 region:
   # ── Hard / built surfaces ─────────────────────────────────
-  - label:       building
-    material:    MAT_BUILDING
-  - label:       site_boundary
-    material:    MAT_BOUNDARY
+  - label:    building
+    material: MAT_BUILDING
+  - label:    site_boundary
+    material: MAT_BOUNDARY
     export_role: review
   - label:    driveway
     material: MAT_TARMAC
@@ -110,7 +110,7 @@ region:
 # ─────────────────────────────────────────────────────────────────────────────
 
 linear:
-  - label: road
+  - label: road_edge
   - label: kerb
   - label: path_edge
   - label: fence
