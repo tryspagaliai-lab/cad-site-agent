@@ -591,8 +591,16 @@ class TestHatchRulesConfig:
             rules = yaml.safe_load(f)
         c2m = rules["class_to_material"]
 
-        assert c2m.get("driveway") == "MAT_TARMAC",    f"driveway: got {c2m.get('driveway')!r}"
-        assert c2m.get("path")     == "MAT_PAVING",    f"path: got {c2m.get('path')!r}"
-        assert c2m.get("road")     == "MAT_TARMAC",    f"road: got {c2m.get('road')!r}"
-        assert c2m.get("lawn")     == "MAT_GRASS",     f"lawn: got {c2m.get('lawn')!r}"
-        assert c2m.get("boundary") == "MAT_BOUNDARY",  f"boundary: got {c2m.get('boundary')!r}"
+        assert c2m.get("building")  == "MAT_BUILDING",  f"building: got {c2m.get('building')!r}"
+        assert c2m.get("driveway")  == "MAT_TARMAC",   f"driveway: got {c2m.get('driveway')!r}"
+        assert c2m.get("parking")   == "MAT_PARKING",  f"parking: got {c2m.get('parking')!r}"
+        assert c2m.get("path")      == "MAT_PAVING",   f"path: got {c2m.get('path')!r}"
+        assert c2m.get("road")      == "MAT_TARMAC",   f"road: got {c2m.get('road')!r}"
+        assert c2m.get("garden")    == "MAT_GRASS",    f"garden: got {c2m.get('garden')!r}"
+        assert c2m.get("lawn")      == "MAT_GRASS",    f"lawn: got {c2m.get('lawn')!r}"
+        assert c2m.get("planting")  == "MAT_PLANTING", f"planting: got {c2m.get('planting')!r}"
+        assert c2m.get("water")     == "MAT_WATER",    f"water: got {c2m.get('water')!r}"
+        assert c2m.get("boundary")  == "MAT_BOUNDARY", f"boundary: got {c2m.get('boundary')!r}"
+        # REVIEW_UNKNOWN is an intentional sentinel: triggers human review in the
+        # export pipeline rather than silently dropping the region.
+        assert c2m.get("unknown")   == "REVIEW_UNKNOWN", f"unknown: got {c2m.get('unknown')!r}"

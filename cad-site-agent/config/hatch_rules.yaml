@@ -36,7 +36,7 @@ class_to_material:
   planting:  MAT_PLANTING
   water:     MAT_WATER
   boundary:  MAT_BOUNDARY
-  unknown:   REVIEW_UNKNOWN
+  unknown:   REVIEW_UNKNOWN  # intentional sentinel — triggers human review, not a MAT_ code
 
 # ── Layer keyword hints ───────────────────────────────────
 # Case-insensitive substring search.  First class whose ANY keyword
