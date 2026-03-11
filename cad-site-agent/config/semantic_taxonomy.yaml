@@ -51,6 +51,9 @@ aliases:
   building: building
   path:     path
   driveway: driveway
+  boundary: site_boundary
+  planting: planting_bed
+  road:     road_carriageway
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Region: closed polygons filled with hatching and exported as areas.
@@ -62,8 +65,11 @@ aliases:
 
 region:
   # ── Hard / built surfaces ─────────────────────────────────
-  - label:    building
-    material: MAT_BUILDING
+  - label:       building
+    material:    MAT_BUILDING
+  - label:       site_boundary
+    material:    MAT_BOUNDARY
+    export_role: review
   - label:    driveway
     material: MAT_TARMAC
   - label:    parking_bay
