@@ -447,3 +447,74 @@ class TestHatchCandidateToDict:
         assert set(d["semantic_label"].keys()) == {
             "feature_type", "semantic_class", "export_role", "material_class"
         }
+
+
+# ─── 10. classify_hatch_candidates taxonomy integration ─────────────────────
+
+
+class TestClassifyHatchCandidatesTaxonomy:
+    """
+    Verify that classify_hatch_candidates() stamps each candidate with a
+    SemanticLabel resolved by TaxonomyLoader.
+
+    We use monkeypatching to avoid needing real DXF files.
+    """
+
+    def test_semantic_label_is_stamped(self, monkeypatch, tmp_path):
+        import yaml
+        from cad_site_agent.hatch.semantic_hatch import classify_hatch_candidates
+        from cad_site_agent.hatch.closed_regions import ClosedRegion
+
+        # Write minimal config files – structure mirrors the real YAML:
+        # feature-type sections (region, …) are top-level, entries use `label:`
+        tax = {
+            "aliases": {"building": "building"},
+            "region":  [{"label": "building", "material": "MAT_BUILDING"}],
+        }
+        roles = {"default_by_type": {"region": "hatch_and_export", "unknown": "review"}}
+        tax_path = tmp_path / "semantic_taxonomy.yaml"
+        rol_path = tmp_path / "export_roles.yaml"
+        tax_path.write_text(yaml.dump(tax), encoding="utf-8")
+        rol_path.write_text(yaml.dump(roles), encoding="utf-8")
+
+        # Stub out extract_closed_regions to return one fake region
+        fake_region = ClosedRegion(
+            id=0, source_layer="CB-BUILDING",
+            handle="A1", area=20_000.0, perimeter=600.0,
+            bbox=(0, 0, 100, 200), vertex_count=4,
+            is_closed=True, source_type="LWPOLYLINE",
+        )
+        monkeypatch.setattr(
+            "cad_site_agent.hatch.semantic_hatch.extract_closed_regions",
+            lambda *a, **kw: [fake_region],
+        )
+
+        report = _make_report()
+
+        # Use a tiny rules yaml so the test doesn't need real files
+        rules_yaml = tmp_path / "hatch_rules.yaml"
+        rules_yaml.write_text(yaml.dump({
+            "thresholds": {"auto": 0.75, "review": 0.45},
+            "scoring": {"strong_layer_signal": 0.45},
+            "region": {"min_area": 100, "max_vertices": 5000},
+            "class_to_material": {"building": "MAT_BUILDING"},
+            "layer_hints": {"building": ["building", "bldg"]},
+            "area_hints": {},
+        }), encoding="utf-8")
+
+        candidates = classify_hatch_candidates(
+            "fake.dxf",
+            report,
+            rules_path=str(rules_yaml),
+            aliases_path=str(tmp_path / "nonexistent_aliases.yaml"),
+            taxonomy_path=str(tax_path),
+            roles_path=str(rol_path),
+        )
+
+        assert len(candidates) == 1
+        c = candidates[0]
+        assert hasattr(c, "semantic_label")
+        assert c.semantic_label.feature_type   == "region"
+        assert c.semantic_label.semantic_class == "building"
+        assert c.semantic_label.export_role    == "hatch_and_export"
+        assert c.semantic_label.material_class == "MAT_BUILDING"

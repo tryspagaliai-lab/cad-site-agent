@@ -27,8 +27,10 @@ from ..semantic.taxonomy import SemanticLabel, TaxonomyLoader
 # ─── Default paths ──────────────────────────────────────────────────────────
 
 _ROOT = Path(__file__).resolve().parents[3]  # …/cad-site-agent/
-_DEFAULT_RULES   = _ROOT / "config" / "hatch_rules.yaml"
-_DEFAULT_ALIASES = _ROOT / "config" / "layer_aliases.yaml"
+_DEFAULT_RULES    = _ROOT / "config" / "hatch_rules.yaml"
+_DEFAULT_ALIASES  = _ROOT / "config" / "layer_aliases.yaml"
+_DEFAULT_TAXONOMY = _ROOT / "config" / "semantic_taxonomy.yaml"
+_DEFAULT_ROLES    = _ROOT / "config" / "export_roles.yaml"
 
 
 # ─── Data class ─────────────────────────────────────────────────────────────
@@ -179,9 +181,11 @@ def classify_hatch_candidates(
     dxf_path: str,
     report: AnalysisReport,
     *,
-    rules_path:   Optional[str] = None,
-    aliases_path: Optional[str] = None,
-    class_filter: Optional[str] = None,
+    rules_path:    Optional[str] = None,
+    aliases_path:  Optional[str] = None,
+    class_filter:  Optional[str] = None,
+    taxonomy_path: Optional[str] = None,
+    roles_path:    Optional[str] = None,
 ) -> list[HatchCandidate]:
     """
     Extract closed regions from *dxf_path*, classify each against site
@@ -193,7 +197,9 @@ def classify_hatch_candidates(
                       presence per layer).
         rules_path:   Override path to hatch_rules.yaml.
         aliases_path: Override path to layer_aliases.yaml.
-        class_filter: If set, only return candidates for this class.
+        class_filter:  If set, only return candidates for this class.
+        taxonomy_path: Override path to semantic_taxonomy.yaml.
+        roles_path:    Override path to export_roles.yaml.
 
     Returns:
         Sorted list of HatchCandidates by (status priority, confidence desc).
@@ -203,6 +209,14 @@ def classify_hatch_candidates(
     ap = Path(aliases_path) if aliases_path else _DEFAULT_ALIASES
 
     rules = _load_rules(rp)
+
+    # ── Load taxonomy ─────────────────────────────────────────────────────
+    tp     = Path(taxonomy_path) if taxonomy_path else _DEFAULT_TAXONOMY
+    rp_tax = Path(roles_path)    if roles_path    else _DEFAULT_ROLES
+    try:
+        taxonomy: "TaxonomyLoader | None" = TaxonomyLoader(tp, rp_tax)
+    except FileNotFoundError:
+        taxonomy = None
 
     thresholds      = rules.get("thresholds", {})
     scoring         = rules.get("scoring", {})
@@ -253,7 +267,8 @@ def classify_hatch_candidates(
             thresholds=thresholds,
         )
 
-        hatch_class = class_to_mat.get(class_guess, "REVIEW_UNKNOWN")
+        hatch_class    = class_to_mat.get(class_guess, "REVIEW_UNKNOWN")
+        semantic_label = taxonomy.classify(class_guess) if taxonomy else SemanticLabel.unknown()
 
         candidates.append(
             HatchCandidate(
@@ -263,6 +278,7 @@ def classify_hatch_candidates(
                 confidence=confidence,
                 status=status,
                 reasons=reasons,
+                semantic_label=semantic_label,
             )
         )
 
