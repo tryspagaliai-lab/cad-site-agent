@@ -110,7 +110,7 @@ if _HAS_CLICK:
                   help="Only output candidates for this site class")
     @click.option("--json-only", is_flag=True, default=False,
                   help="Write JSON report only (skip Markdown)")
-    def hatch_candidates_cmd(
+    def hatch_candidates(
         dxf_file: str,
         output: str | None,
         min_area: float | None,
