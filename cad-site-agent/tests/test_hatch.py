@@ -556,7 +556,7 @@ class TestClassifyHatchCandidatesTaxonomy:
         report = _make_report()
 
         # Use the real taxonomy files so 'path' → MAT_PAVING
-        config = Path("E:/cad-site-agent/config")
+        config = Path(__file__).resolve().parents[1] / "config"
         candidates = classify_hatch_candidates(
             "fake.dxf",
             report,
