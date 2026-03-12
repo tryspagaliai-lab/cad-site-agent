@@ -1,0 +1,25 @@
+# config/presets/site_plan.yaml
+# Default settings for the site-plan process workflow.
+# Used by: cad-agent process (Phase 7.5+)
+
+pipeline:
+  status_filter: "auto"          # only high-confidence candidates
+  min_confidence: null           # accept all auto-status candidates
+  exclude_noise: true            # strip titleblock, notes, survey refs
+
+hatch_write:
+  min_area: 100.0                # mm² — drop slivers
+  max_vertices: 5000
+  stabilize: true
+  gap_tolerance: 10.0            # mm — snap gap ends
+  snap_distance: 1.0             # mm
+
+gap_closer:
+  tolerance: 1000.0              # mm — close-gaps search radius
+  max_bridge_length: 500.0       # mm
+
+routing:
+  include_linework: true
+  include_markings: true
+  include_symbols: true
+  include_text: true
