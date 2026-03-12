@@ -69,6 +69,14 @@ class TestRunProcess:
         with pytest.raises(FileExistsError):
             run_process(str(src), str(out))
 
+    def test_raises_if_status_filter_all(self, tmp_path):
+        import ezdxf
+        src = tmp_path / "src.dxf"
+        ezdxf.new("R2010").saveas(str(src))
+        out = tmp_path / "out.dxf"
+        with pytest.raises(ValueError, match="status_filter='all' is not supported"):
+            run_process(str(src), str(out), status_filter="all")
+
     @pytest.mark.skipif(not SAMPLE_DXF.exists(), reason="no fixture DXF")
     def test_produces_output_files(self, tmp_path):
         out = tmp_path / "result.dxf"

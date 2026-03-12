@@ -55,7 +55,8 @@ def run_process(
     Args:
         source_dxf:     Path to the input DXF file.
         output_dxf:     Path for the final output DXF (non-region features).
-        status_filter:  Which candidate status to pass to hatch writer ("auto", "review", "all").
+        status_filter:  Which candidate status to pass to hatch writer ("auto" or "review").
+                        "all" is not supported — pass each value explicitly if both are needed.
         min_confidence: Optional minimum confidence threshold for hatch writer.
         exclude_noise:  Whether to suppress noise entities in the routing stage.
 
@@ -65,6 +66,7 @@ def run_process(
     Raises:
         FileNotFoundError: If source_dxf does not exist.
         FileExistsError:   If output_dxf already exists.
+        ValueError:        If status_filter is "all" (not supported by the hatch writer).
     """
     src_path = Path(source_dxf)
     out_path = Path(output_dxf)
@@ -74,6 +76,11 @@ def run_process(
         raise FileNotFoundError(f"Source DXF not found: {source_dxf}")
     if out_path.exists():
         raise FileExistsError(f"Output DXF already exists: {output_dxf}")
+    if status_filter == "all":
+        raise ValueError(
+            "status_filter='all' is not supported; hatch_writer.filter_eligible() "
+            "performs strict equality matching. Pass 'auto' or 'review' explicitly."
+        )
 
     out_dir  = out_path.parent
     out_stem = out_path.stem
@@ -90,17 +97,17 @@ def run_process(
     candidates = classify_hatch_candidates(str(src_path), analysis_report)
     summary    = summarise_candidates(candidates)
 
-    json_path, _md = write_hatch_report(
+    json_path, md_path = write_hatch_report(
         candidates, summary, str(src_path), str(out_dir)
     )
 
     # Rename JSON (and MD) to use output stem if they differ from source stem
     wanted_json = out_dir / f"{out_stem}.hatch_candidates.json"
+    wanted_md   = out_dir / f"{out_stem}.hatch_candidates.md"
     if json_path.resolve() != wanted_json.resolve():
         shutil.move(str(json_path), str(wanted_json))
-        src_md = json_path.with_suffix("").with_suffix(".hatch_candidates.md")
-        if src_md.exists():
-            src_md.replace(out_dir / f"{out_stem}.hatch_candidates.md")
+        if md_path.exists():
+            md_path.replace(wanted_md)
 
     candidates_json = str(wanted_json)
 
@@ -108,50 +115,71 @@ def run_process(
     n_auto   = sum(1 for c in candidates if c.status == "auto")
     n_review = sum(1 for c in candidates if c.status == "review")
 
-    # ── Stage 2 — hatch writer ───────────────────────────────────────────────
-    from .export.hatch_writer import run_hatch_write
+    # ── Stages 2 & 3 — hatch writer + routing (with failure cleanup) ─────────
+    # Track all files created by this run so they can be removed on failure.
+    _created: list[Path] = [wanted_json, wanted_md]
 
-    hatches_dxf = str(out_dir / f"{out_stem}.hatches.dxf")
-    write_report = run_hatch_write(
-        source_dxf=str(src_path),
-        candidates_json=candidates_json,
-        output_dxf=hatches_dxf,
-        status_filter=status_filter,
-        min_confidence=min_confidence,
-    )
+    hatches_dxf_path = out_dir / f"{out_stem}.hatches.dxf"
+    process_json     = out_dir / f"{out_stem}.process.json"
+    _created.extend([hatches_dxf_path, process_json, out_path])
 
-    # ── Stage 3 — route non-region features ─────────────────────────────────
-    from .export.routing import run_route_features
+    _failed = False
+    try:
+        # ── Stage 2 — hatch writer ───────────────────────────────────────────
+        from .export.hatch_writer import run_hatch_write
 
-    routing_report = run_route_features(
-        source_dxf=str(src_path),
-        candidates_json=candidates_json,
-        output_dxf=str(out_path),
-        exclude_noise=exclude_noise,
-    )
+        write_report = run_hatch_write(
+            source_dxf=str(src_path),
+            candidates_json=candidates_json,
+            output_dxf=str(hatches_dxf_path),
+            status_filter=status_filter,
+            min_confidence=min_confidence,
+        )
 
-    # ── Write process summary JSON ───────────────────────────────────────────
-    process_json = out_dir / f"{out_stem}.process.json"
-    process_payload = {
-        "meta": {
-            "source_dxf":   source_dxf,
-            "output_dxf":   output_dxf,
-            "generated_at": generated_at,
-        },
-        "totals": {
-            "candidates_total":   len(candidates),
-            "candidates_auto":    n_auto,
-            "candidates_review":  n_review,
-            "hatches_written":    write_report.total_written,
-            "features_written":   routing_report.total_written,
-            "features_removed":   routing_report.total_removed,
-            "features_skipped":   routing_report.total_skipped,
-        },
-    }
-    process_json.write_text(
-        json.dumps(process_payload, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+        # ── Stage 3 — route non-region features ─────────────────────────────
+        from .export.routing import run_route_features
+
+        routing_report = run_route_features(
+            source_dxf=str(src_path),
+            candidates_json=candidates_json,
+            output_dxf=str(out_path),
+            exclude_noise=exclude_noise,
+        )
+
+        # ── Write process summary JSON ───────────────────────────────────────
+        process_payload = {
+            "meta": {
+                "source_dxf":   source_dxf,
+                "output_dxf":   output_dxf,
+                "generated_at": generated_at,
+            },
+            "totals": {
+                "candidates_total":   len(candidates),
+                "candidates_auto":    n_auto,
+                "candidates_review":  n_review,
+                "hatches_written":    write_report.total_written,
+                "features_written":   routing_report.total_written,
+                "features_removed":   routing_report.total_removed,
+                "features_skipped":   routing_report.total_skipped,
+            },
+        }
+        process_json.write_text(
+            json.dumps(process_payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    except Exception:
+        _failed = True
+        raise
+
+    finally:
+        if _failed:
+            for _p in _created:
+                try:
+                    if _p.exists():
+                        _p.unlink()
+                except OSError:
+                    pass
 
     # ── Return ProcessReport ─────────────────────────────────────────────────
     return ProcessReport(
