@@ -9,19 +9,19 @@ closed regions as hatch candidates, and produces structured JSON + Markdown repo
 ```
 DXF File
    │
-   ├──────────────────────────────────────────────┐
-   ▼                                              ▼
+   ├──────────────────────────────────────────────┬───────────────────────────┐
+   ▼                                              ▼                           ▼
 [analyzer/dxf_analyzer.py]   ← Phase 2    [hatch/closed_regions.py]  ← Phase 4B
-   │  AnalysisReport                              │  list[ClosedRegion]
-   ▼                                              │
-[classify/drawing_type.py]   ← Phase 4A          ▼
-│   OR                                    [hatch/confidence.py]
-[analyzer/drawing_classifier.py] (legacy)         │  score per region
-   │  DrawingTypeResult                           ▼
-   ▼                                     [hatch/semantic_hatch.py]
-[cli.py]  write_json + write_md                   │  list[HatchCandidate]
-   │                                              ▼
-   ▼                                     [export/review_writer.py]
+   │  AnalysisReport                              │  list[ClosedRegion]       │
+   ▼                                              │                           ▼  ← Phase 7
+[classify/drawing_type.py]   ← Phase 4A          ▼                  [export/routing.py]
+│   OR                                    [hatch/confidence.py]               │  classify by layer
+[analyzer/drawing_classifier.py] (legacy)         │  score per region         │  copy non-region
+   │  DrawingTypeResult                           ▼                           │  entities
+   ▼                                     [hatch/semantic_hatch.py]            ▼
+[cli.py]  write_json + write_md                   │  list[HatchCandidate]  <stem>.routed.dxf
+   │                                              ▼                        <stem>.routing.json
+   ▼                                     [export/review_writer.py]         <stem>.routing.md
 reports/analysis/<stem>.analysis.json             │
 reports/analysis/<stem>.analysis.md               ▼
                                          reports/analysis/<stem>.hatch_candidates.json
@@ -59,8 +59,14 @@ cad_site_agent/
 ├── export/
 │   ├── review_writer.py        Phase 4B: write_hatch_report() → JSON + MD
 │   ├── hatch_writer.py         Phase 6A/6B: run_hatch_write() pipeline + WriteReport
-│   └── dxf_writer.py           Phase 6B: material_to_layer_name(), write_hatch_dxf()
-│                               (stabilize_region integrated; 3-tuple return)
+│   ├── dxf_writer.py           Phase 6B: material_to_layer_name(), write_hatch_dxf()
+│   │                           (stabilize_region integrated; 3-tuple return)
+│   ├── routing.py              Phase 7: classify_layer_name(), run_route_features(),
+│   │                           write_routing_reports(), RoutingReport
+│   ├── linework_writer.py      Phase 7: run_linework_write() thin wrapper
+│   ├── marking_writer.py       Phase 7: run_marking_write() thin wrapper
+│   ├── symbol_writer.py        Phase 7: run_symbol_write() thin wrapper
+│   └── text_writer.py          Phase 7: run_text_write() thin wrapper
 ├── geometry/
 │   ├── __init__.py
 │   └── boundary_tools.py       Phase 6B: polyline stabilization (snap, gap-close,
@@ -134,6 +140,36 @@ reports/
 | `status` | str | `"auto"` (≥0.75) \| `"review"` (≥0.45) \| `"skip"` |
 | `reasons` | list[str] | Human-readable scoring evidence |
 | `semantic_label` | SemanticLabel | Phase 5: feature_type, semantic_class, export_role, material_class |
+
+### `RoutingReport` (`export/routing.py`) — Phase 7
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source_dxf` | str | Path to the source DXF |
+| `candidates_json` | str | Path to the (region) candidates JSON |
+| `output_dxf` | str | Path to the written output DXF |
+| `generated_at` | str | ISO-8601 timestamp |
+| `total_input` | int | Total modelspace entities in source |
+| `total_written` | int | Entities copied to output DXF |
+| `total_removed` | int | Noise entities suppressed |
+| `total_skipped` | int | Unknown / disabled-group entities skipped |
+| `unknowns` | int | Entities with no layer-name match |
+| `by_feature_type` | dict[str, int] | Counts by feature type (linear, marking, symbol, text, noise, unknown) |
+| `by_semantic_class` | dict[str, int] | Counts by semantic class (fence, tree, …) |
+| `by_export_role` | dict[str, int] | Counts by export role |
+| `by_dest_layer` | dict[str, int] | Counts per output layer (`LINEWORK_FENCE`, `SYMBOL_TREE`, …) |
+
+**Routing constants:**
+
+| Group | Prefix | Export role |
+|-------|--------|-------------|
+| `linear` | `LINEWORK` | `keep_linework` |
+| `marking` | `MARKING` | `keep_markings` |
+| `symbol` | `SYMBOL` | `keep_symbols` |
+| `text` | `TEXT` | `keep_text` |
+| `noise` | — (removed) | `remove` |
+
+---
 
 ### `WriteReport` (`export/hatch_writer.py`) — Phase 6A
 
@@ -240,3 +276,4 @@ area_hints:           # mm² expected range per class
 | 5 — Semantic Taxonomy | ✅ Complete | `semantic/taxonomy.py`: SemanticLabel + TaxonomyLoader; `config/semantic_taxonomy.yaml` + `export_roles.yaml` |
 | 6A — Hatch Writer | ✅ Complete | `export/hatch_writer.py` + `export/dxf_writer.py`: filter eligible candidates, write HATCH DXF, WriteReport |
 | 6B — Export | 🔜 Future | SVG / PNG / GeoJSON export |
+| 7 — Non-Region Routing | ✅ Complete | `export/routing.py` + 4 thin writer wrappers: classify non-region entities by layer name, copy to layered output DXF (`LINEWORK_*`, `MARKING_*`, `SYMBOL_*`, `TEXT_*`), suppress noise; `route-features` CLI command; RoutingReport |

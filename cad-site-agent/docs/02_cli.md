@@ -270,6 +270,108 @@ PYTHONPATH=src python -m cad_site_agent.cli write-hatches \
 
 ---
 
+### `route-features`
+
+Classify and copy non-region DXF entities (linework, markings, symbols, text) to a
+new output DXF, placing each entity on a semantically named layer. Noise entities
+are suppressed. The source DXF is never modified.
+
+```
+route-features <SOURCE_DXF> <CANDIDATES_JSON> <OUTPUT_DXF>
+               [--include-linework | --no-linework]
+               [--include-markings | --no-markings]
+               [--include-symbols  | --no-symbols]
+               [--include-text     | --no-text]
+               [--exclude-noise    | --keep-noise]
+               [--output-dir DIR]
+```
+
+| Argument / Option | Default | Description |
+|-------------------|---------|-------------|
+| `SOURCE_DXF` | (required) | Original DXF to read entities from |
+| `CANDIDATES_JSON` | (required) | Region candidates JSON (only used for metadata consistency; routing is layer-name-based) |
+| `OUTPUT_DXF` | (required) | Path for new output DXF (must not exist) |
+| `--include-linework` / `--no-linework` | on | Route entities classified as `linear` (walls, fences, kerbs, drains, …) |
+| `--include-markings` / `--no-markings` | on | Route entities classified as `marking` (parking lines, crossings, …) |
+| `--include-symbols` / `--no-symbols` | on | Route entities classified as `symbol` (trees, bollards, gates, …) |
+| `--include-text` / `--no-text` | on | Route entities classified as `text` (plot numbers, annotations, …) |
+| `--exclude-noise` / `--keep-noise` | exclude | Remove noise entities (title blocks, refs, …) from output |
+| `--output-dir DIR` | same dir as OUTPUT_DXF | Directory for JSON + MD routing reports |
+
+**Output layer naming:**
+
+| Feature group | Output layer prefix | Example |
+|---------------|---------------------|---------|
+| `linear` | `LINEWORK_` | `LINEWORK_FENCE`, `LINEWORK_WALL` |
+| `marking` | `MARKING_` | `MARKING_CROSSING_MARKING` |
+| `symbol` | `SYMBOL_` | `SYMBOL_TREE`, `SYMBOL_GATE` |
+| `text` | `TEXT_` | `TEXT_PLOT_NUMBER`, `TEXT_ANNOTATION` |
+
+**Output files:**
+- `<OUTPUT_DXF>` — new DXF with routed entities on semantically named layers
+- `<stem>.routing.json` — routing report with counts per feature type, class, and destination layer
+- `<stem>.routing.md` — human-readable markdown report
+
+**Example (all groups):**
+```bash
+PYTHONPATH=src python -m cad_site_agent.cli route-features \
+  "E:/SHAKESPEARE/RAW_DATA/roman_gardens_gapclosed.dxf" \
+  "reports/analysis/roman_gardens_gapclosed.hatch_candidates.json" \
+  "reports/analysis/roman_gardens_gapclosed.routed.dxf"
+```
+```
+Routing features: E:/SHAKESPEARE/RAW_DATA/roman_gardens_gapclosed.dxf
+  Candidates:  reports/analysis/roman_gardens_gapclosed.hatch_candidates.json
+  Output DXF:  reports/analysis/roman_gardens_gapclosed.routed.dxf
+  Groups: linework, markings, symbols, text  noise-excluded: True
+
+  Input:   34,655
+  Written: 4,767
+  Removed: 6
+  Skipped: 29,882
+  Unknown: 29,882
+
+  DXF    -> reports/analysis/roman_gardens_gapclosed.routed.dxf
+  JSON   -> reports/analysis/roman_gardens_gapclosed.routing.json
+  MD     -> reports/analysis/roman_gardens_gapclosed.routing.md
+```
+
+**By destination layer (roman_gardens example):**
+
+| Layer | Count |
+|-------|-------|
+| `LINEWORK_DRAIN` | 10 |
+| `LINEWORK_FENCE` | 500 |
+| `LINEWORK_KERB` | 12 |
+| `LINEWORK_WALL` | 537 |
+| `MARKING_CROSSING_MARKING` | 5 |
+| `SYMBOL_BOLLARD` | 20 |
+| `SYMBOL_GATE` | 287 |
+| `SYMBOL_SIGNAGE` | 10 |
+| `SYMBOL_TREE` | 2,190 |
+| `TEXT_ANNOTATION` | 54 |
+| `TEXT_PARKING_NUMBER` | 839 |
+| `TEXT_PLOT_NUMBER` | 303 |
+
+**Safety guarantees:**
+- Raises `FileNotFoundError` if source DXF or candidates JSON is missing
+- Raises `FileExistsError` if output DXF path already exists
+- Always creates the output DXF (empty DXF when zero entities match)
+- Never opens source DXF for writing
+
+**Thin single-group wrappers** (Python API only):
+
+```python
+from cad_site_agent.export.linework_writer import run_linework_write
+from cad_site_agent.export.marking_writer  import run_marking_write
+from cad_site_agent.export.symbol_writer   import run_symbol_write
+from cad_site_agent.export.text_writer     import run_text_write
+```
+
+Each wrapper calls `run_route_features()` with only its feature group enabled.
+
+---
+
 ## JSON Report Structure
 
 ### `<stem>.analysis.json`
@@ -357,6 +459,35 @@ PYTHONPATH=src python -m cad_site_agent.cli write-hatches \
   "by_material": {
     "MAT_LAWN":    { "layer": "HATCH_MAT_LAWN",    "eligible": 180 },
     "MAT_PATH":    { "layer": "HATCH_MAT_PATH",    "eligible": 120 }
+  }
+}
+```
+
+### `<stem>.routing.json`
+
+```json
+{
+  "meta": {
+    "source_dxf":      "E:/SHAKESPEARE/RAW_DATA/roman_gardens_gapclosed.dxf",
+    "candidates_json": "reports/analysis/roman_gardens_gapclosed.hatch_candidates.json",
+    "output_dxf":      "reports/analysis/roman_gardens_gapclosed.routed.dxf",
+    "generated_at":    "2026-01-01T12:00:00"
+  },
+  "totals": {
+    "input":   34655,
+    "written": 4767,
+    "removed": 6,
+    "skipped": 29882,
+    "unknowns": 29882
+  },
+  "by_feature_type": {
+    "linear": 1059, "marking": 5, "noise": 6, "symbol": 2507, "text": 1196, "unknown": 29882
+  },
+  "by_semantic_class": {
+    "tree": 2190, "parking_number": 839, "wall": 537, "fence": 500, "plot_number": 303, ...
+  },
+  "by_dest_layer": {
+    "LINEWORK_FENCE": 500, "SYMBOL_TREE": 2190, "TEXT_PLOT_NUMBER": 303, ...
   }
 }
 ```

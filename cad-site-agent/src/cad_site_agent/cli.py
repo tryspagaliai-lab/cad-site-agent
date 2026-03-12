@@ -14,6 +14,10 @@ Commands:
                           [--status auto|review] [--min-confidence N]
                           [--class-filter NAME] [--material-filter NAME]
                           [--output-dir DIR]
+  route-features   <source_dxf> <candidates_json> <output_dxf>
+                          [--include-linework] [--include-markings]
+                          [--include-symbols] [--include-text]
+                          [--exclude-noise] [--output-dir DIR]
 """
 from __future__ import annotations
 
@@ -164,6 +168,44 @@ if _HAS_CLICK:
             output_dir=output_dir,
         )
 
+    @main.command("route-features")
+    @click.argument("source_dxf", type=click.Path(exists=True))
+    @click.argument("candidates_json", type=click.Path(exists=True))
+    @click.argument("output_dxf")
+    @click.option("--include-linework/--no-linework", default=True,
+                  help="Copy linear entities (default: on)")
+    @click.option("--include-markings/--no-markings", default=True,
+                  help="Copy marking entities (default: on)")
+    @click.option("--include-symbols/--no-symbols", default=True,
+                  help="Copy symbol entities (default: on)")
+    @click.option("--include-text/--no-text", default=True,
+                  help="Copy text entities (default: on)")
+    @click.option("--exclude-noise/--keep-noise", default=True,
+                  help="Suppress noise entities (default: on)")
+    @click.option("--output-dir", "-o", default=None,
+                  help="Directory for routing reports (default: reports/analysis/)")
+    def route_features_cmd(
+        source_dxf: str,
+        candidates_json: str,
+        output_dxf: str,
+        include_linework: bool,
+        include_markings: bool,
+        include_symbols: bool,
+        include_text: bool,
+        exclude_noise: bool,
+        output_dir: str | None,
+    ):
+        """Route non-region DXF entities to layered output DXF."""
+        _run_route_features(
+            source_dxf, candidates_json, output_dxf,
+            include_linework=include_linework,
+            include_markings=include_markings,
+            include_symbols=include_symbols,
+            include_text=include_text,
+            exclude_noise=exclude_noise,
+            output_dir=output_dir,
+        )
+
     def cli_entry():
         main()
 
@@ -176,6 +218,7 @@ if _HAS_CLICK:
     def normalize_layers():   main()
     def hatch_candidates():   main()
     def write_hatches():      main()
+    def route_features():     main()
 
 else:
     # ──────────────────────────────────────────────────────────────────────────
@@ -249,6 +292,28 @@ else:
         p_w.add_argument("--material-filter", default=None, dest="material_filter")
         p_w.add_argument("--output-dir", "-o", default=None, dest="output_dir")
 
+        # route-features
+        p_r = sub.add_parser("route-features")
+        p_r.add_argument("source_dxf")
+        p_r.add_argument("candidates_json")
+        p_r.add_argument("output_dxf")
+        p_r.add_argument("--include-linework", action="store_true", default=True,
+                         dest="include_linework")
+        p_r.add_argument("--no-linework", action="store_false", dest="include_linework")
+        p_r.add_argument("--include-markings", action="store_true", default=True,
+                         dest="include_markings")
+        p_r.add_argument("--no-markings", action="store_false", dest="include_markings")
+        p_r.add_argument("--include-symbols", action="store_true", default=True,
+                         dest="include_symbols")
+        p_r.add_argument("--no-symbols", action="store_false", dest="include_symbols")
+        p_r.add_argument("--include-text", action="store_true", default=True,
+                         dest="include_text")
+        p_r.add_argument("--no-text", action="store_false", dest="include_text")
+        p_r.add_argument("--exclude-noise", action="store_true", default=True,
+                         dest="exclude_noise")
+        p_r.add_argument("--keep-noise", action="store_false", dest="exclude_noise")
+        p_r.add_argument("--output-dir", "-o", default=None, dest="output_dir")
+
         args = parser.parse_args()
         legacy_cls = getattr(args, "legacy_cls", False)
 
@@ -290,6 +355,16 @@ else:
                 material_filter=args.material_filter,
                 output_dir=args.output_dir,
             )
+        elif args.cmd == "route-features":
+            _run_route_features(
+                args.source_dxf, args.candidates_json, args.output_dxf,
+                include_linework=args.include_linework,
+                include_markings=args.include_markings,
+                include_symbols=args.include_symbols,
+                include_text=args.include_text,
+                exclude_noise=args.exclude_noise,
+                output_dir=args.output_dir,
+            )
         else:
             parser.print_help()
 
@@ -302,6 +377,7 @@ else:
     def normalize_layers(): cli_entry()
     def hatch_candidates(): cli_entry()
     def write_hatches(): cli_entry()
+    def route_features(): cli_entry()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -722,6 +798,61 @@ def _run_write_hatches(
 
     if report.total_written == 0:
         print("\n  Note: 0 hatches written. Try --status review for lower-confidence candidates.")
+
+
+def _run_route_features(
+    source_dxf: str,
+    candidates_json: str,
+    output_dxf: str,
+    *,
+    include_linework: bool = True,
+    include_markings: bool = True,
+    include_symbols: bool = True,
+    include_text: bool = True,
+    exclude_noise: bool = True,
+    output_dir: str | None = None,
+):
+    from .export.routing import run_route_features, write_routing_reports
+
+    print(f"Routing features: {source_dxf}")
+    print(f"  Candidates:  {candidates_json}")
+    print(f"  Output DXF:  {output_dxf}")
+    groups = [g for g, flag in [
+        ("linework", include_linework),
+        ("markings", include_markings),
+        ("symbols",  include_symbols),
+        ("text",     include_text),
+    ] if flag]
+    print(f"  Groups: {', '.join(groups) or '(none)'}  noise-excluded: {exclude_noise}")
+
+    try:
+        report = run_route_features(
+            source_dxf, candidates_json, output_dxf,
+            include_linework=include_linework,
+            include_markings=include_markings,
+            include_symbols=include_symbols,
+            include_text=include_text,
+            exclude_noise=exclude_noise,
+        )
+    except FileExistsError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except FileNotFoundError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    out_dir = _resolve_output_dir(source_dxf, output_dir)
+    stem = Path(source_dxf).stem
+    json_path, md_path = write_routing_reports(report, str(out_dir), stem)
+
+    print(f"\n  Input:   {report.total_input:,}")
+    print(f"  Written: {report.total_written:,}")
+    print(f"  Removed: {report.total_removed:,}")
+    print(f"  Skipped: {report.total_skipped:,}")
+    print(f"  Unknown: {report.unknowns:,}")
+    print(f"\n  DXF    -> {output_dxf}")
+    print(f"  JSON   -> {json_path}")
+    print(f"  MD     -> {md_path}")
 
 
 if __name__ == "__main__":
