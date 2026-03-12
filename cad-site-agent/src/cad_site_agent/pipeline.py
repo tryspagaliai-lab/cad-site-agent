@@ -123,7 +123,6 @@ def run_process(
     process_json     = out_dir / f"{out_stem}.process.json"
     _created.extend([hatches_dxf_path, process_json, out_path])
 
-    _failed = False
     try:
         # ── Stage 2 — hatch writer ───────────────────────────────────────────
         from .export.hatch_writer import run_hatch_write
@@ -168,18 +167,14 @@ def run_process(
             encoding="utf-8",
         )
 
-    except Exception:
-        _failed = True
+    except BaseException:
+        for _p in _created:
+            try:
+                if _p.exists():
+                    _p.unlink()
+            except OSError:
+                pass
         raise
-
-    finally:
-        if _failed:
-            for _p in _created:
-                try:
-                    if _p.exists():
-                        _p.unlink()
-                except OSError:
-                    pass
 
     # ── Return ProcessReport ─────────────────────────────────────────────────
     return ProcessReport(
