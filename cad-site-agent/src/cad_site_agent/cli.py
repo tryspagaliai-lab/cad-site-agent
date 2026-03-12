@@ -18,6 +18,9 @@ Commands:
                           [--include-linework] [--include-markings]
                           [--include-symbols] [--include-text]
                           [--exclude-noise] [--output-dir DIR]
+  process          <source_dxf> <output_dxf>
+                          [--status auto|review] [--min-confidence N]
+                          [--keep-noise]
 """
 from __future__ import annotations
 
@@ -210,7 +213,8 @@ if _HAS_CLICK:
     @click.argument("source_dxf")
     @click.argument("output_dxf")
     @click.option("--status",         default="auto", show_default=True,
-                  help="Candidate status filter: auto | review")
+                  type=click.Choice(["auto", "review"]),
+                  help="Candidate status filter")
     @click.option("--min-confidence", default=None,   type=float,
                   help="Minimum hatch-candidate confidence (0–1)")
     @click.option("--keep-noise",     is_flag=True,
@@ -341,7 +345,7 @@ else:
         p_process = sub.add_parser("process", help="Full end-to-end pipeline")
         p_process.add_argument("source_dxf")
         p_process.add_argument("output_dxf")
-        p_process.add_argument("--status", default="auto")
+        p_process.add_argument("--status", choices=["auto", "review"], default="auto")
         p_process.add_argument("--min-confidence", type=float, default=None, dest="min_confidence")
         p_process.add_argument("--keep-noise", action="store_true", dest="keep_noise")
 
