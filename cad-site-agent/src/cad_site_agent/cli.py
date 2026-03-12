@@ -10,6 +10,10 @@ Commands:
   normalize-layers <file> [--config config/layer_aliases.yaml] [--output FILE]
   hatch-candidates <file> [--output DIR] [--min-area N] [--class-filter NAME]
                           [--json-only]
+  write-hatches    <source_dxf> <candidates_json> <output_dxf>
+                          [--status auto|review] [--min-confidence N]
+                          [--class-filter NAME] [--material-filter NAME]
+                          [--output-dir DIR]
 """
 from __future__ import annotations
 
@@ -125,8 +129,53 @@ if _HAS_CLICK:
             json_only=json_only,
         )
 
+    @main.command("write-hatches")
+    @click.argument("source_dxf", type=click.Path(exists=True))
+    @click.argument("candidates_json", type=click.Path(exists=True))
+    @click.argument("output_dxf")
+    @click.option("--status", "status_filter", default="auto",
+                  type=click.Choice(["auto", "review", "skip"]),
+                  help="Only write candidates with this status (default: auto)")
+    @click.option("--min-confidence", default=None, type=float,
+                  help="Skip candidates below this confidence threshold")
+    @click.option("--class-filter", default=None,
+                  help="Only write candidates for this site class")
+    @click.option("--material-filter", default=None,
+                  help="Only write candidates for this material class")
+    @click.option("--output-dir", "-o", default=None,
+                  help="Directory for write reports (default: reports/analysis/)")
+    def write_hatches_cmd(
+        source_dxf: str,
+        candidates_json: str,
+        output_dxf: str,
+        status_filter: str,
+        min_confidence: float | None,
+        class_filter: str | None,
+        material_filter: str | None,
+        output_dir: str | None,
+    ):
+        """Write HATCH DXF from eligible candidates in a hatch_candidates JSON."""
+        _run_write_hatches(
+            source_dxf, candidates_json, output_dxf,
+            status_filter=status_filter,
+            min_confidence=min_confidence,
+            class_filter=class_filter,
+            material_filter=material_filter,
+            output_dir=output_dir,
+        )
+
     def cli_entry():
         main()
+
+    # Entry-point stubs so pyproject.toml [project.scripts] works with click too
+    def analyze_dxf():        main()
+    def classify_drawing():   main()
+    def export_report():      main()
+    def clean_dxf():          main()
+    def close_gaps():         main()
+    def normalize_layers():   main()
+    def hatch_candidates():   main()
+    def write_hatches():      main()
 
 else:
     # ──────────────────────────────────────────────────────────────────────────
@@ -188,6 +237,18 @@ else:
         p_h.add_argument("--class-filter", default=None, dest="class_filter")
         p_h.add_argument("--json-only", action="store_true", dest="json_only")
 
+        # write-hatches
+        p_w = sub.add_parser("write-hatches")
+        p_w.add_argument("source_dxf")
+        p_w.add_argument("candidates_json")
+        p_w.add_argument("output_dxf")
+        p_w.add_argument("--status", default="auto", dest="status_filter",
+                         choices=["auto", "review", "skip"])
+        p_w.add_argument("--min-confidence", type=float, default=None, dest="min_confidence")
+        p_w.add_argument("--class-filter", default=None, dest="class_filter")
+        p_w.add_argument("--material-filter", default=None, dest="material_filter")
+        p_w.add_argument("--output-dir", "-o", default=None, dest="output_dir")
+
         args = parser.parse_args()
         legacy_cls = getattr(args, "legacy_cls", False)
 
@@ -220,6 +281,15 @@ else:
                 class_filter=args.class_filter,
                 json_only=args.json_only,
             )
+        elif args.cmd == "write-hatches":
+            _run_write_hatches(
+                args.source_dxf, args.candidates_json, args.output_dxf,
+                status_filter=args.status_filter,
+                min_confidence=args.min_confidence,
+                class_filter=args.class_filter,
+                material_filter=args.material_filter,
+                output_dir=args.output_dir,
+            )
         else:
             parser.print_help()
 
@@ -231,6 +301,7 @@ else:
     def close_gaps(): cli_entry()
     def normalize_layers(): cli_entry()
     def hatch_candidates(): cli_entry()
+    def write_hatches(): cli_entry()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -599,6 +670,58 @@ def _print_hatch_summary(summary: dict) -> None:
         top_classes = sorted(by_class.items(), key=lambda x: -x[1])[:8]
         cls_str = "  ".join(f"{k}:{v}" for k, v in top_classes)
         print(f"  Classes: {cls_str}")
+
+
+def _run_write_hatches(
+    source_dxf: str,
+    candidates_json: str,
+    output_dxf: str,
+    *,
+    status_filter: str = "auto",
+    min_confidence: float | None = None,
+    class_filter: str | None = None,
+    material_filter: str | None = None,
+    output_dir: str | None = None,
+):
+    from .export.hatch_writer import run_hatch_write, write_hatch_write_reports
+
+    print(f"Writing hatches: {source_dxf}")
+    print(f"  Candidates:  {candidates_json}")
+    print(f"  Output DXF:  {output_dxf}")
+    print(f"  Status filter: {status_filter}", end="")
+    if min_confidence is not None:
+        print(f"  min-confidence: {min_confidence}", end="")
+    print()
+
+    try:
+        report = run_hatch_write(
+            source_dxf, candidates_json, output_dxf,
+            status_filter=status_filter,
+            min_confidence=min_confidence,
+            class_filter=class_filter,
+            material_filter=material_filter,
+        )
+    except FileExistsError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except FileNotFoundError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    out_dir = _resolve_output_dir(source_dxf, output_dir)
+    stem = Path(candidates_json).stem.replace(".hatch_candidates", "")
+    json_path, md_path = write_hatch_write_reports(report, str(out_dir), stem)
+
+    print(f"\n  Input:    {report.total_input:,}")
+    print(f"  Eligible: {report.total_eligible:,}")
+    print(f"  Written:  {report.total_written:,}")
+    print(f"  Skipped:  {report.total_skipped:,}")
+    print(f"\n  DXF    -> {output_dxf}")
+    print(f"  JSON   -> {json_path}")
+    print(f"  MD     -> {md_path}")
+
+    if report.total_written == 0:
+        print("\n  Note: 0 hatches written. Try --status review for lower-confidence candidates.")
 
 
 if __name__ == "__main__":

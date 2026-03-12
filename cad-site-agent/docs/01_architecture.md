@@ -26,6 +26,15 @@ reports/analysis/<stem>.analysis.json             │
 reports/analysis/<stem>.analysis.md               ▼
                                          reports/analysis/<stem>.hatch_candidates.json
                                          reports/analysis/<stem>.hatch_candidates.md
+                                                  │
+                                                  ▼  ← Phase 6A
+                                         [export/hatch_writer.py]
+                                         [export/dxf_writer.py]
+                                                  │  WriteReport
+                                                  ▼
+                                         <stem>.hatches_<status>.dxf  (new DXF, HATCH entities)
+                                         reports/analysis/<stem>.hatch_write.json
+                                         reports/analysis/<stem>.hatch_write.md
 ```
 
 ---
@@ -48,7 +57,9 @@ cad_site_agent/
 │   ├── confidence.py           Phase 4B: score_candidate() → (float, str, reasons)
 │   └── semantic_hatch.py       Phase 4B: classify_hatch_candidates() orchestrator
 ├── export/
-│   └── review_writer.py        Phase 4B: write_hatch_report() → JSON + MD
+│   ├── review_writer.py        Phase 4B: write_hatch_report() → JSON + MD
+│   ├── hatch_writer.py         Phase 6A: run_hatch_write() pipeline + WriteReport
+│   └── dxf_writer.py           Phase 6A: material_to_layer_name(), write_hatch_dxf()
 ├── semantic/
 │   ├── normalizer.py           Pre-Phase 5: layer name normalisation helpers
 │   └── taxonomy.py             Phase 5: SemanticLabel dataclass + TaxonomyLoader
@@ -118,6 +129,21 @@ reports/
 | `status` | str | `"auto"` (≥0.75) \| `"review"` (≥0.45) \| `"skip"` |
 | `reasons` | list[str] | Human-readable scoring evidence |
 | `semantic_label` | SemanticLabel | Phase 5: feature_type, semantic_class, export_role, material_class |
+
+### `WriteReport` (`export/hatch_writer.py`) — Phase 6A
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source_dxf` | str | Path to the source DXF |
+| `candidates_json` | str | Path to the input candidates JSON |
+| `output_dxf` | str | Path to the written output DXF |
+| `generated_at` | str | ISO-8601 timestamp |
+| `total_input` | int | Total candidates in JSON |
+| `total_eligible` | int | Candidates passing all filters |
+| `total_written` | int | HATCH entities successfully written |
+| `total_skipped` | int | `total_input - total_eligible` |
+| `skips_by_reason` | dict[str, int] | Counts per skip reason (filter stage + write stage) |
+| `by_material` | dict[str, dict] | Per-material `{ layer, eligible }` breakdown |
 
 ---
 
@@ -207,4 +233,5 @@ area_hints:           # mm² expected range per class
 | 4A — Classifier | ✅ Complete | `classify/drawing_type.py`, new CLI flags |
 | 4B — Hatch Gen | ✅ Complete | `hatch/` + `export/`: closed-region scoring + hatch candidate reports |
 | 5 — Semantic Taxonomy | ✅ Complete | `semantic/taxonomy.py`: SemanticLabel + TaxonomyLoader; `config/semantic_taxonomy.yaml` + `export_roles.yaml` |
-| 6 — Export | 🔜 Future | SVG / PNG / GeoJSON export |
+| 6A — Hatch Writer | ✅ Complete | `export/hatch_writer.py` + `export/dxf_writer.py`: filter eligible candidates, write HATCH DXF, WriteReport |
+| 6B — Export | 🔜 Future | SVG / PNG / GeoJSON export |

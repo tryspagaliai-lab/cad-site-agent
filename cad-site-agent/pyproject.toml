@@ -30,6 +30,7 @@ clean-dxf        = "cad_site_agent.cli:clean_dxf"
 close-gaps       = "cad_site_agent.cli:close_gaps"
 normalize-layers = "cad_site_agent.cli:normalize_layers"
 hatch-candidates = "cad_site_agent.cli:hatch_candidates"
+write-hatches    = "cad_site_agent.cli:write_hatches"
 
 [build-system]
 requires = ["hatchling"]

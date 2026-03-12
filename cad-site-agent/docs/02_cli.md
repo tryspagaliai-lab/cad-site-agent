@@ -184,6 +184,92 @@ normalize-layers <DXF_FILE> [--config FILE] [--output FILE]
 
 ---
 
+### `write-hatches`
+
+Take a hatch-candidates JSON and write a new DXF with solid HATCH entities for
+each eligible region. The source DXF is never modified.
+
+```
+write-hatches <SOURCE_DXF> <CANDIDATES_JSON> <OUTPUT_DXF>
+              [--status auto|review|skip] [--min-confidence N]
+              [--class-filter CLASS] [--material-filter MAT]
+              [--output-dir DIR]
+```
+
+| Argument / Option | Default | Description |
+|-------------------|---------|-------------|
+| `SOURCE_DXF` | (required) | Original DXF — read-only for vertex lookup |
+| `CANDIDATES_JSON` | (required) | `<stem>.hatch_candidates.json` from `hatch-candidates` |
+| `OUTPUT_DXF` | (required) | Path for new output DXF (must not exist) |
+| `--status` | `auto` | Only write candidates with this status value |
+| `--min-confidence N` | (none) | Skip candidates below this confidence threshold |
+| `--class-filter CLASS` | (all) | Only write candidates with this `class_guess` |
+| `--material-filter MAT` | (all) | Only write candidates with this `material_class` |
+| `--output-dir DIR` | same as source DXF | Directory for JSON + MD reports |
+
+**Eligibility filter (applied in order):**
+
+1. `semantic_label.feature_type == "region"`
+2. `semantic_label.export_role == "hatch_and_export"`
+3. `status == <status>` (default `"auto"`)
+4. `semantic_label.material_class` is non-empty
+5. `confidence >= min_confidence` (if `--min-confidence` set)
+6. `class_guess == class_filter` (if `--class-filter` set)
+7. `material_class == material_filter` (if `--material-filter` set)
+
+**Output files:**
+- `<OUTPUT_DXF>` — new DXF with one HATCH entity per eligible region, on layer `HATCH_<material_class>`
+- `<stem>.hatch_write.json` — write report with counts and per-material breakdown
+- `<stem>.hatch_write.md` — human-readable markdown report
+
+**Example (auto-confidence candidates only):**
+```bash
+PYTHONPATH=src python -m cad_site_agent.cli write-hatches \
+  "E:/SHAKESPEARE/RAW_DATA/roman_gardens_gapclosed.dxf" \
+  "reports/analysis/roman_gardens_gapclosed.hatch_candidates.json" \
+  "reports/analysis/roman_gardens_gapclosed.hatches_auto.dxf"
+```
+```
+Writing hatches: E:/SHAKESPEARE/RAW_DATA/roman_gardens_gapclosed.dxf
+  Candidates:  reports/analysis/roman_gardens_gapclosed.hatch_candidates.json
+  Output DXF:  reports/analysis/roman_gardens_gapclosed.hatches_auto.dxf
+  Status filter: auto
+
+  Input:    1,721
+  Eligible: 0
+  Written:  0
+  Skipped:  1,721
+
+  DXF    -> reports/analysis/roman_gardens_gapclosed.hatches_auto.dxf
+  JSON   -> reports/analysis/roman_gardens_gapclosed.hatch_write.json
+  MD     -> reports/analysis/roman_gardens_gapclosed.hatch_write.md
+
+  Note: 0 hatches written. Try --status review for lower-confidence candidates.
+```
+
+**Example (review-status candidates):**
+```bash
+PYTHONPATH=src python -m cad_site_agent.cli write-hatches \
+  "E:/SHAKESPEARE/RAW_DATA/roman_gardens_gapclosed.dxf" \
+  "reports/analysis/roman_gardens_gapclosed.hatch_candidates.json" \
+  "reports/analysis/roman_gardens_gapclosed.hatches_review.dxf" \
+  --status review
+```
+```
+  Input:    1,721
+  Eligible: 300
+  Written:  300
+  Skipped:  1,421
+```
+
+**Safety guarantees:**
+- Raises `FileNotFoundError` if source DXF or candidates JSON is missing
+- Raises `FileExistsError` if output DXF path already exists
+- Always creates the output DXF (empty DXF when zero eligible candidates)
+- Never opens source DXF for writing
+
+---
+
 ## JSON Report Structure
 
 ### `<stem>.analysis.json`
@@ -244,6 +330,34 @@ normalize-layers <DXF_FILE> [--config FILE] [--output FILE]
       "reasons": ["Layer name matches class 'parking'", "Area 48200mm² in expected parking range"]
     }
   ]
+}
+```
+
+### `<stem>.hatch_write.json`
+
+```json
+{
+  "meta": {
+    "source_dxf":      "E:/SHAKESPEARE/RAW_DATA/roman_gardens_gapclosed.dxf",
+    "candidates_json": "reports/analysis/roman_gardens_gapclosed.hatch_candidates.json",
+    "output_dxf":      "reports/analysis/roman_gardens_gapclosed.hatches_review.dxf",
+    "generated_at":    "2025-01-01T12:00:00"
+  },
+  "totals": {
+    "input":    1721,
+    "eligible": 300,
+    "written":  300,
+    "skipped":  1421
+  },
+  "skips_by_reason": {
+    "not_region":         0,
+    "wrong_export_role":  0,
+    "status_not_auto":    1421
+  },
+  "by_material": {
+    "MAT_LAWN":    { "layer": "HATCH_MAT_LAWN",    "eligible": 180 },
+    "MAT_PATH":    { "layer": "HATCH_MAT_PATH",    "eligible": 120 }
+  }
 }
 ```
 
