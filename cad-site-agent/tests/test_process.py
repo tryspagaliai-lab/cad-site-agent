@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import shutil
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -24,40 +22,32 @@ def tmp_out(tmp_path):
 
 # ── ProcessReport ──────────────────────────────────────────────────────────────
 
+def _make_report(**overrides) -> ProcessReport:
+    defaults = dict(
+        source_dxf="a.dxf",
+        output_dxf="b.dxf",
+        generated_at="2026-01-01T00:00:00",
+        candidates_total=10,
+        candidates_auto=8,
+        candidates_review=2,
+        hatches_written=7,
+        features_written=100,
+        features_removed=5,
+        features_skipped=50,
+        drawing_type="site_layout",
+        drawing_confidence=0.9,
+    )
+    return ProcessReport(**{**defaults, **overrides})
+
+
 class TestProcessReport:
     def test_fields_exist(self):
-        r = ProcessReport(
-            source_dxf="a.dxf",
-            output_dxf="b.dxf",
-            generated_at="2026-01-01T00:00:00",
-            candidates_total=10,
-            candidates_auto=8,
-            candidates_review=2,
-            hatches_written=7,
-            features_written=100,
-            features_removed=5,
-            features_skipped=50,
-            drawing_type="site_layout",
-            drawing_confidence=0.9,
-        )
+        r = _make_report()
         assert r.source_dxf == "a.dxf"
         assert r.hatches_written == 7
 
     def test_to_dict(self):
-        r = ProcessReport(
-            source_dxf="a.dxf",
-            output_dxf="b.dxf",
-            generated_at="2026-01-01T00:00:00",
-            candidates_total=10,
-            candidates_auto=8,
-            candidates_review=2,
-            hatches_written=7,
-            features_written=100,
-            features_removed=5,
-            features_skipped=50,
-            drawing_type="site_layout",
-            drawing_confidence=0.9,
-        )
+        r = _make_report()
         d = r.to_dict()
         assert d["hatches_written"] == 7
         assert "generated_at" in d
@@ -71,10 +61,13 @@ class TestRunProcess:
             run_process("nonexistent.dxf", str(tmp_out))
 
     def test_raises_if_output_exists(self, tmp_path):
+        import ezdxf
+        src = tmp_path / "src.dxf"
+        ezdxf.new("R2010").saveas(str(src))
         out = tmp_path / "out.dxf"
         out.touch()
         with pytest.raises(FileExistsError):
-            run_process(str(SAMPLE_DXF), str(out))
+            run_process(str(src), str(out))
 
     @pytest.mark.skipif(not SAMPLE_DXF.exists(), reason="no fixture DXF")
     def test_produces_output_files(self, tmp_path):
