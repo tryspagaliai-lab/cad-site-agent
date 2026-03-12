@@ -58,8 +58,13 @@ cad_site_agent/
 │   └── semantic_hatch.py       Phase 4B: classify_hatch_candidates() orchestrator
 ├── export/
 │   ├── review_writer.py        Phase 4B: write_hatch_report() → JSON + MD
-│   ├── hatch_writer.py         Phase 6A: run_hatch_write() pipeline + WriteReport
-│   └── dxf_writer.py           Phase 6A: material_to_layer_name(), write_hatch_dxf()
+│   ├── hatch_writer.py         Phase 6A/6B: run_hatch_write() pipeline + WriteReport
+│   └── dxf_writer.py           Phase 6B: material_to_layer_name(), write_hatch_dxf()
+│                               (stabilize_region integrated; 3-tuple return)
+├── geometry/
+│   ├── __init__.py
+│   └── boundary_tools.py       Phase 6B: polyline stabilization (snap, gap-close,
+│                               rebuild, merge, self-intersection check)
 ├── semantic/
 │   ├── normalizer.py           Pre-Phase 5: layer name normalisation helpers
 │   └── taxonomy.py             Phase 5: SemanticLabel dataclass + TaxonomyLoader
@@ -67,7 +72,7 @@ cad_site_agent/
 
 config/
 ├── settings.yaml               Global settings (paths, thresholds)
-├── tolerances.yaml             Gap-close and cleanup tolerances
+├── tolerances.yaml             Gap-close, cleanup, and boundary stabilization tolerances
 ├── layer_aliases.yaml          Layer name → canonical class mapping
 ├── hatch_rules.yaml            Phase 4B: scoring weights, class→material map, layer hints
 ├── semantic_taxonomy.yaml      Phase 5: 40+ canonical site classes, 5 feature types, aliases

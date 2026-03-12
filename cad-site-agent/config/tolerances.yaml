@@ -40,3 +40,18 @@ hatch:
 
   # Scale for non-SOLID hatch patterns
   pattern_scale: 500.0
+
+boundary:
+  # Phase 6B: stabilization tolerances for region geometry before hatch writing
+
+  # polyline_gap_tolerance: max endpoint gap to close automatically (drawing units)
+  polyline_gap_tolerance: 10.0
+
+  # snap_distance: merge consecutive vertices within this distance (drawing units)
+  snap_distance: 1.0
+
+  # min_region_area: reject regions smaller than this area (drawing units squared)
+  min_region_area: 100.0
+
+  # max_region_vertex_count: reject regions with more vertices than this
+  max_region_vertex_count: 5000

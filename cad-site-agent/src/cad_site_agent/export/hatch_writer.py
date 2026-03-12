@@ -42,8 +42,10 @@ class WriteReport:
     total_eligible:  int
     total_written:   int
     total_skipped:   int
-    skips_by_reason: dict[str, int] = field(default_factory=dict)
-    by_material:     dict[str, dict] = field(default_factory=dict)
+    skips_by_reason:         dict[str, int] = field(default_factory=dict)
+    by_material:             dict[str, dict] = field(default_factory=dict)
+    stabilization_repaired:  int = 0
+    stabilization_rejected:  int = 0
 
 
 # ─── filter_eligible ─────────────────────────────────────────────────────────
@@ -125,6 +127,11 @@ def run_hatch_write(
     min_confidence: Optional[float] = None,
     class_filter: Optional[str] = None,
     material_filter: Optional[str] = None,
+    stabilize: bool = True,
+    gap_tolerance: float = 10.0,
+    snap_distance: float = 1.0,
+    min_area: float = 100.0,
+    max_vertices: int = 5000,
 ) -> WriteReport:
     """Full pipeline: filter candidates, write HATCH DXF, return WriteReport.
 
@@ -168,9 +175,17 @@ def run_hatch_write(
 
     # Write DXF (always create output, even when empty)
     all_skips = dict(filter_skips)
+    repaired = 0
 
     if eligible:
-        written, write_skips = write_hatch_dxf(str(src_path), eligible, str(out_path))
+        written, write_skips, repaired = write_hatch_dxf(
+            str(src_path), eligible, str(out_path),
+            stabilize=stabilize,
+            gap_tolerance=gap_tolerance,
+            snap_distance=snap_distance,
+            min_area=min_area,
+            max_vertices=max_vertices,
+        )
         for k, v in write_skips.items():
             all_skips[k] = all_skips.get(k, 0) + v
     else:
@@ -179,6 +194,9 @@ def run_hatch_write(
         written = 0
 
     total_skipped = len(candidates) - len(eligible)
+    stab_rejected = sum(
+        v for k, v in all_skips.items() if k.startswith("stabilize_rejected_")
+    )
 
     return WriteReport(
         source_dxf=str(source_dxf),
@@ -191,6 +209,8 @@ def run_hatch_write(
         total_skipped=total_skipped,
         skips_by_reason=all_skips,
         by_material=by_material,
+        stabilization_repaired=repaired,
+        stabilization_rejected=stab_rejected,
     )
 
 
@@ -226,6 +246,10 @@ def write_hatch_write_reports(
             "written":  report.total_written,
             "skipped":  report.total_skipped,
         },
+        "stabilization": {
+            "repaired":  report.stabilization_repaired,
+            "rejected":  report.stabilization_rejected,
+        },
         "skips_by_reason": report.skips_by_reason,
         "by_material":     report.by_material,
     }
@@ -253,6 +277,19 @@ def write_hatch_write_reports(
         f"| Eligible         | {report.total_eligible:,} |",
         f"| Written          | {report.total_written:,} |",
         f"| Skipped          | {report.total_skipped:,} |",
+        "",
+    ]
+
+    # Stabilization stats (always shown)
+    lines += [
+        "---",
+        "",
+        "## Stabilization",
+        "",
+        "| Metric | Value |",
+        "|--------|-------|",
+        f"| Repaired (vertices adjusted) | {report.stabilization_repaired:,} |",
+        f"| Rejected (geometry invalid)  | {report.stabilization_rejected:,} |",
         "",
     ]
 
