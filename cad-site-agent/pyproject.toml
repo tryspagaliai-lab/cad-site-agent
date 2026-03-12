@@ -1,6 +1,6 @@
 [project]
 name = "cad-site-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Local CAD Site Agent — DXF analysis, cleanup, semantic normalisation, region/hatch generation, MAX-prep export"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,6 +31,8 @@ close-gaps       = "cad_site_agent.cli:close_gaps"
 normalize-layers = "cad_site_agent.cli:normalize_layers"
 hatch-candidates = "cad_site_agent.cli:hatch_candidates"
 write-hatches    = "cad_site_agent.cli:write_hatches"
+route-features   = "cad_site_agent.cli:route_features"
+cad-agent        = "cad_site_agent.cli:cli_entry"
 
 [build-system]
 requires = ["hatchling"]
