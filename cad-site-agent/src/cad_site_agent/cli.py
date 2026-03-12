@@ -206,6 +206,28 @@ if _HAS_CLICK:
             output_dir=output_dir,
         )
 
+    @main.command("process")
+    @click.argument("source_dxf")
+    @click.argument("output_dxf")
+    @click.option("--status",         default="auto", show_default=True,
+                  help="Candidate status filter: auto | review")
+    @click.option("--min-confidence", default=None,   type=float,
+                  help="Minimum hatch-candidate confidence (0–1)")
+    @click.option("--keep-noise",     is_flag=True,
+                  help="Include noise entities in output (default: excluded)")
+    def process(source_dxf, output_dxf, status, min_confidence, keep_noise):
+        """Run the full end-to-end pipeline on SOURCE_DXF -> OUTPUT_DXF.
+
+        Produces alongside OUTPUT_DXF:\n
+          <stem>.hatches.dxf           -- HATCH entities for closed regions\n
+          <stem>.hatch_candidates.json -- candidate metadata\n
+          <stem>.process.json          -- pipeline summary
+        """
+        _run_process(source_dxf, output_dxf,
+                     status_filter=status,
+                     min_confidence=min_confidence,
+                     exclude_noise=not keep_noise)
+
     def cli_entry():
         main()
 
@@ -219,6 +241,7 @@ if _HAS_CLICK:
     def hatch_candidates():   main()
     def write_hatches():      main()
     def route_features():     main()
+    def process():            main()
 
 else:
     # ──────────────────────────────────────────────────────────────────────────
@@ -314,6 +337,14 @@ else:
         p_r.add_argument("--keep-noise", action="store_false", dest="exclude_noise")
         p_r.add_argument("--output-dir", "-o", default=None, dest="output_dir")
 
+        # process
+        p_process = sub.add_parser("process", help="Full end-to-end pipeline")
+        p_process.add_argument("source_dxf")
+        p_process.add_argument("output_dxf")
+        p_process.add_argument("--status", default="auto")
+        p_process.add_argument("--min-confidence", type=float, default=None, dest="min_confidence")
+        p_process.add_argument("--keep-noise", action="store_true", dest="keep_noise")
+
         args = parser.parse_args()
         legacy_cls = getattr(args, "legacy_cls", False)
 
@@ -365,6 +396,11 @@ else:
                 exclude_noise=args.exclude_noise,
                 output_dir=args.output_dir,
             )
+        elif args.cmd == "process":
+            _run_process(args.source_dxf, args.output_dxf,
+                         status_filter=args.status,
+                         min_confidence=args.min_confidence,
+                         exclude_noise=not args.keep_noise)
         else:
             parser.print_help()
 
@@ -378,6 +414,7 @@ else:
     def hatch_candidates(): cli_entry()
     def write_hatches(): cli_entry()
     def route_features(): cli_entry()
+    def process(): cli_entry()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -853,6 +890,34 @@ def _run_route_features(
     print(f"\n  DXF    -> {output_dxf}")
     print(f"  JSON   -> {json_path}")
     print(f"  MD     -> {md_path}")
+
+
+def _run_process(
+    source_dxf: str,
+    output_dxf: str,
+    *,
+    status_filter: str = "auto",
+    min_confidence=None,
+    exclude_noise: bool = True,
+) -> None:
+    from .pipeline import run_process
+    try:
+        report = run_process(
+            source_dxf,
+            output_dxf,
+            status_filter=status_filter,
+            min_confidence=min_confidence,
+            exclude_noise=exclude_noise,
+        )
+    except (FileNotFoundError, FileExistsError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
+
+    print(f"Done.  candidates={report.candidates_total}  "
+          f"hatches={report.hatches_written}  "
+          f"features={report.features_written}  "
+          f"removed={report.features_removed}")
+    print(f"Output: {output_dxf}")
 
 
 if __name__ == "__main__":
