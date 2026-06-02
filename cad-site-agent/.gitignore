@@ -29,3 +29,54 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# CAD / 3D production files
+*.dwg
+*.dxf
+*.max
+*.fbx
+*.obj
+*.3ds
+*.blend
+*.c4d
+
+# Adobe / design files
+*.psd
+*.psb
+*.ai
+*.indd
+*.aep
+*.prproj
+
+# Images / renders
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.exr
+*.hdr
+*.webp
+
+# Video / animation
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+
+# Archives
+*.zip
+*.rar
+*.7z
+
+# Large/generated folders
+output/
+outputs/
+renders/
+render/
+cache/
+temp/
+tmp/
+exports/
+reports/analysis/*.dxf
