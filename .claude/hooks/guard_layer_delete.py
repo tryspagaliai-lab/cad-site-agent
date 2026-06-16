@@ -3,7 +3,8 @@
 stdin: JSON su tool call. exit 0 = leisti, exit 2 = blokuoti."""
 import json, sys, os
 
-SCHEMA = os.environ.get('CAD_LAYER_SCHEMA', 'config/layers.json')
+# Kelias reliatyvus repo šakniai (cwd desktop'e = repo šaknis); turinys yra po cad-site-agent/
+SCHEMA = os.environ.get('CAD_LAYER_SCHEMA', 'cad-site-agent/config/layers.json')
 
 def stable_layers():
     with open(SCHEMA) as f:
