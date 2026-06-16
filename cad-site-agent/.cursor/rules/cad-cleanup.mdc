@@ -1,0 +1,18 @@
+---
+description: DXF/DWG layer cleanup automation rules
+globs: ["src/cad_site_agent/**/*.py", "config/layers.json"]
+alwaysApply: false
+---
+
+# CAD Cleanup Protocol
+
+## Scope
+- Naudok TIK 47 stabilius sluoksnius iš schema config.
+- Prieš delete/merge — patikrink ar layer egzistuoja per ezdxf wrapper'į.
+- Mutacijas logink per system logger, ne print().
+
+## Libs
+- ezdxf primityvai. Jokių UI/visual import'ų.
+
+## Errors
+- DXF parse klaidas izoliuok explicit try-except. Partial failures -> JSON metadata log, pipeline nekrenta.

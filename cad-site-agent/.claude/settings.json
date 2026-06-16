@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/guard_layer_delete.py"
+          }
+        ]
+      }
+    ]
+  }
+}
