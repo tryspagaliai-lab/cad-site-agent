@@ -19,20 +19,22 @@ Merge'inta į `main` (merge commit `7ee7c78`):
 - `cad-site-agent/.cursor/rules/cad-cleanup.mdc` — glob-scoped Cursor taisyklė
   (globs: `src/cad_site_agent/**/*.py`, `config/layers.json`).
 - `cad-site-agent/src/cad_site_agent/CLAUDE.md` — nested Claude Code scope taisyklės.
-- `cad-site-agent/.claude/hooks/guard_layer_delete.py` — PreToolUse layer-delete gardas (STUB).
-- `cad-site-agent/.claude/settings.json` — nested PreToolUse registracija (žr. pastabą žemiau).
+- `.claude/hooks/guard_layer_delete.py` (**repo šaknyje**) — PreToolUse layer-delete gardas (STUB).
+- `.claude/settings.json` (**repo šaknyje**) — SessionStart + PreToolUse registracijos (auto-kraunasi).
+- `.claude/hooks/session-start.sh` (**repo šaknyje**) — repo sync + handoff konteksto įkėlimas.
 
 ## Atviri TODO (rytojui)
 1. **`config/layers.json` NEEGZISTUOJA.** Hook'as ir Cursor glob'as į jį rodo.
    Reikia sukurti `{"stable_layers": [... 47 sluoksnių ...]}` arba nukreipti į esamus
    YAML (`config/layer_aliases.yaml`, `config/export_layers.yaml`).
 2. **`guard_layer_delete.py` yra STUB** — target sluoksnio parse + palyginimas su
-   schema dar neįgyvendintas (`# TODO`). Be #1 jis mestų klaidą, jei suveiktų.
+   schema dar neįgyvendintas (`# TODO`). Be #1 jis mestų klaidą, jei suveiktų
+   (kol nėra `cad-site-agent/config/layers.json`). Schemos kelias jau nukreiptas teisingai.
 3. **Layer „esmės" testavimas** — pagrindinis tikslas: kad sistema suvoktų sluoksnių
    prasmę. Tam skirti `tests/` (test_analyzer, test_classifier, test_taxonomy,
    test_hatch ir kt.). Paleisti pilną rinkinį ir peržiūrėti rezultatus.
-4. **Nested PreToolUse gardas neauto-kraunamas** (per giliai). Jei norим, kad gardas
-   realiai veiktų desktop'e — perkelti jo registraciją į repo šaknies `.claude/settings.json`.
+4. **(DONE 2026-06-16)** Layer-guard perkeltas į repo šaknies `.claude/` ir
+   registruotas šaknies `settings.json` → dabar auto-kraunasi desktop'e.
 5. **`agentos-sessions` branduolys (`AGENTS.md`) + `~/.claude/CLAUDE.md`** — ne šios
    sesijos apimtyje (GitHub scope tik cad-site-agent). Padaryti iš desktop'o vietoje.
 
