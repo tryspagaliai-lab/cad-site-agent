@@ -25,15 +25,30 @@ HANDOFF="$APP/docs/SESSION_HANDOFF.md"
   fi
 } 1>&2
 
-# 3) Surinkti kontekstą sesijai: handoff dokumentas + paskutiniai commit'ai
+# 3) Surinkti kontekstą sesijai: handoff + agentų statusai + paskutiniai commit'ai
 RECENT="$(cd "$PROJ" && git log --oneline -8 2>/dev/null || true)"
 HANDOFF_TXT=""
 [ -f "$HANDOFF" ] && HANDOFF_TXT="$(cat "$HANDOFF")"
 
-python3 - "$HANDOFF_TXT" "$RECENT" <<'PY'
+# Visų agentų statusai iš bendros koordinacijos lentos
+STATUS_TXT=""
+STATUS_DIR="$APP/docs/agent-status"
+if [ -d "$STATUS_DIR" ]; then
+  for f in "$STATUS_DIR"/*.md; do
+    [ -f "$f" ] || continue
+    STATUS_TXT="$STATUS_TXT
+--- $(basename "$f") ---
+$(cat "$f")
+"
+  done
+fi
+
+python3 - "$HANDOFF_TXT" "$RECENT" "$STATUS_TXT" <<'PY'
 import json, sys
-handoff, recent = sys.argv[1], sys.argv[2]
+handoff, recent, status = sys.argv[1], sys.argv[2], sys.argv[3]
 ctx = "# Auto-loaded session context (SessionStart hook)\n\n"
+if status.strip():
+    ctx += "## Agentų koordinacija (kas ką daro)\n" + status + "\n"
 if handoff:
     ctx += handoff + "\n\n"
 ctx += "## Paskutiniai commit'ai\n" + (recent or "(nėra)") + "\n"
