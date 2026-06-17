@@ -24,15 +24,16 @@ Merge'inta į `main` (merge commit `7ee7c78`):
 - `.claude/hooks/session-start.sh` (**repo šaknyje**) — repo sync + handoff konteksto įkėlimas.
 
 ## Atviri TODO (rytojui)
-1. **`config/layers.json` NEEGZISTUOJA.** Hook'as ir Cursor glob'as į jį rodo.
-   Reikia sukurti `{"stable_layers": [... 47 sluoksnių ...]}` arba nukreipti į esamus
-   YAML (`config/layer_aliases.yaml`, `config/export_layers.yaml`).
-2. **`guard_layer_delete.py` yra STUB** — target sluoksnio parse + palyginimas su
-   schema dar neįgyvendintas (`# TODO`). Be #1 jis mestų klaidą, jei suveiktų
-   (kol nėra `cad-site-agent/config/layers.json`). Schemos kelias jau nukreiptas teisingai.
+1. **(DONE 2026-06-17)** `config/layers.json` sukurtas — generuotas iš
+   `export_layers.yaml` (12 output sluoksnių) + `semantic_taxonomy.yaml` (43 klasės)
+   = **55 stabilūs sluoksniai**. RADINYS: spec'o „47" NEATITINKA realios schemos;
+   failas atspindi tikrą schemą (regeneruoti po schemos pakeitimų).
+2. **(DONE 2026-06-17)** `guard_layer_delete.py` logika užbaigta — aptinka
+   delete/merge/purge, ištraukia taikinio sluoksnį, BLOKUOJA (exit 2) stabilaus
+   sluoksnio naikinimą, fail-open jei schema/sluoksnis neaiškus. Ištestuota 5 scenarijais.
 3. **Layer „esmės" testavimas** — pagrindinis tikslas: kad sistema suvoktų sluoksnių
    prasmę. Tam skirti `tests/` (test_analyzer, test_classifier, test_taxonomy,
-   test_hatch ir kt.). Paleisti pilną rinkinį ir peržiūrėti rezultatus.
+   test_hatch ir kt.). Baseline: **202 passed, 8 skipped** (skip = trūkstami DXF fixture'ai).
 4. **(DONE 2026-06-16)** Layer-guard perkeltas į repo šaknies `.claude/` ir
    registruotas šaknies `settings.json` → dabar auto-kraunasi desktop'e.
 5. **`agentos-sessions` branduolys (`AGENTS.md`) + `~/.claude/CLAUDE.md`** — ne šios
