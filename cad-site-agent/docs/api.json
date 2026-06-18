@@ -1,0 +1,387 @@
+{
+  "info": {
+    "title": "CAD Site Agent — Python API Reference",
+    "version": "0.2.0",
+    "description": "7-phase DXF pipeline: analizuoja, klasifikuoja ir eksportuoja CAD vietovės brėžinius. Visi moduliai yra Python paketų viduje `cad_site_agent`.",
+    "entrypoint": "cad_site_agent.pipeline.run_process"
+  },
+
+  "pipeline_stages": [
+    { "phase": 2,  "name": "Analyzer",        "module": "cad_site_agent.analyzer.dxf_analyzer",   "main_fn": "analyze_dxf" },
+    { "phase": 3,  "name": "Gap Closer",       "module": "cad_site_agent.cleanup.gap_closer",      "main_fn": "close_gaps" },
+    { "phase": "4A", "name": "Drawing Classifier", "module": "cad_site_agent.classify.drawing_type", "main_fn": "classify_drawing_type" },
+    { "phase": "4B", "name": "Hatch Candidates",   "module": "cad_site_agent.hatch.semantic_hatch",  "main_fn": "classify_hatch_candidates" },
+    { "phase": 5,  "name": "Semantic Taxonomy","module": "cad_site_agent.semantic.taxonomy",       "main_fn": "TaxonomyLoader.classify" },
+    { "phase": "6A", "name": "Hatch Writer",   "module": "cad_site_agent.export.hatch_writer",     "main_fn": "run_hatch_write" },
+    { "phase": "6B", "name": "DXF Writer",     "module": "cad_site_agent.export.dxf_writer",       "main_fn": "write_hatch_dxf" },
+    { "phase": 7,  "name": "Feature Router",   "module": "cad_site_agent.export.routing",          "main_fn": "run_route_features" }
+  ],
+
+  "functions": {
+
+    "run_process": {
+      "module": "cad_site_agent.pipeline",
+      "description": "Pilnas pipeline nuo DXF įvesties iki išvesties: hatch kandidatai → hatch DXF → feature routing DXF.",
+      "parameters": {
+        "source_dxf":     { "type": "string", "required": true,  "description": "Kelias iki įvedamo DXF failo." },
+        "output_dxf":     { "type": "string", "required": true,  "description": "Kelias išvedamam DXF failui (ne-regionų elementai)." },
+        "status_filter":  { "type": "string", "required": false, "default": "auto",  "enum": ["auto", "review"], "description": "Kuriuos kandidatus rašyti: 'auto' arba 'review'. 'all' neleidžiamas." },
+        "min_confidence": { "type": "number", "required": false, "default": null,    "description": "Minimali patikimumo riba (0.0–1.0). Null = naudoja YAML numatytąjį." },
+        "exclude_noise":  { "type": "boolean","required": false, "default": true,    "description": "Ar filtruoti triukšmo entitetus routing etape." }
+      },
+      "returns": "ProcessReport",
+      "raises": [
+        { "type": "FileNotFoundError", "when": "source_dxf neegzistuoja" },
+        { "type": "FileExistsError",   "when": "output_dxf jau egzistuoja" },
+        { "type": "ValueError",        "when": "status_filter == 'all'" }
+      ],
+      "output_files": [
+        "<stem>.hatch_candidates.json",
+        "<stem>.hatch_candidates.md",
+        "<stem>.hatches.dxf",
+        "<stem>.process.json",
+        "<output_dxf> (routed non-region features)"
+      ]
+    },
+
+    "analyze_dxf": {
+      "module": "cad_site_agent.analyzer.dxf_analyzer",
+      "description": "2 fazė: nuskaito DXF failą ir grąžina struktūrizuotą analizės ataskaitą.",
+      "parameters": {
+        "dxf_path": { "type": "string | Path", "required": true, "description": "Kelias iki DXF failo." }
+      },
+      "returns": "AnalysisReport"
+    },
+
+    "classify_drawing_type": {
+      "module": "cad_site_agent.classify.drawing_type",
+      "description": "4A fazė: klasifikuoja brėžinį į vieną iš 5 tipų pagal AnalysisReport.",
+      "parameters": {
+        "report": { "type": "AnalysisReport", "required": true, "description": "Rezultatas iš analyze_dxf()." }
+      },
+      "returns": "DrawingTypeResult"
+    },
+
+    "classify_hatch_candidates": {
+      "module": "cad_site_agent.hatch.semantic_hatch",
+      "description": "4B fazė: ištraukia uždarus regionus ir įvertina juos kaip hatch kandidatus.",
+      "parameters": {
+        "dxf_path":       { "type": "string",        "required": true },
+        "analysis_report":{ "type": "AnalysisReport", "required": true },
+        "class_filter":   { "type": "string",        "required": false, "default": null, "description": "Jei nustatyta — grąžinami tik šios klasės kandidatai." },
+        "config_dir":     { "type": "string | Path", "required": false, "default": null, "description": "Alternatyvus kelias iki config/ katalogo." }
+      },
+      "returns": "list[HatchCandidate]"
+    },
+
+    "run_hatch_write": {
+      "module": "cad_site_agent.export.hatch_writer",
+      "description": "6A fazė: iš kandidatų JSON failo rašo HATCH entitetus į naują DXF.",
+      "parameters": {
+        "source_dxf":       { "type": "string", "required": true },
+        "candidates_json":  { "type": "string", "required": true,  "description": "Kelias iki .hatch_candidates.json failo." },
+        "output_dxf":       { "type": "string", "required": true },
+        "status_filter":    { "type": "string", "required": false, "default": "auto",  "enum": ["auto", "review"] },
+        "min_confidence":   { "type": "number", "required": false, "default": null },
+        "class_filter":     { "type": "string", "required": false, "default": null },
+        "material_filter":  { "type": "string", "required": false, "default": null }
+      },
+      "returns": "WriteReport"
+    },
+
+    "run_route_features": {
+      "module": "cad_site_agent.export.routing",
+      "description": "7 fazė: ne-regionų DXF entitetus paskirsto į semantinius sluoksnius.",
+      "parameters": {
+        "source_dxf":       { "type": "string",  "required": true },
+        "candidates_json":  { "type": "string",  "required": true },
+        "output_dxf":       { "type": "string",  "required": true },
+        "include_linework": { "type": "boolean", "required": false, "default": true },
+        "include_markings": { "type": "boolean", "required": false, "default": true },
+        "include_symbols":  { "type": "boolean", "required": false, "default": true },
+        "include_text":     { "type": "boolean", "required": false, "default": true },
+        "exclude_noise":    { "type": "boolean", "required": false, "default": true },
+        "taxonomy_path":    { "type": "string",  "required": false, "default": null },
+        "roles_path":       { "type": "string",  "required": false, "default": null },
+        "routing_hints":    { "type": "object",  "required": false, "default": null, "description": "{ class_name: [keyword, ...] } papildomi maršrutizavimo patarimai." }
+      },
+      "returns": "RoutingReport"
+    }
+  },
+
+  "schemas": {
+
+    "AnalysisReport": {
+      "description": "Pilna DXF failo struktūrinė analizė (2 fazė).",
+      "fields": {
+        "source_file":         { "type": "string" },
+        "file_size_kb":        { "type": "integer" },
+        "ezdxf_version":       { "type": "string" },
+        "total_entities":      { "type": "integer" },
+        "entity_type_counts":  { "type": "object", "description": "{ entity_type: count }" },
+        "total_layers":        { "type": "integer" },
+        "layers":              { "type": "object", "description": "{ layer_name: LayerInfo }" },
+        "has_hatches":         { "type": "boolean" },
+        "has_blocks":          { "type": "boolean" },
+        "has_splines":         { "type": "boolean" },
+        "has_3d":              { "type": "boolean" },
+        "closed_polyline_count": { "type": "integer" },
+        "open_polyline_count":   { "type": "integer" },
+        "total_line_segments":   { "type": "integer" },
+        "text_entries":        { "type": "array", "items": "TextEntry" },
+        "extents_min":         { "type": "array | null", "items": "number", "description": "[x, y] braižymo minimumas" },
+        "extents_max":         { "type": "array | null", "items": "number", "description": "[x, y] braižymo maksimumas" },
+        "extents_width":       { "type": "number" },
+        "extents_height":      { "type": "number" },
+        "likely_unit":         { "type": "string", "enum": ["mm", "m", "unknown"] },
+        "block_names":         { "type": "array",  "items": "string" }
+      },
+      "json_output_key": "to_dict()"
+    },
+
+    "LayerInfo": {
+      "description": "Vieno DXF sluoksnio metaduomenys.",
+      "fields": {
+        "name":                 { "type": "string" },
+        "color_aci":            { "type": "integer", "description": "ACI spalvos indeksas" },
+        "true_color":           { "type": "integer | null" },
+        "linetype":             { "type": "string", "default": "Continuous" },
+        "entity_count":         { "type": "integer" },
+        "entity_types":         { "type": "object", "description": "{ type: count }" },
+        "has_closed_polylines": { "type": "integer" },
+        "has_open_polylines":   { "type": "integer" }
+      }
+    },
+
+    "TextEntry": {
+      "description": "Vienas teksto entitetas DXF faile.",
+      "fields": {
+        "entity_type": { "type": "string", "enum": ["TEXT", "MTEXT"] },
+        "layer":       { "type": "string" },
+        "content":     { "type": "string" },
+        "x":           { "type": "number" },
+        "y":           { "type": "number" },
+        "height":      { "type": "number", "default": 0.0 },
+        "rotation":    { "type": "number", "default": 0.0 }
+      }
+    },
+
+    "DrawingTypeResult": {
+      "description": "Brėžinio tipo klasifikavimo rezultatas (4A fazė).",
+      "fields": {
+        "label":      {
+          "type": "string",
+          "enum": ["rich_site_layout", "sparse_linework", "illustrator_derived", "max_prep", "unknown"],
+          "description": "Nustatytas brėžinio tipas."
+        },
+        "confidence": { "type": "number", "description": "Patikimumo rodiklis 0.0–1.0" },
+        "reasons":    { "type": "array",  "items": "string", "description": "Paaiškinamieji teiginiai" },
+        "diagnostics": {
+          "type": "object",
+          "fields": {
+            "spline_count":         { "type": "integer" },
+            "hatch_count":          { "type": "integer" },
+            "insert_count":         { "type": "integer" },
+            "semantic_class_count": { "type": "integer" }
+          }
+        }
+      }
+    },
+
+    "ClosedRegion": {
+      "description": "Uždara poligoninė sritis išskirta iš DXF geometrijos.",
+      "fields": {
+        "layer":        { "type": "string" },
+        "polygon":      { "type": "object", "description": "shapely.geometry.Polygon objektas" },
+        "area":         { "type": "number", "description": "Plotas brėžinio vienetais²" },
+        "perimeter":    { "type": "number" },
+        "bbox":         { "type": "array",  "description": "[minx, miny, maxx, maxy]" },
+        "vertex_count": { "type": "integer" },
+        "source_type":  { "type": "string", "description": "Originalaus entiteto tipas (LWPOLYLINE, HATCH, ...)" }
+      }
+    },
+
+    "HatchCandidate": {
+      "description": "Vienas įvertintas hatch kandidatas uždaram regionui (4B fazė).",
+      "fields": {
+        "region":         { "type": "ClosedRegion" },
+        "class_guess":    { "type": "string", "description": "Semantinė klasė, pvz. 'parking_bay', 'building', 'unknown'" },
+        "hatch_class":    { "type": "string", "description": "Hatch kodas, pvz. 'MAT_PARKING', 'REVIEW_UNKNOWN'" },
+        "confidence":     { "type": "number", "description": "Patikimumo rodiklis 0.0–1.0" },
+        "status":         { "type": "string", "enum": ["auto", "review", "skip"], "description": "auto ≥ 0.75 | review ≥ 0.45 | skip < 0.45" },
+        "reasons":        { "type": "array",  "items": "string" },
+        "semantic_label": { "type": "SemanticLabel" }
+      }
+    },
+
+    "SemanticLabel": {
+      "description": "Kanoniniai 4 taksonomijos laukai vienai vietovės klasei (5 fazė).",
+      "fields": {
+        "feature_type":   { "type": "string", "enum": ["region", "linear", "marking", "symbol", "text", "noise", "unknown"] },
+        "semantic_class": { "type": "string", "description": "Kanoninė klasė iš semantic_taxonomy.yaml, pvz. 'parking_bay'" },
+        "export_role":    { "type": "string", "enum": ["hatch_and_export", "keep_linework", "remove", "review", "noise", "text_export", "symbol_export"] },
+        "material_class": { "type": "string", "description": "Hatch medžiagos kodas, pvz. 'MAT_PARKING'. Tuščias ne-regionų tipams." }
+      },
+      "factory_methods": {
+        "SemanticLabel.unknown()": "Grąžina numatytąjį sentinel objektą su feature_type='unknown'"
+      }
+    },
+
+    "WriteReport": {
+      "description": "Vieno hatch-write paleidimo suvestinė (6A fazė).",
+      "fields": {
+        "source_dxf":              { "type": "string" },
+        "candidates_json":         { "type": "string" },
+        "output_dxf":              { "type": "string" },
+        "generated_at":            { "type": "string", "description": "ISO 8601 laiko žymė" },
+        "total_input":             { "type": "integer" },
+        "total_eligible":          { "type": "integer" },
+        "total_written":           { "type": "integer" },
+        "total_skipped":           { "type": "integer" },
+        "skips_by_reason":         { "type": "object", "description": "{ reason: count }" },
+        "by_material":             { "type": "object", "description": "{ material_code: { written, skipped } }" },
+        "stabilization_repaired":  { "type": "integer" },
+        "stabilization_rejected":  { "type": "integer" }
+      }
+    },
+
+    "RoutingReport": {
+      "description": "Vieno feature-routing paleidimo suvestinė (7 fazė).",
+      "fields": {
+        "source_dxf":        { "type": "string" },
+        "candidates_json":   { "type": "string" },
+        "output_dxf":        { "type": "string" },
+        "generated_at":      { "type": "string", "description": "ISO 8601 laiko žymė" },
+        "total_input":       { "type": "integer" },
+        "total_written":     { "type": "integer" },
+        "total_removed":     { "type": "integer" },
+        "total_skipped":     { "type": "integer" },
+        "by_feature_type":   { "type": "object", "description": "{ feature_type: count }" },
+        "by_semantic_class": { "type": "object", "description": "{ semantic_class: count }" },
+        "by_export_role":    { "type": "object", "description": "{ export_role: count }" },
+        "by_dest_layer":     { "type": "object", "description": "{ destination_layer: count }" },
+        "unknowns":          { "type": "integer" }
+      }
+    },
+
+    "ProcessReport": {
+      "description": "Pilno pipeline paleidimo suvestinė.",
+      "fields": {
+        "source_dxf":         { "type": "string" },
+        "output_dxf":         { "type": "string" },
+        "generated_at":       { "type": "string", "description": "ISO 8601 laiko žymė" },
+        "candidates_total":   { "type": "integer" },
+        "candidates_auto":    { "type": "integer" },
+        "candidates_review":  { "type": "integer" },
+        "hatches_written":    { "type": "integer" },
+        "features_written":   { "type": "integer" },
+        "features_removed":   { "type": "integer" },
+        "features_skipped":   { "type": "integer" },
+        "drawing_type":       { "type": "string",  "default": "unknown" },
+        "drawing_confidence": { "type": "number",  "default": 0.0 }
+      }
+    }
+  },
+
+  "cli_commands": {
+    "cad-agent process": {
+      "description": "Pilnas pipeline (fazės 2–7) vienu paleidimo veiksmu.",
+      "args": {
+        "SOURCE_DXF":      { "positional": true },
+        "OUTPUT_DXF":      { "positional": true },
+        "--status":        { "default": "auto",  "choices": ["auto", "review"] },
+        "--min-confidence":{ "type": "float",    "default": null },
+        "--no-exclude-noise": { "type": "flag",  "default": false }
+      }
+    },
+    "analyze-dxf": {
+      "description": "Tik 2 fazė: analizuoja DXF ir rašo JSON + MD ataskaitas.",
+      "args": {
+        "DXF_PATH": { "positional": true },
+        "--out-dir": { "type": "string", "default": "reports/analysis" },
+        "--no-preview": { "type": "flag" }
+      }
+    },
+    "classify-drawing": {
+      "description": "Tik 4A fazė: klasifikuoja brėžinį į 5 tipų.",
+      "args": { "DXF_PATH": { "positional": true } }
+    },
+    "hatch-candidates": {
+      "description": "4B fazė: ištraukia ir įvertina hatch kandidatus.",
+      "args": {
+        "DXF_PATH": { "positional": true },
+        "--class-filter": { "type": "string", "default": null },
+        "--out-dir": { "type": "string", "default": "reports/analysis" }
+      }
+    },
+    "write-hatches": {
+      "description": "6A/6B fazė: rašo HATCH DXF iš kandidatų JSON.",
+      "args": {
+        "SOURCE_DXF":       { "positional": true },
+        "CANDIDATES_JSON":  { "positional": true },
+        "OUTPUT_DXF":       { "positional": true },
+        "--status":         { "default": "auto" },
+        "--min-confidence": { "type": "float",  "default": null }
+      }
+    },
+    "route-features": {
+      "description": "7 fazė: paskirsto ne-regionų entitetus į semantinius sluoksnius.",
+      "args": {
+        "SOURCE_DXF":      { "positional": true },
+        "CANDIDATES_JSON": { "positional": true },
+        "OUTPUT_DXF":      { "positional": true },
+        "--no-linework":   { "type": "flag" },
+        "--no-markings":   { "type": "flag" },
+        "--no-symbols":    { "type": "flag" },
+        "--no-text":       { "type": "flag" },
+        "--include-noise": { "type": "flag" }
+      }
+    }
+  },
+
+  "config_files": {
+    "config/settings.yaml":         "Globalūs nustatymai: keliai, slenksčiai, logging.",
+    "config/tolerances.yaml":       "Geometrijos tolerancijos: gap-close 1m, snap 1mm, min plotas 100mm².",
+    "config/hatch_rules.yaml":      "Patikimumo taisyklės: auto_threshold=0.75, review_threshold=0.45, klasių→medžiagų atvaizdavimas.",
+    "config/semantic_taxonomy.yaml":"40+ kanoninių vietovės klasių 6 feature_type grupėse.",
+    "config/export_roles.yaml":     "7 eksportavimo rolės su numatytaisiais pagal feature_type.",
+    "config/layer_aliases.yaml":    "Sluoksnio pavadinimų → kanoninės klasės atvaizdavimas.",
+    "config/export_layers.yaml":    "Eksporto sluoksnių konfigūracija."
+  },
+
+  "drawing_types": {
+    "rich_site_layout":     "Daug HATCH + ≥3 semantinės klasės. Pagrindinis tikslingas tipas.",
+    "sparse_linework":      "Didelis LINE/LWPOLYLINE santykis, be HATCH. Juodraščiai.",
+    "illustrator_derived":  ">20 SPLINE arba >2% spline santykis. Adobe Illustrator eksportai.",
+    "max_prep":             "Medžiagų/tinklelio/3D sluoksnių pavadinimai arba 3D geometrija. 3ds Max failai.",
+    "unknown":              "Balas < 0.25 visose kategorijose."
+  },
+
+  "feature_types": {
+    "region":  "Uždaros ploto sritys → hatch_and_export",
+    "linear":  "Linijos, polilinijos → keep_linework",
+    "marking": "Žymėjimo linijos (pvz. kelio juostos) → keep_linework",
+    "symbol":  "Blokų įterpiniai, ženklai → symbol_export",
+    "text":    "TEXT / MTEXT entitetai → text_export",
+    "noise":   "Triukšmo entitetai → remove"
+  },
+
+  "confidence_thresholds": {
+    "auto":   { "min": 0.75, "action": "Automatiškai rašomas į DXF" },
+    "review": { "min": 0.45, "action": "Reikia rankinio peržiūrėjimo" },
+    "skip":   { "max": 0.44, "action": "Praleistas" }
+  },
+
+  "output_file_patterns": {
+    "<stem>.analysis.json":          "AnalysisReport (2 fazė)",
+    "<stem>.analysis.md":            "AnalysisReport Markdown versija",
+    "<stem>.hatch_candidates.json":  "list[HatchCandidate] (4B fazė)",
+    "<stem>.hatch_candidates.md":    "Hatch kandidatų Markdown suvestinė",
+    "<stem>.hatches.dxf":            "HATCH entitetai (6A/6B fazė)",
+    "<stem>.hatch_write.json":       "WriteReport (6A fazė)",
+    "<stem>.hatch_write.md":         "WriteReport Markdown versija",
+    "<stem>.routing.json":           "RoutingReport (7 fazė)",
+    "<stem>.routing.md":             "RoutingReport Markdown versija",
+    "<stem>.process.json":           "ProcessReport (pilnas pipeline)"
+  }
+}
