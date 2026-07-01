@@ -17,6 +17,7 @@ dependencies = [
     "pydantic>=2.0.0",     # installed: 2.12.5
     "PyYAML>=6.0.0",       # installed: 6.0.3
     "click>=8.0.0",        # installed in py310: 8.3.1
+    "mcp>=1.0.0",          # required by mcp_server.py (FastMCP, Repo Bridge A)
 ]
 
 # Optional: only needed for spatial-index optimisation on very large drawings
