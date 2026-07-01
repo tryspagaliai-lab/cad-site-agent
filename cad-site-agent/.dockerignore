@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.coverage
+
+# Darbiniai / generuoti
+work/
+output/
+outputs/
+tmp/
+temp/
+cache/
+reports/analysis/
+
+# CAD / production failai (niekada nepatenka į image)
+*.dwg
+*.dxf
+*.max
+*.fbx
+*.obj
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
