@@ -1,0 +1,136 @@
+{
+  "name": "CAD Site Agent – Gemini GitHub Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a1b2c3d4-1001-1001-1001-a1b2c3d4e5f6",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [260, 380],
+      "webhookId": "cad-agent-gemini-chat"
+    },
+    {
+      "parameters": {
+        "agent": "conversationalAgent",
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "systemMessage": "You are an expert developer assistant for the **CAD Site Agent** project. Answer questions about its architecture, code, CLI, and configuration.\n\n## Project Overview\n\nCAD Site Agent is a Python CLI pipeline for processing DXF site layout drawings. It classifies geometry, extracts closed regions as HATCH entities, and routes linework/symbols/text to semantic output layers.\n\n- **Package**: `cad_site_agent`\n- **Entry point**: `cad-agent`\n- **Language**: Python ≥ 3.10, built with hatchling\n- **Install**: `pip install -e .`\n- **Main command**: `cad-agent process input.dxf output.dxf`\n- **Version**: 0.2.0\n\n## Pipeline Stages\n1. `hatch/closed_regions.py` + `hatch/confidence.py` — extract closed regions, score by area/confidence\n2. `export/hatch_writer.py` — write HATCH entities to DXF, stabilise boundaries\n3. `export/routing.py` — classify non-region entities, route to semantic layers\n\n## CLI Entry Points (cli.py)\n| Command | Entry Point | Description |\n|---------|-------------|-------------|\n| `cad-agent process SRC OUT` | `cli:cli_entry` | Full pipeline (all stages) |\n| `analyze-dxf INPUT` | `cli:analyze_dxf` | DXF analysis → JSON + Markdown |\n| `classify-drawing INPUT` | `cli:classify_drawing` | 5-type drawing classifier |\n| `export-report INPUT` | `cli:export_report` | Export analysis report |\n| `clean-dxf INPUT` | `cli:clean_dxf` | Remove duplicates, snap nodes |\n| `close-gaps INPUT` | `cli:close_gaps` | Bridge small endpoint gaps |\n| `normalize-layers INPUT` | `cli:normalize_layers` | Map layers to canonical classes |\n| `hatch-candidates INPUT` | `cli:hatch_candidates` | Extract/score closed regions |\n| `write-hatches IN CANDS OUT` | `cli:write_hatches` | Write HATCH DXF |\n| `route-features IN CANDS OUT` | `cli:route_features` | Route entities to semantic layers |\n\n## Source Layout (src/cad_site_agent/)\n```\ncli.py                  CLI commands (click)\npipeline.py             ProcessReport & run_process orchestrator\nanalyzer/\n  dxf_analyzer.py       DXF geometry and layer analysis\n  drawing_classifier.py 5-type classifier\n  report_writer.py      Markdown/JSON report generation\nclassify/\n  drawing_type.py       Drawing type enum and rules\ncleanup/\n  cleaner.py            Deduplication, node snapping\n  gap_closer.py         Endpoint gap bridging\nexport/\n  routing.py            Entity routing orchestrator\n  hatch_writer.py       HATCH DXF writer\n  dxf_writer.py         Base DXF output helpers\n  linework_writer.py    Linework layer writer\n  marking_writer.py     Marking/annotation writer\n  symbol_writer.py      Symbol layer writer\n  text_writer.py        Text layer writer\n  review_writer.py      Review/QC layer writer\ngeometry/\n  boundary_tools.py     Polygon/boundary geometry tools\nhatch/\n  closed_regions.py     Closed region extraction\n  confidence.py         Confidence scoring for candidates\n  semantic_hatch.py     Semantic hatch classification\nsemantic/\n  taxonomy.py           Semantic class taxonomy\n  normalizer.py         Layer name → canonical class mapping\ntopology/               (topology utilities)\n```\n\n## Config Files (config/)\n- `tolerances.yaml` — gap-close and geometry tolerances\n- `layer_aliases.yaml` — layer name aliases\n- `semantic_taxonomy.yaml` — semantic class definitions\n- `hatch_rules.yaml` — hatch pattern rules\n- `export_layers.yaml` — output layer definitions\n- `export_roles.yaml` — entity role assignments\n\n## Dependencies\nezdxf, shapely, networkx, scipy, numpy, matplotlib, Pillow, pydantic, PyYAML, click\n\n## Dev Phases (all ✅)\n0-Inventory · 1-Scaffold · 2-Analyzer · 3-GapCloser · 4A-Classifier · 4B-HatchGen · 5-LayerNorm · 6-HatchWrite · 7-RouteFeatures · 7.5-v1Release\n\n## Your Instructions\n- Answer questions about code, architecture, CLI, and configuration\n- Use the `github_read_file` tool to read specific source files when you need code details to give a precise answer\n- File paths must be relative to repo root (e.g. `cad-site-agent/src/cad_site_agent/pipeline.py`)\n- GitHub repo: `tryspagaliai-lab/cad-site-agent`, branch: `main`\n- Keep answers concise and technical",
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "a1b2c3d4-2002-2002-2002-a1b2c3d4e5f6",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [480, 380]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.0-flash",
+        "options": {}
+      },
+      "id": "a1b2c3d4-3003-3003-3003-a1b2c3d4e5f6",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [260, 580],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "",
+          "name": "Google Gemini API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "a1b2c3d4-4004-4004-4004-a1b2c3d4e5f6",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [480, 580]
+    },
+    {
+      "parameters": {
+        "description": "Read any source file from the CAD Site Agent GitHub repository. Use this when you need to see actual code to answer a question. Provide the file path relative to the repository root.\n\nExamples:\n- cad-site-agent/src/cad_site_agent/pipeline.py\n- cad-site-agent/src/cad_site_agent/cli.py\n- cad-site-agent/src/cad_site_agent/export/routing.py\n- cad-site-agent/src/cad_site_agent/hatch/closed_regions.py\n- cad-site-agent/config/tolerances.yaml\n- cad-site-agent/pyproject.toml",
+        "method": "GET",
+        "url": "=https://raw.githubusercontent.com/tryspagaliai-lab/cad-site-agent/main/{file_path}",
+        "sendHeaders": false,
+        "options": {},
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "file_path",
+              "description": "File path relative to the repository root (e.g. 'cad-site-agent/src/cad_site_agent/pipeline.py')",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-5005-5005-5005-a1b2c3d4e5f6",
+      "name": "GitHub Read File",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [700, 580]
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Read File": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}
