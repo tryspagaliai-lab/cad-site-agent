@@ -40,9 +40,13 @@ Merge'inta į `main` (merge commit `7ee7c78`):
    sesijos apimtyje (GitHub scope tik cad-site-agent). Padaryti iš laptopo vietoje.
 
 ## Aplinkos FAKTAS (2026-07-02, iš vartotojo — įsiminti!)
-- Atskirų „desktop" kompiuterių NĖRA. Vienintelė fizinė mašina — **LAPTOPAS**
-  (Windows; jame ir `C:\Users\zilva\...` raw data). Ateityje galimas **VPS**.
+- Atskirų „desktop" kompiuterių NĖRA. Vienintelė fizinė mašina — **LAPTOPAS su LINUX**
+  (NE Windows! Ankstesnė Windows prielaida buvo klaidinga — ji kilo iš seno
+  užduoties failo su `C:\Users\zilva\...` keliu; tie Windows/E:/ keliai pasenę).
+  H7149 Osprey Heights raw data yra laptope — tikslus kelias nežinomas, ieškoti
+  per `find ~ -iname "*osprey*"`. Ateityje galimas **VPS**.
 - Koordinacijos rolė `desktop` pervadinta į `local` (žr. docs/COORDINATION.md).
+- Laptopo paleidimas: `bash cad-site-agent/scripts/bootstrap_local.sh` (Linux).
 
 ## Testavimo planas
 ```bash

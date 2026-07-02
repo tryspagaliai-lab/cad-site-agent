@@ -6,9 +6,11 @@ Git** — ne live pokalbis, bet bendra atmintis: kiekvienas startuodamas perskai
 kitų statusus, o baigęs darbo vienetą — atnaujina savo.
 
 > **FAKTAS (2026-07-02, iš vartotojo):** atskirų „desktop" kompiuterių NĖRA.
-> Vienintelė fizinė mašina — LAPTOPAS (Windows, jame ir `C:\Users\zilva\...`
-> raw data). Ateityje galimas VPS. Rolė `local` = Claude Code paleistas tame
-> laptope; rolė `web` = cloud sesija (šis repo, be prieigos prie C:\).
+> Vienintelė fizinė mašina — LAPTOPAS su LINUX (NE Windows — seni `C:\`/`E:/`
+> keliai užduočių failuose ir config'e yra pasenę). H7149 raw data yra laptope,
+> kelią rasti per `find ~ -iname "*osprey*"`. Ateityje galimas VPS.
+> Rolė `local` = Claude Code paleistas laptope (start: `bash
+> cad-site-agent/scripts/bootstrap_local.sh`); `web` = cloud sesija (tik repo).
 
 ## Kaip tai veikia
 - Kiekvienas agentas turi SAVO statuso failą: `docs/agent-status/<role>.md`
@@ -31,7 +33,7 @@ kitų statusus, o baigęs darbo vienetą — atnaujina savo.
 ## Vaidmenys (rolės)
 | role | aplinka | atsakomybė |
 |------|---------|-----------|
-| `local` | Claude Code LAPTOPE (vienintelė fizinė mašina, Windows) | Prieiga prie `C:\` raw data, ODA DWG→DXF konversija, failų parsing |
+| `local` | Claude Code LAPTOPE (vienintelė fizinė mašina, LINUX) | Prieiga prie raw data diske, ODA DWG→DXF konversija, failų parsing |
 | `web` | cloud sesija (be prieigos prie C:\) | Repo/kodo darbas: taisyklės, pipeline taisymai, testai, commit'ai |
 | `kimi` / `mimo` | tandemo modeliai | Kryžminė rezultatų patikra |
 | `vps` | (ateityje, jei bus) | Nuolatinis serveris pipeline'ui / automatizacijai |
