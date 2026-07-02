@@ -126,10 +126,13 @@ def run_normalization(
             except Exception:
                 pass
 
-        # Create canonical layer definitions that don't exist yet
-        existing_layers = {l.dxf.name for l in doc.layers}
+        # Create canonical layer definitions that don't exist yet.
+        # DXF layer table names are case-insensitive, so compare lowercased —
+        # otherwise e.g. existing "PARKING" vs canonical "parking" raises
+        # DXFTableEntryError on doc.layers.new().
+        existing_layers = {l.dxf.name.lower() for l in doc.layers}
         for canonical in set(mapping.values()):
-            if canonical not in existing_layers:
+            if canonical.lower() not in existing_layers:
                 doc.layers.new(name=canonical)
 
         renamed_count = len(mapping)

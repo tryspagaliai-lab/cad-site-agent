@@ -36,6 +36,18 @@ kitų statusus, o baigęs darbo vienetą — atnaujina savo.
 | `kimi` / `mimo` | tandemo modeliai | Kryžminė rezultatų patikra |
 | `vps` | (ateityje, jei bus) | Nuolatinis serveris pipeline'ui / automatizacijai |
 
+## Tandemo (Kimi/MiMo) darbo eiga
+1. **Paketas:** `python scripts/tandem_report.py --batch data/h7149/batch_report.json`
+   → sugeneruoja vieną savarankišką md failą (`reports/tandem/`) su visa būsena
+   ir aiškia užduotimi tikrintojui.
+2. **Patikra:** paketo turinys įklijuojamas į Kimi ir (atskirai) į MiMo.
+   Kiekvienas grąžina standartinį `VERDICT: PASS|FAIL|CONCERNS` bloką.
+3. **Įrašymas:** verdiktai grįžta į lentą:
+   `./.claude/hooks/agent-status.sh kimi "VERDICT: ..."` (ir `mimo`).
+4. **Uždarymas:** Claude sesija kitą kartą startuodama verdiktus mato
+   automatiškai ir taiso, kas rasta. Jei Kimi ir MiMo verdiktai prieštarauja —
+   sprendžia vartotojas.
+
 ## Helper'is
 ```bash
 # atnaujinti savo statusą (commit + push automatiškai):
