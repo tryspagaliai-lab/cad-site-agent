@@ -18,6 +18,36 @@ https://www.opendesign.com/guestfiles/oda_file_converter (nemokama, reikia el. p
   Jei ne PATH — nurodyk kelią per `ODAFC_EXEC` env var.
 - **macOS:** įtempk `ODAFileConverter.app` į Applications.
 
+### Linux BE root (patikrinta 2026-07-02, laptopas — Ubuntu 22.04)
+`sudo` gali būti neprieinamas (reikalauja slaptažodžio). QT6 `.deb` yra
+savarankiškas (susikomplektuoja savo Qt6 bibliotekas → `lib/`), tad jį galima
+išskleisti į naudotojo katalogą be root:
+
+```bash
+# 1. parsisiųsk .deb (guestfiles get -> presigned S3 redirect, galioja ~60 s):
+URL='https://www.opendesign.com/guestfiles/get?filename=ODAFileConverter_QT6_lnxX64_8.3dll_27.1.deb'
+curl -sL "$URL" -o ~/Downloads/ODAFileConverter.deb
+
+# 2. išskleisk BE root:
+dpkg-deb -x ~/Downloads/ODAFileConverter.deb ~/.local/oda
+
+# 3. wrapper į PATH (originalus wrapper turi HARDCODED /usr/bin kelią — netinka):
+cat > ~/.local/bin/ODAFileConverter <<'EOF'
+#!/bin/sh
+ODADIR="$HOME/.local/oda/usr/bin/ODAFileConverter_27.1.0.0"
+export LD_LIBRARY_PATH="$ODADIR/lib:$LD_LIBRARY_PATH"
+export QT_PLUGIN_PATH="$ODADIR/plugins"
+export QT_QPA_PLATFORM_PLUGIN_PATH="$ODADIR/plugins/platforms"
+exec "$ODADIR/ODAFileConverter" "$@"
+EOF
+chmod +x ~/.local/bin/ODAFileConverter
+
+# 4. kad ezdxf rastų nepriklausomai nuo PATH — įrašyk į ezdxf konfigą:
+python3 -c "import ezdxf; ezdxf.options.set('odafc-addon','unix_exec_path','$HOME/.local/bin/ODAFileConverter'); ezdxf.options.write_home_config()"
+```
+Patikra: `python3 -c "from ezdxf.addons import odafc; print(odafc.is_installed())"` → `True`.
+(GUI atsidaro trumpam ekrane; norint be lango — įsidiek `xvfb`.)
+
 ## 3. Patikrink
 ```bash
 python -c "from ezdxf.addons import odafc; print('ODA įdiegtas:', odafc.is_installed())"
