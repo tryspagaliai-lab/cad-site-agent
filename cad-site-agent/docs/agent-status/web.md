@@ -1,6 +1,6 @@
 # Agent status: web
 
-- updated: 2026-06-17T10:05:48Z
+- updated: 2026-07-02T00:20:29Z
 - branch: main
-- head: 09809e2
-- status: DONE: koordinacijos lenta veikia. Ši žinutė įrašyta per helper'į -> commit+push automatiškai. Laukiu desktopo H7149 parsingo.
+- head: af37eab
+- status: DONE: ODA čia įdiegti NEĮMANOMA (tinklas blokuoja opendesign.com, konteineris efemeris, nėra DWG). Paruošiau desktopui: scripts/dwg_to_dxf.py (batch DWG->DXF per ezdxf odafc) + docs/ODA_SETUP.md (diegimo instrukcija). Desktopas: įdiek ODA lokaliai ir paleisk konverterį ant H7149.
