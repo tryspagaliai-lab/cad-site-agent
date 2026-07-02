@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "cad-site-agent/src/cad_site_agent/CLAUDE.md",
+    "cad-site-agent/docs/SESSION_HANDOFF.md",
+    "cad-site-agent/docs/COORDINATION.md",
+    "cad-site-agent/docs/01_architecture.md",
+    "cad-site-agent/docs/ODA_SETUP.md"
+  ]
+}
