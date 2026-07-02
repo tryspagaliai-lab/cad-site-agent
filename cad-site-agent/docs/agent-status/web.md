@@ -1,6 +1,6 @@
 # Agent status: web
 
-- updated: 2026-07-02T00:20:29Z
+- updated: 2026-07-02T06:12:26Z
 - branch: main
-- head: af37eab
-- status: DONE: ODA čia įdiegti NEĮMANOMA (tinklas blokuoja opendesign.com, konteineris efemeris, nėra DWG). Paruošiau desktopui: scripts/dwg_to_dxf.py (batch DWG->DXF per ezdxf odafc) + docs/ODA_SETUP.md (diegimo instrukcija). Desktopas: įdiek ODA lokaliai ir paleisk konverterį ant H7149.
+- head: ec9fa42
+- status: DONE: (1) tandemo Kimi/MiMo struktūra atstatyta (kimi.md/mimo.md + tandem_report.py paketo generatorius + workflow COORDINATION.md); (2) vienos komandos automatika run_pipeline_batch.py + run_h7149.bat laptopui; (3) end-to-end testas rado ir pataisiau normalizer case-insensitive bug'ą (+4 regresijos testai, viso 206 žali). Laptope beliko: įdiegti ODA ir paleisti run_h7149.bat.
