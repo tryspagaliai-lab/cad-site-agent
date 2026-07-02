@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "sasplanet-imagery": {
+      "command": "python3",
+      "args": ["/home/tryspagaliai/cad-site-agent/cad-site-agent/sasplanet_mcp.py"]
+    },
+    "cad-site-agent": {
+      "command": "python3",
+      "args": ["/home/tryspagaliai/cad-site-agent/cad-site-agent/mcp_server.py"],
+      "env": {"PYTHONPATH": "/home/tryspagaliai/cad-site-agent/cad-site-agent/src"}
+    }
+  }
+}

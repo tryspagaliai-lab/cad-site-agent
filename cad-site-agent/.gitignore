@@ -38,6 +38,11 @@ Thumbs.db
 *.obj
 *.3ds
 *.blend
+
+# Geo imagery output (GeoTIFF exports from sasplanet_mcp)
+*.tif
+*.tiff
+data/imagery/
 *.c4d
 
 # Adobe / design files
