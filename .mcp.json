@@ -8,6 +8,14 @@
       "command": "python3",
       "args": ["/home/tryspagaliai/cad-site-agent/cad-site-agent/mcp_server.py"],
       "env": {"PYTHONPATH": "/home/tryspagaliai/cad-site-agent/cad-site-agent/src"}
+    },
+    "graphics-ops": {
+      "command": "python3",
+      "args": ["/home/tryspagaliai/cad-site-agent/cad-site-agent/graphics_ops_mcp.py"]
+    },
+    "blender-render": {
+      "command": "python3",
+      "args": ["/home/tryspagaliai/cad-site-agent/cad-site-agent/blender_render_mcp.py"]
     }
   }
 }
