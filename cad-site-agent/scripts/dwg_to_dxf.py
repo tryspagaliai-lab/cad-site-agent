@@ -9,8 +9,8 @@ SVARBU: reikia įdiegto ODA File Converter (nemokamas):
   - macOS:   ODAFileConverter.app.
 
 Pastaba dėl aplinkos: NUOTOLINĖJE (cloud/web) Claude Code sesijoje ODA įdiegti
-negalima (tinklas apribotas, konteineris efemeris). Šį skriptą LEISK per
-Claude Code DESKTOP lokaliai, kur yra ir failai, ir ODA.
+negalima (tinklas apribotas, konteineris efemeris). Šį skriptą leisk LAPTOPE
+(vienintelė fizinė mašina; ateityje galbūt VPS), kur yra ir failai, ir ODA.
 
 Naudojimas:
   python scripts/dwg_to_dxf.py <input_dir_ar_failas> [--out DIR] [--version ACAD2018] [--recursive]
@@ -51,7 +51,7 @@ def main() -> int:
             "ok": False,
             "error": "ODA File Converter NĖRA įdiegtas.",
             "fix": "Įdiek iš https://www.opendesign.com/guestfiles/oda_file_converter "
-                   "ir leisk šį skriptą DESKTOPE (ne nuotolinėje sesijoje).",
+                   "ir leisk šį skriptą LAPTOPE (ne nuotolinėje cloud sesijoje).",
             "platform_hint": {
                 "windows": "ODAFileConverter.exe numatytoje vietoje randamas auto",
                 "linux": "įdiek .deb/AppImage; nurodyk kelią per ODAFC_EXEC jei reikia",

@@ -5,7 +5,8 @@ konvertuojami į DXF su nemokamu **ODA File Converter**.
 
 > ⚠️ NUOTOLINĖJE (cloud/web) Claude Code sesijoje ODA įdiegti NEGALIMA:
 > tinklas apribotas (opendesign.com blokuojamas), konteineris efemeris, ir ten
-> nėra DWG failų. ODA diegiamas ir naudojamas **DESKTOPE**, kur yra raw data.
+> nėra DWG failų. ODA diegiamas ir naudojamas **LAPTOPE** (vienintelė fizinė
+> mašina; ateityje galbūt VPS), kur yra raw data.
 
 ## 1. Parsisiųsk
 https://www.opendesign.com/guestfiles/oda_file_converter (nemokama, reikia el. pašto).

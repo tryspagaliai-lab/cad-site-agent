@@ -1,7 +1,7 @@
 # Session Handoff — Rules Modularization
 
 > Šitą failą automatiškai nuskaito SessionStart hook'as ir įkelia į naujos sesijos
-> kontekstą (desktop / web / bet kuris modelis — Kimi, MiMo). Atnaujink jį
+> kontekstą (laptopas / web / bet kuris modelis — Kimi, MiMo). Atnaujink jį
 > kiekvienos darbo sesijos pabaigoje.
 
 **Atnaujinta:** 2026-06-16
@@ -37,7 +37,12 @@ Merge'inta į `main` (merge commit `7ee7c78`):
 4. **(DONE 2026-06-16)** Layer-guard perkeltas į repo šaknies `.claude/` ir
    registruotas šaknies `settings.json` → dabar auto-kraunasi desktop'e.
 5. **`agentos-sessions` branduolys (`AGENTS.md`) + `~/.claude/CLAUDE.md`** — ne šios
-   sesijos apimtyje (GitHub scope tik cad-site-agent). Padaryti iš desktop'o vietoje.
+   sesijos apimtyje (GitHub scope tik cad-site-agent). Padaryti iš laptopo vietoje.
+
+## Aplinkos FAKTAS (2026-07-02, iš vartotojo — įsiminti!)
+- Atskirų „desktop" kompiuterių NĖRA. Vienintelė fizinė mašina — **LAPTOPAS**
+  (Windows; jame ir `C:\Users\zilva\...` raw data). Ateityje galimas **VPS**.
+- Koordinacijos rolė `desktop` pervadinta į `local` (žr. docs/COORDINATION.md).
 
 ## Testavimo planas
 ```bash
