@@ -10,7 +10,8 @@
 #
 # Canonical classes:
 #   building, driveway, parking, path, road, boundary,
-#   planting, water, text, annotation, symbols, unknown
+#   planting, water, text, annotation, symbols, unknown,
+#   titleblock, notes, survey_reference   (noise — removed at routing)
 # ============================================================
 
 rules:
@@ -104,11 +105,19 @@ rules:
   # ── SYMBOLS ───────────────────────────────────────────────
   - { type: substring, pattern: "symbol",      class: symbols }
   - { type: substring, pattern: "north",       class: symbols }
-  - { type: substring, pattern: "logo",        class: symbols }
   - { type: substring, pattern: "sign",        class: symbols }
-  - { type: substring, pattern: "title",       class: symbols }
-  - { type: substring, pattern: "border",      class: symbols }
-  - { type: substring, pattern: "frame",       class: symbols }
+
+  # ── NOISE (drawing furniture — routing removes these) ─────
+  # Target names are taxonomy noise labels, so post-normalisation
+  # routing hints still resolve them to feature_type=noise → remove.
+  # (Previously "title"/"border"/"frame"/"logo" mapped to `symbols`,
+  #  which routing cannot classify → junk survived as review.)
+  - { type: substring, pattern: "title",       class: titleblock }
+  - { type: substring, pattern: "border",      class: titleblock }
+  - { type: substring, pattern: "frame",       class: titleblock }
+  - { type: substring, pattern: "logo",        class: titleblock }
+  - { type: substring, pattern: "notes",       class: notes }
+  - { type: substring, pattern: "survey",      class: survey_reference }
 
   # ── UNKNOWN (catch-all — leave at bottom) ─────────────────
   # Anything not matched above → unknown

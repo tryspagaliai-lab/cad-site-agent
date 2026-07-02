@@ -46,6 +46,31 @@ class TestCaseInsensitiveLayerTable:
             assert canonical in layers_used
 
 
+class TestNoiseLayers:
+    def test_titleblock_maps_to_noise_class_not_symbols(self, tmp_path):
+        # Regression: "title" used to alias to `symbols`, which routing cannot
+        # classify -> titleblock junk survived as review instead of remove.
+        src = _make_dxf(tmp_path, ["TITLEBLOCK"])
+        out = tmp_path / "out.dxf"
+        result = run_normalization(src, config_path=CONFIG, output_path=out)
+        assert result["mapping"]["TITLEBLOCK"] == "titleblock"
+
+    def test_normalised_noise_layer_still_classifies_as_noise(self, tmp_path):
+        # Post-normalisation layer names must still resolve to feature_type
+        # noise in routing, so `process` removes them.
+        from cad_site_agent.export.routing import classify_layer_name
+        from cad_site_agent.semantic.taxonomy import TaxonomyLoader
+
+        config_dir = CONFIG.parent
+        taxonomy = TaxonomyLoader(
+            config_dir / "semantic_taxonomy.yaml",
+            config_dir / "export_roles.yaml",
+        )
+        for layer in ("titleblock", "notes", "survey_reference"):
+            label = classify_layer_name(layer, taxonomy=taxonomy)
+            assert label.feature_type == "noise", layer
+
+
 class TestBasicNormalisation:
     def test_unmapped_layer_reported(self, tmp_path):
         src = _make_dxf(tmp_path, ["TOTALLY_UNKNOWN_LAYER_XYZ"])
