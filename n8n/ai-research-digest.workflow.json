@@ -1,4 +1,5 @@
 {
+  "id": "zzAiDigestWf0001",
   "name": "AI Research Digest → Telegram",
   "nodes": [
     {
@@ -263,7 +264,7 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "PRISKIRK_PO_IMPORTO",
+          "id": "zzAnthropicCr001",
           "name": "Anthropic API (x-api-key)"
         }
       }
@@ -301,7 +302,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "PRISKIRK_PO_IMPORTO",
+          "id": "zzTgDigestCred01",
           "name": "AI Digest Bot (Telegram)"
         }
       }
