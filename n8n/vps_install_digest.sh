@@ -10,7 +10,7 @@ set -euo pipefail
 
 : "${TELEGRAM_TOKEN:?Truksta TELEGRAM_TOKEN (boto tokenas is @BotFather)}"
 : "${CHAT_ID:?Truksta CHAT_ID (skaicius is @userinfobot)}"
-: "${ANTHROPIC_KEY:?Truksta ANTHROPIC_KEY (is console.anthropic.com)}"
+ANTHROPIC_KEY="${ANTHROPIC_KEY:-}"   # neprivalomas: be jo ataskaita bus be AI santraukos
 
 RAW_BASE="https://raw.githubusercontent.com/tryspagaliai-lab/cad-site-agent/claude/lithuanian-language-question-7al6mx/n8n"
 WF_ID="zzAiDigestWf0001"
@@ -22,12 +22,22 @@ curl -fsSL "$RAW_BASE/ai-research-digest.workflow.json" -o "$TMP/wf.json"
 sed -i "s/PAKEISK_I_SAVO_CHAT_ID/${CHAT_ID}/" "$TMP/wf.json"
 
 echo "==> [2/5] Ruosiu credentials..."
-cat > "$TMP/creds.json" <<EOF
+if [ -n "$ANTHROPIC_KEY" ]; then
+  cat > "$TMP/creds.json" <<EOF
 [
   {"id":"zzTgDigestCred01","name":"AI Digest Bot (Telegram)","type":"telegramApi","data":{"accessToken":"${TELEGRAM_TOKEN}"}},
   {"id":"zzAnthropicCr001","name":"Anthropic API (x-api-key)","type":"httpHeaderAuth","data":{"name":"x-api-key","value":"${ANTHROPIC_KEY}"}}
 ]
 EOF
+else
+  echo "    (ANTHROPIC_KEY neduotas - ataskaita eis be AI santraukos; veliau ji pridesi)"
+  sed -i 's/claude-sonnet-5/none/g' "$TMP/wf.json"
+  cat > "$TMP/creds.json" <<EOF
+[
+  {"id":"zzTgDigestCred01","name":"AI Digest Bot (Telegram)","type":"telegramApi","data":{"accessToken":"${TELEGRAM_TOKEN}"}}
+]
+EOF
+fi
 
 if command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}} {{.Image}}' | grep -qi n8n; then
   C="$(docker ps --format '{{.Names}} {{.Image}}' | grep -i n8n | head -1 | cut -d' ' -f1)"
