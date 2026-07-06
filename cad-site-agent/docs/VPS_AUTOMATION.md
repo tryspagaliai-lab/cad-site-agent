@@ -33,9 +33,14 @@
 - `run_shell` tool **PRIDĖTAS** prie router'io `mcprouterdesk001` (addityviai; backup `/root/zz_all_backup.json`).
 - **Serverio pusė BAIGTA:** `n8n publish:workflow --id=mcprouterdesk001` + restart atlikta 2026-07-06 —
   `run_shell` publikuotas router'yje. (Reikėjo `publish`, ne `update:workflow --active`.)
-- **PAIMTI įrankį:** aktyvioje Claude sesijoje naujas MCP įrankis „karštai" neatsiranda patikimai. `run_shell`
-  patikimiausiai matomas **NAUJAME Claude pokalbyje** (jungtis n8n_VPS užsikrauna su šviežiu tool sąrašu).
-  Ten galima liepti Claude: „paleisk per run_shell: <komanda>“.
+- **DIAGNOZĖ (2026-07-06 vakaras):** connector rodo TIK „Ping". Router'io `ping` yra
+  **`@n8n/n8n-nodes-langchain.toolCode`** (JS code tool, typeVersion 1.3), `ai_tool → MCP Server Trigger`.
+  Mano `run_shell` buvo `toolWorkflow` → šios n8n versijos MCP trigger jo NEIŠVEDĖ. Išvedami tik `toolCode` tipo.
+- **SPRENDIMAS (nebaigtas):** `run_shell` daryti `toolCode` tipo (kaip ping), bet toolCode sandbox pagal nutylėjimą
+  blokuoja `child_process`. Reikia n8n konteineriui env **`NODE_FUNCTION_ALLOW_BUILTIN=*`** (+ recreate), tada
+  toolCode gali `require('child_process').execSync(cmd)`. Alternatyva: toolCode → HTTP POST į Webhook workflow su
+  Execute Command node (jei nenorim keisti env). Sub-workflow `zzVpsExecSub001` (toolWorkflow) — nepasiteisino, galima trinti.
+- Ping node kodas (pavyzdys, kaip apibrėžtas veikiantis tool): grąžina `JSON.stringify({status:'ok',...})`.
 - Atskiras MCP shell bridge (jei prireiktų vietoj router'io): workflow `zzVpsShellMcp01`,
   URL `…/mcp/claude-vps-shell-…` (žr. `n8n/vps_install_bridge.sh`). Reikalauja custom connector (tik per kompiuterį).
 
