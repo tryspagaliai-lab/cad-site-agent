@@ -1,0 +1,475 @@
+{
+  "name": "AI Research Digest → Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "aa000001-0001-4001-8001-000000000001",
+      "name": "Kasdien 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "chatId",
+              "value": "PAKEISK_I_SAVO_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "maxAgeHours",
+              "value": 26,
+              "type": "number"
+            },
+            {
+              "id": "s3",
+              "name": "maxPerSource",
+              "value": 8,
+              "type": "number"
+            },
+            {
+              "id": "s4",
+              "name": "maxItemsTotal",
+              "value": 100,
+              "type": "number"
+            },
+            {
+              "id": "s5",
+              "name": "claudeModel",
+              "value": "claude-sonnet-5",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa000002-0002-4002-8002-000000000002",
+      "name": "Nustatymai",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -340,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sources = [\n  {\n    \"source\": \"arXiv cs.AI\",\n    \"url\": \"https://rss.arxiv.org/rss/cs.AI\"\n  },\n  {\n    \"source\": \"arXiv cs.LG\",\n    \"url\": \"https://rss.arxiv.org/rss/cs.LG\"\n  },\n  {\n    \"source\": \"arXiv cs.CL\",\n    \"url\": \"https://rss.arxiv.org/rss/cs.CL\"\n  },\n  {\n    \"source\": \"Hugging Face Blog\",\n    \"url\": \"https://huggingface.co/blog/feed.xml\"\n  },\n  {\n    \"source\": \"OpenAI News\",\n    \"url\": \"https://openai.com/news/rss.xml\"\n  },\n  {\n    \"source\": \"Google DeepMind\",\n    \"url\": \"https://deepmind.google/blog/rss.xml\"\n  },\n  {\n    \"source\": \"Google AI Blog\",\n    \"url\": \"https://blog.google/technology/ai/rss/\"\n  },\n  {\n    \"source\": \"Meta AI\",\n    \"url\": \"https://ai.meta.com/blog/rss/\"\n  },\n  {\n    \"source\": \"Microsoft Research\",\n    \"url\": \"https://www.microsoft.com/en-us/research/feed/\"\n  },\n  {\n    \"source\": \"NVIDIA GenAI\",\n    \"url\": \"https://blogs.nvidia.com/blog/category/generative-ai/feed/\"\n  },\n  {\n    \"source\": \"MIT News AI\",\n    \"url\": \"https://news.mit.edu/rss/topic/artificial-intelligence2\"\n  },\n  {\n    \"source\": \"Berkeley BAIR\",\n    \"url\": \"https://bair.berkeley.edu/blog/feed.xml\"\n  },\n  {\n    \"source\": \"CMU ML Blog\",\n    \"url\": \"https://blog.ml.cmu.edu/feed/\"\n  },\n  {\n    \"source\": \"Stanford HAI\",\n    \"url\": \"https://hai.stanford.edu/rss.xml\"\n  },\n  {\n    \"source\": \"Allen AI (AI2)\",\n    \"url\": \"https://medium.com/feed/ai2-blog\"\n  },\n  {\n    \"source\": \"EleutherAI\",\n    \"url\": \"https://blog.eleuther.ai/index.xml\"\n  },\n  {\n    \"source\": \"Simon Willison (irankiai/harness)\",\n    \"url\": \"https://simonwillison.net/atom/everything/\"\n  },\n  {\n    \"source\": \"The Gradient\",\n    \"url\": \"https://thegradient.pub/rss/\"\n  },\n  {\n    \"source\": \"Import AI (Jack Clark)\",\n    \"url\": \"https://importai.substack.com/feed\"\n  }\n];\nreturn sources.map(s => ({ json: s }));"
+      },
+      "id": "aa000003-0003-4003-8003-000000000003",
+      "name": "RSS saltiniai",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "id": "aa000004-0004-4004-8004-000000000004",
+      "name": "Parsisiusti RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        100,
+        120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "xmlToJson",
+        "dataPropertyName": "data",
+        "options": {
+          "explicitArray": false,
+          "mergeAttrs": true,
+          "normalize": true,
+          "trim": true
+        }
+      },
+      "id": "aa000005-0005-4005-8005-000000000005",
+      "name": "XML i JSON",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        320,
+        120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Suvienodina RSS/Atom irasus i {title, link, date, summary, source}\nconst cfg = $('Nustatymai').first().json;\nconst maxAgeMs = (cfg.maxAgeHours || 26) * 3600 * 1000;\nconst now = Date.now();\nconst out = [];\n\nconst asArray = (x) => (x === undefined || x === null) ? [] : (Array.isArray(x) ? x : [x]);\nconst text = (v) => {\n  if (v === undefined || v === null) return '';\n  if (typeof v === 'string') return v;\n  if (Array.isArray(v)) return text(v[0]);\n  if (typeof v === 'object') return v._ || v['#text'] || v.href || '';\n  return String(v);\n};\nconst strip = (s) => String(s).replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();\n\nfor (const item of items) {\n  const j = item.json || {};\n  let source = 'nezinomas saltinis';\n  let entries = [];\n\n  if (j.rss && j.rss.channel) {\n    const ch = Array.isArray(j.rss.channel) ? j.rss.channel[0] : j.rss.channel;\n    source = strip(text(ch.title)) || source;\n    entries = asArray(ch.item).map(e => ({\n      title: strip(text(e.title)),\n      link: text(e.link),\n      date: text(e.pubDate) || text(e['dc:date']) || '',\n      summary: strip(text(e.description)).slice(0, 300),\n    }));\n  } else if (j.feed) {\n    const f = j.feed;\n    source = strip(text(f.title)) || source;\n    entries = asArray(f.entry).map(e => {\n      const links = asArray(e.link);\n      const alt = links.find(l => l && (!l.rel || l.rel === 'alternate')) || links[0];\n      const link = alt ? (alt.href || (alt.$ && alt.$.href) || text(alt)) : '';\n      return {\n        title: strip(text(e.title)),\n        link,\n        date: text(e.updated) || text(e.published) || '',\n        summary: strip(text(e.summary) || text(e.content)).slice(0, 300),\n      };\n    });\n  } else {\n    continue; // nepavykes fetch/parse - praleidziam\n  }\n\n  let kept = 0;\n  for (const e of entries) {\n    if (!e.title || !e.link) continue;\n    const t = Date.parse(e.date);\n    if (isNaN(t) || now - t > maxAgeMs) continue;\n    if (++kept > (cfg.maxPerSource || 8)) break;\n    out.push({ json: { ...e, source } });\n  }\n}\nreturn out;"
+      },
+      "id": "aa000006-0006-4006-8006-000000000006",
+      "name": "Normalizuoti RSS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        120
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://huggingface.co/api/models?sort=createdAt&direction=-1&limit=25",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "aa000007-0007-4007-8007-000000000007",
+      "name": "HF nauji modeliai",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -120,
+        380
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Hugging Face API atsakyma paverciam i ta pati formata\nconst cfg = $('Nustatymai').first().json;\nconst maxAgeMs = (cfg.maxAgeHours || 26) * 3600 * 1000;\nconst now = Date.now();\nconst out = [];\nfor (const item of items) {\n  const m = item.json || {};\n  const id = m.modelId || m.id;\n  if (!id) continue;\n  const t = Date.parse(m.createdAt || '');\n  if (isNaN(t) || now - t > maxAgeMs) continue;\n  out.push({ json: {\n    title: id,\n    link: 'https://huggingface.co/' + id,\n    date: m.createdAt,\n    summary: 'tipas: ' + (m.pipeline_tag || '?') + ', likes: ' + (m.likes || 0) + ', downloads: ' + (m.downloads || 0),\n    source: 'Hugging Face (nauji modeliai)',\n  }});\n  if (out.length >= (cfg.maxPerSource || 8)) break;\n}\nreturn out;"
+      },
+      "id": "aa000008-0008-4008-8008-000000000008",
+      "name": "Normalizuoti HF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        380
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 2,
+        "options": {}
+      },
+      "id": "aa000009-0009-4009-8009-000000000009",
+      "name": "Sujungti",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        760,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sudaro Claude uzklausa is visu surinktu naujienu\nconst cfg = $('Nustatymai').first().json;\nconst all = items.map(i => i.json).filter(e => e && e.title && e.link);\n\n// dedupe pagal nuoroda\nconst seen = new Set();\nconst uniq = [];\nfor (const e of all) {\n  if (seen.has(e.link)) continue;\n  seen.add(e.link);\n  uniq.push(e);\n}\nuniq.sort((a, b) => (Date.parse(b.date || 0) || 0) - (Date.parse(a.date || 0) || 0));\nconst top = uniq.slice(0, cfg.maxItemsTotal || 100);\n\nif (top.length === 0) {\n  return [{ json: {\n    hasNews: false,\n    text: 'Per pastarasias 24 val. stebimuose saltiniuose reiksmingu AI naujienu neaptikta.',\n  } }];\n}\n\nconst lines = top.map(e =>\n  '- [' + e.source + '] ' + e.title + ' | ' + e.link + (e.summary ? ' | ' + e.summary : '')\n);\n\nconst prompt = [\n  'Tu esi AI srities naujienu analitikas. Zemiau - per pastarasias 24 val. surinktos naujienos',\n  'is pirmauja pasaulio AI laboratoriju, universitetu ir bendruomenes saltiniu (arXiv, Hugging Face,',\n  'OpenAI, DeepMind, Google, Meta, Microsoft Research, NVIDIA, MIT, Stanford, Berkeley, CMU, AI2 ir kt.).',\n  '',\n  'Uzduotis: atrink SVARBIAUSIAS ir parenk dienos ataskaita LIETUVIU kalba.',\n  '',\n  'Struktura (praleisk sekcija, jei jai nieko nera):',\n  '🧠 NAUJI MODELIAI IR LEIDIMAI',\n  '🛠️ AGENTAI, IRANKIAI, HARNESS / SKILLS',\n  '📄 SVARBIAUSI TYRIMAI (arXiv)',\n  '🏛️ LABORATORIJOS IR UNIVERSITETAI',\n  '⭐ TOP 3 DIENOS IVYKIAI (trumpai, kodel svarbu)',\n  '',\n  'Reikalavimai:',\n  '- Kiekvienam irasui: pavadinimas, 1-2 sakiniai kodel tai svarbu, ir nuoroda atskiroje eiluteje.',\n  '- Nekartok to paties dalyko keliose sekcijose.',\n  '- arXiv sekcijoje max 5 patys reiksmingiausi darbai (ne studentu kursiniai - proveržiai, nauji metodai, SOTA).',\n  '- Rasyk paprastu tekstu, BE Markdown zenklu (be **, ##, []()). Emoji sekciju antrastese palik.',\n  '- Visa ataskaita iki ~3500 simboliu.',\n  '',\n  'NAUJIENU SARASAS:',\n  ...lines,\n].join('\\n');\n\nreturn [{ json: {\n  hasNews: true,\n  anthropicBody: {\n    model: cfg.claudeModel || 'claude-sonnet-5',\n    max_tokens: 2500,\n    messages: [{ role: 'user', content: prompt }],\n  },\n} }];"
+      },
+      "id": "aa000010-0010-4010-8010-000000000010",
+      "name": "Sudaryti uzklausa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "if1",
+              "leftValue": "={{ $json.hasNews }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "aa000011-0011-4011-8011-000000000011",
+      "name": "Ar yra naujienu?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.anthropicBody) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "aa000012-0012-4012-8012-000000000012",
+      "name": "Claude santrauka",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1420,
+        140
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PRISKIRK_PO_IMPORTO",
+          "name": "Anthropic API (x-api-key)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Padalina ataskaita i Telegram tinkamus gabalus (limitas 4096, imam 3800)\nconst j = items[0].json;\nconst raw = (j.content && j.content[0] && j.content[0].text) || j.text || '(tuscia ataskaita)';\nconst esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst header = '🤖 <b>AI Research Digest</b> — ' + new Date().toISOString().slice(0, 10);\nconst body = esc(String(raw).trim());\nconst limit = 3800;\nconst chunks = [];\nlet rest = body;\nwhile (rest.length > limit) {\n  let cut = rest.lastIndexOf('\\n', limit);\n  if (cut < limit * 0.5) cut = limit;\n  chunks.push(rest.slice(0, cut));\n  rest = rest.slice(cut).trim();\n}\nif (rest) chunks.push(rest);\nreturn chunks.map((c, i) => ({ json: {\n  text: (i === 0 ? header + '\\n\\n' : '(dalis ' + (i + 1) + '/' + chunks.length + ')\\n') + c,\n} }));"
+      },
+      "id": "aa000013-0013-4013-8013-000000000013",
+      "name": "Padalinti zinutes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1640,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Nustatymai').first().json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "aa000014-0014-4014-8014-000000000014",
+      "name": "Siusti i Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1860,
+        240
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "PRISKIRK_PO_IMPORTO",
+          "name": "AI Digest Bot (Telegram)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Kasdien 08:00": {
+      "main": [
+        [
+          {
+            "node": "Nustatymai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nustatymai": {
+      "main": [
+        [
+          {
+            "node": "RSS saltiniai",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HF nauji modeliai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS saltiniai": {
+      "main": [
+        [
+          {
+            "node": "Parsisiusti RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsisiusti RSS": {
+      "main": [
+        [
+          {
+            "node": "XML i JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML i JSON": {
+      "main": [
+        [
+          {
+            "node": "Normalizuoti RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizuoti RSS": {
+      "main": [
+        [
+          {
+            "node": "Sujungti",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HF nauji modeliai": {
+      "main": [
+        [
+          {
+            "node": "Normalizuoti HF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizuoti HF": {
+      "main": [
+        [
+          {
+            "node": "Sujungti",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Sujungti": {
+      "main": [
+        [
+          {
+            "node": "Sudaryti uzklausa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sudaryti uzklausa": {
+      "main": [
+        [
+          {
+            "node": "Ar yra naujienu?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ar yra naujienu?": {
+      "main": [
+        [
+          {
+            "node": "Claude santrauka",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Padalinti zinutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude santrauka": {
+      "main": [
+        [
+          {
+            "node": "Padalinti zinutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Padalinti zinutes": {
+      "main": [
+        [
+          {
+            "node": "Siusti i Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Vilnius"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
