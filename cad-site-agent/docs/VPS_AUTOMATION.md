@@ -49,6 +49,17 @@
 - Atskiras MCP shell bridge (jei prireiktų vietoj router'io): workflow `zzVpsShellMcp01`,
   URL `…/mcp/claude-vps-shell-…` (žr. `n8n/vps_install_bridge.sh`). Reikalauja custom connector (tik per kompiuterį).
 
+## CAD pipeline VPS'e (2026-07-06) ✅
+- Projektas nuklonuotas: **`/opt/cad-site-agent`** (git, --depth 1). Vidinis paketas `/opt/cad-site-agent/cad-site-agent`.
+- venv: **`/opt/cad-venv`** (python3.12). `pip install -e .` pavyko — ezdxf, shapely, scipy, matplotlib, mcp ir kt.
+- `/opt/cad-venv/bin/cad-agent --help` veikia (analyze-dxf, clean-dxf, close-gaps, process, route-features, …).
+- **DWG įvestims reiktų ODA File Converter** (host'e dar neįdiegtas; žr. docs/ODA_SETUP.md). DXF veikia iš karto.
+- **H7149/Osprey raw duomenų VPS'e NĖRA** — buvo tik laptope. Jei laptopo nebėra → prarasti (tikslinti su vartotoju).
+
+## Claude Code ant VPS (planas / darbe)
+- Tikslas: VPS = pilna agent-darbo mašina. `npm i -g @anthropic-ai/claude-code`, auth per Max prenumeratą (OAuth,
+  BE API mokesčio). Repo hooks/CLAUDE.md/koordinacija užsikrauna automatiškai (SessionStart hook).
+
 ## Saugumo TODO (svarbu)
 1. **Atšaukti Anthropic raktą** (console.anthropic.com → API Keys) — nebenaudojamas.
 2. **MCP shell path yra viešame repo** (`n8n/vps_install_bridge.sh`) — kas žino URL, gali gauti shell.
