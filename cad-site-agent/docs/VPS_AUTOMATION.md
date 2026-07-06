@@ -31,9 +31,11 @@
 - Tikslas: kad Claude pats vykdytų komandas VPS'e per MCP, be copy-paste.
 - Sub-workflow `zzVpsExecSub001` („vps-exec“): Execute Workflow Trigger → Execute Command → grąžina stdout/stderr.
 - `run_shell` tool **PRIDĖTAS** prie router'io `mcprouterdesk001` (addityviai; backup `/root/zz_all_backup.json`).
-- **NEBAIGTA:** n8n 2.28 MCP endpoint'as aptarnauja „published“ versiją; `update:workflow --active` neužteko —
-  reikia **`docker exec -u node n8n-n8n-1 n8n publish:workflow --id=mcprouterdesk001`** + restart, kad `run_shell`
-  atsirastų MCP sąraše. Po to Claude connector'į n8n_VPS reikia perjungti (off/on).
+- **Serverio pusė BAIGTA:** `n8n publish:workflow --id=mcprouterdesk001` + restart atlikta 2026-07-06 —
+  `run_shell` publikuotas router'yje. (Reikėjo `publish`, ne `update:workflow --active`.)
+- **PAIMTI įrankį:** aktyvioje Claude sesijoje naujas MCP įrankis „karštai" neatsiranda patikimai. `run_shell`
+  patikimiausiai matomas **NAUJAME Claude pokalbyje** (jungtis n8n_VPS užsikrauna su šviežiu tool sąrašu).
+  Ten galima liepti Claude: „paleisk per run_shell: <komanda>“.
 - Atskiras MCP shell bridge (jei prireiktų vietoj router'io): workflow `zzVpsShellMcp01`,
   URL `…/mcp/claude-vps-shell-…` (žr. `n8n/vps_install_bridge.sh`). Reikalauja custom connector (tik per kompiuterį).
 
