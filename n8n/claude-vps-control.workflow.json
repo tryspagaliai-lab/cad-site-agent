@@ -1,0 +1,177 @@
+{
+  "name": "Claude VPS Control (MCP)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "claude-vps-control-x7k9q2m4p8w1",
+        "options": {}
+      },
+      "id": "cc000001-0001-4001-8001-000000000001",
+      "name": "MCP Server",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "cc9f0001-aaaa-4bbb-8ccc-000000000001"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Skaityti n8n API (GET http://127.0.0.1:5678/api/v1/{path}). path pavyzdziai: 'workflows' (visu sarasas), 'workflows/ID' (vienas workflow su nodes), 'executions?limit=5' (paskutiniai paleidimai), 'executions/ID' (vieno detales). Grazina JSON.",
+        "method": "GET",
+        "url": "http://127.0.0.1:5678/api/v1/{path}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "path",
+              "description": "API kelias po /api/v1/, be pradinio /",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cc000002-0002-4002-8002-000000000002",
+      "name": "n8n_get",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -200,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PRISKIRK_PO_IMPORTO",
+          "name": "n8n API Key (X-N8N-API-KEY)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Kurti/vykdyti per n8n API (POST http://127.0.0.1:5678/api/v1/{path}). Pavyzdziai: path='workflows' body=pilnas workflow JSON (name,nodes,connections,settings); path='workflows/ID/activate' body={}; path='workflows/ID/deactivate' body={}; path='credentials' body={name,type,data} (pvz. type='telegramApi', data={accessToken:'...'}).",
+        "method": "POST",
+        "url": "http://127.0.0.1:5678/api/v1/{path}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{body}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "path",
+              "description": "API kelias po /api/v1/",
+              "type": "string"
+            },
+            {
+              "name": "body",
+              "description": "JSON kunas",
+              "type": "json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cc000003-0003-4003-8003-000000000003",
+      "name": "n8n_post",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PRISKIRK_PO_IMPORTO",
+          "name": "n8n API Key (X-N8N-API-KEY)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Atnaujinti n8n API objekta (PUT http://127.0.0.1:5678/api/v1/{path}). Pavyzdys: path='workflows/ID' body=pilnas atnaujintas workflow JSON (privalomi laukai: name, nodes, connections, settings).",
+        "method": "PUT",
+        "url": "http://127.0.0.1:5678/api/v1/{path}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{body}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "path",
+              "description": "API kelias po /api/v1/",
+              "type": "string"
+            },
+            {
+              "name": "body",
+              "description": "JSON kunas",
+              "type": "json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cc000004-0004-4004-8004-000000000004",
+      "name": "n8n_put",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PRISKIRK_PO_IMPORTO",
+          "name": "n8n API Key (X-N8N-API-KEY)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "n8n_get": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n_post": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n_put": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
