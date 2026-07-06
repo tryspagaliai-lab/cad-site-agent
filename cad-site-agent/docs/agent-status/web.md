@@ -1,6 +1,13 @@
 # Agent status: web
 
-- updated: 2026-07-02T06:30:21Z
-- branch: main
-- head: 71172f1
-- status: DONE: pataisytas antras realus bug'as — layer_aliases.yaml titleblock/border/frame/logo ėjo į 'symbols', dėl ko po normalizacijos routing'as noise NEBEPAŠALINDAVO (likdavo review). Dabar -> taksonomijos noise etiketės (titleblock/notes/survey_reference), E2E patikrinta: features_removed 0->1. Testai: 208 žali. Laptope beliko: ODA + run_h7149.bat.
+- updated: 2026-07-06T19:30:00Z
+- branch: claude/lithuanian-language-question-7al6mx
+- head: (žr. paskutinį commit'ą)
+- status: DONE (didžioji dalis) — VPS automatika iš telefono. **AI Research Digest VEIKIA**:
+  standalone `/root/ai_digest.py` + cron kasdien 08:00 Europe/Vilnius, LLM Google Gemini
+  `gemini-flash-latest` (thinkingBudget=0, NEMOKAMAS), į Telegram chat 725037198 (@tryspagaliabot).
+  Testas: surinkta 53 naujienos, issiusta. Anthropic išbandytas bet mokamas → atsisakyta.
+  n8n variantas buvo nepatikimas → pereita prie standalone. Pilna dokumentacija: `docs/VPS_AUTOMATION.md`.
+  **NEBAIGTA:** `run_shell` tool pridėtas prie MCP router'io (mcprouterdesk001), bet reikia
+  `n8n publish:workflow --id=mcprouterdesk001` + restart, kad atsirastų Claude MCP sąraše.
+  Saugumo TODO: atšaukti Anthropic raktą, pergeneruoti Telegram token, apsaugoti MCP shell path (viešame repo).
