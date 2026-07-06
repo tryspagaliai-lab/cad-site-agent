@@ -60,7 +60,19 @@
 - Node **v22.23.1** (NodeSource), Claude Code **2.1.201** (`npm i -g @anthropic-ai/claude-code`).
 - Paleidimas: `cd /opt/cad-site-agent && claude`. Repo šaknis = `/opt/cad-site-agent` (ten `.claude/settings.json`),
   tad SessionStart hook (repo sync + handoff kontekstas) + PreToolUse gardas užsikrauna automatiškai.
-- **Auth:** per Max prenumeratą (`/login` → OAuth nuoroda telefone → kodas atgal). BE API mokesčio. (Būsena: dar autorizuoti.)
+- **Auth:** per Max prenumeratą (`/login` → OAuth nuoroda telefone → kodas atgal). BE API mokesčio. **AUTORIZUOTA ✅ (2026-07-06).**
+
+## Superpowers plugin (obra/superpowers)
+- Autorius: Jesse Vincent (GitHub **obra**). 14 skills: test-driven-development, systematic-debugging,
+  verification-before-completion, brainstorming, writing-plans, executing-plans, dispatching-parallel-agents,
+  requesting/receiving-code-review, using-git-worktrees, finishing-a-development-branch,
+  subagent-driven-development, writing-skills, using-superpowers.
+- Repo šaknies `.claude/settings.json` turi `extraKnownMarketplaces` (obra/superpowers-marketplace) +
+  `enabledPlugins` (`superpowers@superpowers-marketplace`) → nauja Claude Code sesija šiame repo pasiūlys
+  įdiegti automatiškai (patvirtinti trust dialoge).
+- Rankinis diegimas VPS'e (Termius, vienkartinis, galioja visam useriui):
+  `claude plugin marketplace add obra/superpowers-marketplace && claude plugin install superpowers@superpowers-marketplace`
+  arba Claude Code viduje: `/plugin install superpowers@claude-plugins-official`.
 
 ## Saugumo TODO (svarbu)
 1. **Atšaukti Anthropic raktą** (console.anthropic.com → API Keys) — nebenaudojamas.
