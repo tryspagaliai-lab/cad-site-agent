@@ -36,11 +36,16 @@
 - **DIAGNOZĖ (2026-07-06 vakaras):** connector rodo TIK „Ping". Router'io `ping` yra
   **`@n8n/n8n-nodes-langchain.toolCode`** (JS code tool, typeVersion 1.3), `ai_tool → MCP Server Trigger`.
   Mano `run_shell` buvo `toolWorkflow` → šios n8n versijos MCP trigger jo NEIŠVEDĖ. Išvedami tik `toolCode` tipo.
-- **SPRENDIMAS (nebaigtas):** `run_shell` daryti `toolCode` tipo (kaip ping), bet toolCode sandbox pagal nutylėjimą
-  blokuoja `child_process`. Reikia n8n konteineriui env **`NODE_FUNCTION_ALLOW_BUILTIN=*`** (+ recreate), tada
-  toolCode gali `require('child_process').execSync(cmd)`. Alternatyva: toolCode → HTTP POST į Webhook workflow su
-  Execute Command node (jei nenorim keisti env). Sub-workflow `zzVpsExecSub001` (toolWorkflow) — nepasiteisino, galima trinti.
-- Ping node kodas (pavyzdys, kaip apibrėžtas veikiantis tool): grąžina `JSON.stringify({status:'ok',...})`.
+- **SPRĘSTA ✅ (2026-07-06):** `run_shell` padarytas `toolCode` tipo (kaip ping) su `require('child_process').execSync(query)`.
+  Konteineryje env JAU buvo `NODE_FUNCTION_ALLOW_BUILTIN=child_process,fs,path` (+ runner atitikmuo), tad shell veikia
+  iš karto. Įdiegimas: `n8n/patch_router2.py` + `n8n/install_router_shell2.sh` (bazė = `/root/zz_all_backup.json`).
+  Patikrinta naujame Claude pokalbyje: `uname -a && whoami && ls /` → whoami=**node**, veikia.
+- **APRIBOJIMAS:** komandos vykdomos **n8n KONTEINERIO viduje** (user `node`), NE host'e. Tinka n8n CLI/failams/HTTP/
+  diagnostikai. Host lygio (apt, docker, /root) — reiktų atskiro host agento (dar nepadaryta).
+- **Naudojimas:** naujame Claude pokalbyje (šioje app'e, n8n_VPS connector ON) → „paleisk per run_shell: <cmd>“.
+  Senoje sesijoje naujas įrankis „karštai" neatsiranda — reikia naujo pokalbio / reconnect.
+- Ping = `@n8n/n8n-nodes-langchain.toolCode` typeVersion 1.3, `ai_tool → MCP Server Trigger` (šabloną atkartojom).
+  Nepavykęs `toolWorkflow` sub-workflow `zzVpsExecSub001` — nebenaudojamas, galima trinti.
 - Atskiras MCP shell bridge (jei prireiktų vietoj router'io): workflow `zzVpsShellMcp01`,
   URL `…/mcp/claude-vps-shell-…` (žr. `n8n/vps_install_bridge.sh`). Reikalauja custom connector (tik per kompiuterį).
 
