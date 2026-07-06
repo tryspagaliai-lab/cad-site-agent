@@ -1,0 +1,107 @@
+{
+  "id": "zzVpsExecSub001",
+  "name": "vps-exec (shell runner)",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "command",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "bb000001-0001-4001-8001-000000000001",
+      "name": "When Executed by Tool",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "command": "={{ $json.command }}"
+      },
+      "id": "bb000002-0002-4002-8002-000000000002",
+      "name": "Run command",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "o1",
+              "name": "stdout",
+              "value": "={{ $json.stdout }}",
+              "type": "string"
+            },
+            {
+              "id": "o2",
+              "name": "stderr",
+              "value": "={{ $json.stderr }}",
+              "type": "string"
+            },
+            {
+              "id": "o3",
+              "name": "exitCode",
+              "value": "={{ $json.exitCode }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bb000003-0003-4003-8003-000000000003",
+      "name": "Return result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Tool": {
+      "main": [
+        [
+          {
+            "node": "Run command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run command": {
+      "main": [
+        [
+          {
+            "node": "Return result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

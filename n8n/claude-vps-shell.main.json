@@ -1,0 +1,80 @@
+{
+  "id": "zzVpsShellMcp01",
+  "name": "Claude VPS Shell (MCP)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "claude-vps-shell-x7k9q2m4p8w1",
+        "options": {}
+      },
+      "id": "cc000001-0001-4001-8001-000000000001",
+      "name": "MCP Server",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "cc9f0002-aaaa-4bbb-8ccc-000000000002"
+    },
+    {
+      "parameters": {
+        "name": "run_shell",
+        "description": "Run a bash command on the VPS (agentos-1) and return stdout, stderr, exitCode. Use for managing n8n, files, installing tooling, diagnostics.",
+        "workflowId": {
+          "__rl": true,
+          "value": "zzVpsExecSub001",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "command": "={{ $fromAI('command', 'the exact bash command to execute', 'string') }}"
+          },
+          "schema": [
+            {
+              "id": "command",
+              "displayName": "command",
+              "required": true,
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        }
+      },
+      "id": "cc000002-0002-4002-8002-000000000002",
+      "name": "run_shell",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        220,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "run_shell": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
