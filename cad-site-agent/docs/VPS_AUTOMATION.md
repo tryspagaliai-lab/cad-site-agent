@@ -56,9 +56,11 @@
 - **DWG įvestims reiktų ODA File Converter** (host'e dar neįdiegtas; žr. docs/ODA_SETUP.md). DXF veikia iš karto.
 - **H7149/Osprey raw duomenų VPS'e NĖRA** — buvo tik laptope. Jei laptopo nebėra → prarasti (tikslinti su vartotoju).
 
-## Claude Code ant VPS (planas / darbe)
-- Tikslas: VPS = pilna agent-darbo mašina. `npm i -g @anthropic-ai/claude-code`, auth per Max prenumeratą (OAuth,
-  BE API mokesčio). Repo hooks/CLAUDE.md/koordinacija užsikrauna automatiškai (SessionStart hook).
+## Claude Code ant VPS ✅ (įdiegta 2026-07-06)
+- Node **v22.23.1** (NodeSource), Claude Code **2.1.201** (`npm i -g @anthropic-ai/claude-code`).
+- Paleidimas: `cd /opt/cad-site-agent && claude`. Repo šaknis = `/opt/cad-site-agent` (ten `.claude/settings.json`),
+  tad SessionStart hook (repo sync + handoff kontekstas) + PreToolUse gardas užsikrauna automatiškai.
+- **Auth:** per Max prenumeratą (`/login` → OAuth nuoroda telefone → kodas atgal). BE API mokesčio. (Būsena: dar autorizuoti.)
 
 ## Saugumo TODO (svarbu)
 1. **Atšaukti Anthropic raktą** (console.anthropic.com → API Keys) — nebenaudojamas.
