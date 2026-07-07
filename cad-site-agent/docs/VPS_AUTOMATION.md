@@ -105,4 +105,16 @@ set -a; . /root/ai_digest.env; set +a; python3 /root/ai_digest.py   # turi parod
   AgentOS Bridge infrastruktūrą — vėliau verta konsoliduoti (naudoti agentos-sessions vietoj cad-site-agent/inbox).
 - Variantui B (HERA worker VPS'e) reikia arba (a) laptopo bent kartą — parsinešti worker'io kodą,
   arba (b) atkurti minimalų 8799 HTTP servisą pagal n8n node payload kontraktą (be originalios logikos).
+
+### STATUS 2026-07-07 — HERA ingest worker ATKURTAS VPS'e ✅ (Variantas B (b))
+- Laptopo nėra ir nežinia kada bus → worker'is atkurtas iš naujo VPS'e (originalaus kodo GitHub'e nebuvo).
+- **Worker:** `/opt/hera-ingest/worker.py` (Python stdlib), systemd `hera-ingest.service` ACTIVE, `0.0.0.0:8799`.
+- **Kontraktas** (iš n8n „Poll & Process"): Bearer `INGEST_BRIDGE_TOKEN`; `POST /file?name=X` (octet-stream) → `{ok,dest}`;
+  `POST /job` (JSON `{id,channel,kind,payload,chat_id,received_at,prefetched?}`, kind∈file/url/youtube/text/council_decision) → `{ok,id}`; `GET /health`.
+- **Vault:** `/opt/hera-vault/ingest/<YYYY-MM-DD>/<id>/payload.json` (+ failas). Kol kas TIK priima+saugo+ack (jokios analizės).
+- **Tinklas:** iš n8n konteinerio pasiekiama `http://172.18.0.1:8799` (docker bridge gw; `host.docker.internal` neveikia). ufw: docker subnet → 8799.
+- **CUTOVER (2026-07-07):** n8n `INGEST_BRIDGE` 100.68.100.14:8799 (miręs laptopas) → `172.18.0.1:8799`. Workflow „Link Parser" liko ACTIVE.
+  Backup: `/root/linkparser_pre_cutover.json` (rollback NEREKOMENDUOJAMAS — senas bridge miręs). Eilė flush'inta: 3 job'ai, photo.jpg atkurtas (validus JPEG).
+- **BUG pataisytas:** n8n flush kelyje failą siunčia kaip JSON-Buffer envelope (`{type:Buffer,data:[...]}`); worker `/file` dabar atsuka į raw baitus.
+- **LIKO Fazė 2:** tikroji HERA apdorojimo logika (ką daryti su url/youtube/file/text/council_decision — parsingas, vault indeksavimas) — originalo nėra, reikės apibrėžti iš naujo.
 ```
