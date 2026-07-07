@@ -165,5 +165,16 @@ set -a; . /root/ai_digest.env; set +a; python3 /root/ai_digest.py   # turi parod
 - **SONA (Self-Optimizing Neural Architecture) — PRIIMTA dalinai (8.5).** Filosofija „intelektas kilpoje, ne modelyje" = HERA vizija.
 - IMAM (be treniravimo): trys laiko kilpos (Loop A per-query / B valandinė klasterizacija+kokybė / C savaitinė konsolidacija), ReasoningBank (kas suveikė → kreipia routing), EWC-lite (svarbos laukas saugo įrodytus skills). Panaudoja jau loginamą `reward` lauką → uždaro kilpą.
 - ATIDĖTA (GPU/overkill): LoRA+EWC svorių treniravimas, hiperbolinė (Poincaré) geom., GNN reranking, dinaminis MinCut RuVector. (Embedding-retrieval — nebent lengvas Fazės 4 patobulinimas.)
-- **Fazė 5 (statoma, task žemiau):** Loop B (klasterizacija+kokybės balai → silpnų sričių raportas) · Loop C (vault konsolidacija: merge/prune STAGED + concept index) · ReasoningBank (reward-kreipiamas routing) · EWC-lite (importance laukas).
+- **Fazė 5 — BAIGTA ✅ (task edcd15c):** Loop B/C, ReasoningBank (reward realiai kreipia skill retrieve 3.88→5.68), EWC-lite (importance vartai). `reward` iš pasyvaus tapo aktyviu.
+
+### YouTube patikimumas — BAIGTA ✅ (2026-07-07, task fefc11a)
+- YouTube blokuoja VPS IP (yt-dlp IR transcript-api → RequestBlocked). Sprendimas: **vieši veidrodžiai** (Piped/Invidious) ima subtitrus be blokavimo.
+- Veikia: **Piped `api.piped.private.coffee`** (patikimas), transcript-api (dalinai), Gemini fallback. Invidious — tuščia (IP blokas).
+- 4-šaltinių grandinė (`yt_sources.py`, `extractors/youtube.py`): transcript-api(proxy) → Piped/Invidious veidrodžiai → Gemini-titrai → Gemini-langai; imam 1-ą sėkmę, `meta.method` loginamas.
+- **Proxy palaikymas:** `HERA_YT_PROXY` iš `/root/hera.env` (http/https/socks5) — jei nustatyta, viskas eina per proxy. Dabar NEbūtina (nemokamas kelias veikia). Įjungti: atkomentuoti eilutę + `systemctl restart hera-processor`.
+- Re-drive: 4/4 užstrigę youtube job'ai atgaivinti (per mirror-piped), 0 liko.
+
+### Fazė 6 — INTENCIJŲ ROUTER + „paklausk vault'o" (statoma, task bdbe94e/re-queue)
+- Auto-router: sistema PATI klasifikuoja ateinantį job'ą (question / ingest / feedback / other→ingest) per Gemini, be rankinių prefiksų.
+- `question` → RAG per vault'ą (extracted+growth+skills) su šaltiniais; `feedback` → atnaujina reward; `ingest` → esamas Fazės 2 kelias.
 ```

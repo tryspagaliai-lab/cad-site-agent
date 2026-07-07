@@ -1,28 +1,33 @@
-UŽDUOTIS — YouTube patikimumas: proxy sluoksnis + nemokami apėjimai. Autonomiškai.
-NELIESK kitų fazių — tik youtube kelią sustiprink. Atsiskaityk į Telegram TRUMPAI, aiškiu statusu.
+UŽDUOTIS — HERA Fazė 6: INTENCIJŲ MARŠRUTIZATORIUS + „paklausk vault'o" (RAG). Autonomiškai.
+NELIESK veikiančių Fazės 2–5 ir youtube kelio — tik PRIDĖK priekinį routerį + query kelią. Nemokama (Gemini free).
+Atsiskaityk į Telegram TRUMPAI, aiškiu galutiniu statusu.
 
-Problema: YouTube blokuoja VPS IP (yt-dlp IR transcript-api → RequestBlocked). Reikia, kad youtube veiktų
-patikimai. Padaryk DVI dalis:
+ESMĖ: sistema turi PATI SUSIVOKTI, kas atsiųsta — klausimas, turinys ar grįžtamasis ryšys — ir pati nukreipti.
+JOKIŲ rankinių prefiksų (nebent kaip papildoma užuomina). Router = HERA smegenų priekis.
 
-1) PROXY PALAIKYMAS (kad būtų galima padaryti 100% patikimą). youtube fetch'eris skaito proxy iš
-   `/root/hera.env` kintamojo `HERA_YT_PROXY` (http/https/socks5). Jei nustatyta — transcript-api IR yt-dlp IR
-   bet koks YouTube HTTP eina PER proxy. Jei tuščia — praleisk į nemokamus apėjimus (žemiau). Dokumentuok, kaip
-   įrašyti proxy (viena eilutė į /root/hera.env), kad vėliau būtų galima įjungti.
+1) INTENCIJŲ ROUTER (`hera_router.py`). Kiekvienam ateinančiam job'ui nustatyk intenciją per Gemini free
+   (greitas klasifikatorius) — klasės:
+   - `question` — vartotojas klausia / nori atsakymo iš sukauptos žinios → RAG atsakymas.
+   - `ingest` — turinys, kurį reikia įsisavinti (url/youtube/failas/straipsnis/esminis tekstas) → esamas Fazės 2 kelias.
+   - `feedback` — vertinimas apie ankstesnį rezultatą → atnaujink to job'o reward (delayed).
+   - `other/unclear` — DEFAULT į `ingest` (saugu). Media numatytai `ingest`; TEKSTĄ klasifikuok visada.
+   Klasifikaciją loginK į trajektorijas (auditas + ReasoningBank). „?" prefiksas — tik neprivaloma užuomina.
 
-2) NEMOKAMI APĖJIMAI (veikia BE vartotojo proxy) — youtube subtitrų gavimas, bandyk eilės tvarka, imk pirmą sėkmę:
-   a) transcript-api per HERA_YT_PROXY (jei nustatyta);
-   b) VIEŠI YouTube veidrodžiai — Invidious (`/api/v1/captions/{id}`) ir Piped (`/streams/{id}` → subtitrų URL),
-      su keliais dabar veikiančiais instancais (sąrašą laikyk konfige, lengvai atnaujinamą); parsink titrus → transkriptas;
-   c) Gemini vieno-skambučio kelias (dabartinis veikiantis) — galutinis fallback.
-   Kiekvienam job'ui loginK, KURIS metodas suveikė (į trajektorijas).
+2) QUERY kelias (`hera_query.py`) — kai router nusprendžia `question`:
+   - indeksuok vault'ą (extracted/*/full.md + growth/*.md + skills/*/SKILL.md), suskaidyk į chunk'us;
+   - retrieve top-K (leksiniai helperiai iš hera_common; Gemini embeddings — neprivaloma);
+   - Gemini free atsakymas GRIEŽTAI iš retrieve'intų chunk'ų + ŠALTINIAI (job id/video/failas);
+   - jei vault'e nėra — „nerandu vault'e", NEfantazuok. CLI: `hera_query.py "klausimas"`.
 
-3) TESTAS iš VPS: patikrink kiekvieną šaltinį (transcript-api, 2-3 Invidious/Piped instancai, Gemini) ir
-   parodyk, KURIE realiai veikia iš šito serverio IP. Sąžiningai — jei visi vieši veidrodžiai irgi blokuoti,
-   pasakyk, kad reikia proxy (ir rekomenduok pigų/nemokamą variantą, pvz. Webshare free tier).
+3) INTEGRACIJA: processor'iuje kiekvienas job'as pirma per hera_router → į teisingą kelią. Be n8n keitimo.
 
-4) RE-DRIVE: likusius nepavykusius youtube job'us paleisk per naują grandinę. Suskaičiuok atgaivinta/liko.
+4) SELF-TEST (€0): mišrūs pavyzdžiai, parodyk teisingą atskyrimą:
+   - „kas yra ATDP ir self-evolving agentai?" → question → atsakymas su šaltiniais (dabar vault'e yra ~5+ AI video)
+   - koks nors tekstas/URL → ingest
+   - „tas wargaming skill buvo naudingas" → feedback → reward atnaujintas
+   Parodyk klasifikaciją + rezultatą kiekvienam.
 
 5) DURABILUMAS: kodą į /opt/cad-site-agent/n8n/hera/. Push nedaryk.
 
-Į Telegram: kurie šaltiniai veikia iš VPS, ar reikia proxy, kiek video atgaivinta/liko, kaip įjungti proxy
-(HERA_YT_PROXY), ir aiškiai „YOUTUBE PROXY BAIGTAS".
+Į Telegram: kaip veikia auto-routing (be prefiksų), self-test klasifikacijos + query atsakymai su šaltiniais,
+ir aiškiai „FAZĖ 6 BAIGTA".
