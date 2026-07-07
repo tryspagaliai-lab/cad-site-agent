@@ -1,32 +1,23 @@
-UŽDUOTIS — HERA Fazė 5: SONA-įkvėptos laiko kilpos + ReasoningBank + EWC-lite. Autonomiškai
-(superpowers OK). NELIESK veikiančių Fazės 2–4 — tik PRAPLĖSK. Feasible tik NEMOKAMAM stack'ui:
-Gemini free, JOKIO treniravimo/RL/svorių/GPU. Laikykis RIC gardo, append-only, žmogaus-gate destruktyviems.
+UŽDUOTIS — YouTube ekstrakcijos fix (subtitrai pirmiausia) + nepavykusių job'ų re-drive.
+Autonomiškai. NELIESK veikiančių Fazės 2–5 kitų dalių — tik pataisyk youtube kelią. Nemokama (Gemini free).
 Atsiskaityk į Telegram TRUMPAI, aiškiu galutiniu statusu.
 
-Tikslas: PANAUDOTI jau loginamą ATDP `reward` lauką, kad jis realiai VALDYTŲ HERA sprendimus (dabar tik saugomas).
+Problema: yt-dlp VPS IP užblokuotas + Gemini-native ilgiems/keliems youtube griūva (503/tuščia) → job'ai
+dead-letter'inami („po 3 bandymų atsisakau").
 
-1) LOOP B (planinė, valandinė — pridėk į hera-processor ciklą ar cron). Klasterizuok ATDP-lite trajektorijas
-   (paprastas grupavimas pagal kind/domeną arba TF-IDF/lexical; jei nori — Gemini embeddings, bet neprivaloma) →
-   kiekvienam klasteriui vidutinis kokybės/reward balas → raportas /opt/hera-vault/analysis/loopB-<data>.md,
-   išryškinantis SILPNAS sritis (žemas reward). Nieko nekeičia, tik raportuoja.
+1) PRIMARY youtube kelias = **subtitrai**. Įdiek `youtube-transcript-api` (pip į hera venv). YouTube video
+   ekstrakcijai PIRMIAUSIA bandyk paimti gatavus subtitrus (bet kuri kalba; prioritetas originalas/en/lt;
+   jei tik auto-generated — imk juos) → full.md iš transkripto. Greita, be atsisiuntimo, be Gemini transkripcijos.
+   - Jei subtitrų NĖRA arba transcript-api irgi blokuojamas iš VPS IP → FALLBACK į esamą Gemini-native (kaip dabar).
+   - Ištestuok ant kelių realių URL; parodyk, ar transcript-api veikia iš VPS IP (jei blokuota — pranešk, spręsim proxy).
 
-2) LOOP C (planinė, savaitinė). Vault konsolidacija: aptik dublikatinius/panašius skills+growth →
-   PASIŪLYK merge/prune į /opt/hera-vault/proposals/ (STAGED, NEtrina — RIC + append-only, promote tik žmogus).
-   Sukurk sąvokų indeksą /opt/hera-vault/index/concepts.md (kas vault'e yra, sugrupuota).
+2) RE-DRIVE: surask dead-letter'intus / nepavykusius youtube job'us (pvz. 20260707T191953Z-tv60mf ir kiti)
+   → paleisk juos iš naujo per NAUJĄ subtitrų kelią. Neliesk jau sėkmingai apdorotų (pvz. chw25r).
+   Parodyk, kiek atgaivinta / kiek dar nepavyko.
 
-3) REASONINGBANK (/opt/hera-vault/reasoningbank.jsonl). Įrašai: (užduoties/konteksto parašas, panaudotas
-   prompt/skill, reward). Retrieval helper: naujai užduočiai parenka aukščiausio-reward variantą →
-   integruok į selektorių/skill-retrieve, kad reward'as KREIPTŲ pasirinkimą. Tai uždaro self-improve kilpą.
+3) Po apdorojimo — HERA selektorius + trajektorijos + (jei tinka) skill/growth kaip įprasta.
 
-4) EWC-LITE. Pridėk `importance` (0..1) lauką skills'ams — kaupiamas iš reward+panaudojimo. hera_optimize/Loop C
-   negali perrašyti aukštos importance įgūdžio be STIPRESNIO replay-pagerėjimo slenksčio (apsauga nuo katastrofiško
-   „užmiršimo"). Dokumentuok slenksčius.
+4) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push nedaryk (nėra creds).
 
-5) SELF-TEST: (a) Loop B ant esamų trajektorijų → silpnų sričių raportas; (b) ReasoningBank užpildyk iš esamų
-   reward event'ų ir parodyk vieną reward-kreipiamą pasirinkimą; (c) EWC-lite importance ant ai-wargaming-metodika;
-   (d) Loop C dry-run → bent 1 merge/prune pasiūlymas (necommit'intas į gamybą).
-
-6) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push nedaryk (nėra creds).
-
-Į Telegram: kas pridėta (Loop B/C, ReasoningBank, EWC-lite), self-test rezultatai, ir aiškiai
-„FAZĖ 5 BAIGTA" arba ko trūksta.
+Į Telegram: ar transcript-api veikia iš VPS, kiek youtube job'ų atgaivinta/apdorota, kiek liko,
+ir aiškiai „YOUTUBE FIX BAIGTAS" arba ko trūksta.
