@@ -16,11 +16,11 @@ FEEDS = [
     ("OpenAI", "https://openai.com/news/rss.xml"),
     ("DeepMind", "https://deepmind.google/blog/rss.xml"),
     ("Google AI", "https://blog.google/technology/ai/rss/"),
-    ("Meta AI", "https://ai.meta.com/blog/rss/"),
+    ("Meta Engineering", "https://engineering.fb.com/feed/"),
     ("Microsoft Research", "https://www.microsoft.com/en-us/research/feed/"),
     ("MIT News AI", "https://news.mit.edu/rss/topic/artificial-intelligence2"),
     ("Berkeley BAIR", "https://bair.berkeley.edu/blog/feed.xml"),
-    ("Stanford HAI", "https://hai.stanford.edu/rss.xml"),
+    ("Stanford SAIL", "https://ai.stanford.edu/blog/feed.xml"),
     ("Import AI", "https://importai.substack.com/feed"),
     ("Simon Willison", "https://simonwillison.net/atom/everything/"),
 ]
