@@ -141,4 +141,17 @@ set -a; . /root/ai_digest.env; set +a; python3 /root/ai_digest.py   # turi parod
 - **Planas: SUJUNGTI į vieną HERA info-pipeline'ą** — visi šaltiniai (tavo įkelti + digest naujienos) → tas pats gilus ištraukimas →
   HERA selektorius nukreipia: *paviešinti* (Telegram) / *saugoti* (vault) / *pasiūlyti augimui* (growth). Digest tampa dar vienu HERA šaltiniu.
   Daryti PO to, kai Fazė 2 stabili.
+
+### Fazė 3 — BAIGTA ✅ (2026-07-07, task c72acff)
+- **ATDP-lite trajektorijos:** `/opt/hera-vault/trajectories/<data>.jsonl` (tipizuoti įrašai, reward laukas atnaujinamas vėliau).
+- **Skill-output:** `/opt/hera-vault/skills/<slug>/SKILL.md` — HERA pati gamina įgūdžių juodraščius (pvz. `ai-wargaming-metodika`).
+- **Kontrafaktinis pakartojimas:** `/opt/hera-processor/hera_replay.py` — validacijos vartai prieš priimant pakeitimą.
+
+### Fazė 4 — HERA selektoriaus verdiktai iš 6 parsintų video (2026-07-07)
+- 🟢 **Multi-SKILL/SAGE/Agentic Proposing (9.5):** skill-tuple `(intent,method,difficulty,tool-hint)` + kaupianti biblioteka + 3-lygių įkėlimas + selektyvi atranka/pruning. (RL/GPU dalis — ne.)
+- 🟢 **AutoMem (9.0):** struktūros-optimizavimo outer-loop — meta-LLM peržiūri ATDP trajektorijas → siūlo prompt/skill pataisas → replay validuoja. (LoRA — ne, GPU.)
+- 🟢 **AgentOS RIC (8.0):** minimalūs gardai TIK neatšaukiamoms operacijoms (rm -rf/DB drop/force-push/servisų naikinimas); visa kita auto. (S-MMU/CSP multi-agent — atidėta.)
+- 🟡 **Parametrinė atmintis / „Frozen Novice" (6.0):** žinoma riba — skill.md=lookup, ne internalizuota; tikras fine-tune reikalauja GPU → ateities kelias.
+- ⚪ **AReal/ATDP:** jau Fazėje 3. **Tencent HY3:** atidėta (pigus atsargos modelis, free iki 07-21).
+- **Fazė 4 (statoma, task žemiau):** skill-tuple schema + struktūros-optimizavimo outer-loop + minimalus RIC.
 ```
