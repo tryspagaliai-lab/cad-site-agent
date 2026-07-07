@@ -153,5 +153,11 @@ set -a; . /root/ai_digest.env; set +a; python3 /root/ai_digest.py   # turi parod
 - 🟢 **AgentOS RIC (8.0):** minimalūs gardai TIK neatšaukiamoms operacijoms (rm -rf/DB drop/force-push/servisų naikinimas); visa kita auto. (S-MMU/CSP multi-agent — atidėta.)
 - 🟡 **Parametrinė atmintis / „Frozen Novice" (6.0):** žinoma riba — skill.md=lookup, ne internalizuota; tikras fine-tune reikalauja GPU → ateities kelias.
 - ⚪ **AReal/ATDP:** jau Fazėje 3. **Tencent HY3:** atidėta (pigus atsargos modelis, free iki 07-21).
-- **Fazė 4 (statoma, task žemiau):** skill-tuple schema + struktūros-optimizavimo outer-loop + minimalus RIC.
+- **Fazė 4 — BAIGTA ✅ (2026-07-07, task a9214ac):**
+  - `hera_skills.py` — skill-tuple `(intent,method,difficulty,tool_hint)` + 3-lygių įkėlimas (L1 iter_cards / L2 load_full / L3 load_resources) + `retrieve(task,k)` top-k atranka su pruning (anti lock-in).
+  - `hera_optimize.py` (AutoMem #1) — meta-LLM diagnozuoja trajektorijas → siūlo pataisas → `hera_replay.py` validuoja → ACCEPTED į `proposals/approved/` (append-only, GAMYBOS NEKEIČIA — reikia žmogaus promote).
+  - `hera_ric.py` — minimalus gardas: blokuoja tik neatšaukiamas katastrofas (rm -rf sist., mkfs/dd, DB drop, force-push, core servisų/vault trynimas); veikia ir kaip PreToolUse, ir kaip API. Blokas → log + Telegram.
+  - Self-test: 3 outer-loop pasiūlymai visi replay-PAGERĖJO→ACCEPTED; RIC blokuoja `rm -rf /opt/hera-vault`, praleidžia failo rašymą.
+- **⚠️ SVARBU — durabilumas:** VISAS HERA kodas (Fazės 2–4) gyvena TIK VPS'e (`/opt/hera-processor/`, `/opt/hera-ingest/`, kopija `/opt/cad-site-agent/n8n/hera/`). GitHub'e NĖRA (VPS neturi push creds). Rizika = laptopo istorija. Apsaugoti reikia scoped tokeno.
+- **⚠️ Patikimumas:** self-improvement sprendimai remiasi Gemini free (flaky, 503) ir subjektyviu LLM verdiktu → `proposals/approved/` laikyti žmogaus-peržiūrimu prieš promote į gamybą (kaip ir pastatyta).
 ```
