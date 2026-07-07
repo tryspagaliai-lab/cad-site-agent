@@ -1,23 +1,30 @@
-UŽDUOTIS — YouTube ekstrakcijos fix (subtitrai pirmiausia) + nepavykusių job'ų re-drive.
-Autonomiškai. NELIESK veikiančių Fazės 2–5 kitų dalių — tik pataisyk youtube kelią. Nemokama (Gemini free).
-Atsiskaityk į Telegram TRUMPAI, aiškiu galutiniu statusu.
+UŽDUOTIS — HERA Fazė 6: „Paklausk savo vault'o" (RAG per sukauptą žinią). Autonomiškai.
+NELIESK veikiančių Fazės 2–5 — tik PRIDĖK klausimų kelią. Nemokama (Gemini free). Atsiskaityk į Telegram
+TRUMPAI, aiškiu galutiniu statusu.
 
-Problema: yt-dlp VPS IP užblokuotas + Gemini-native ilgiems/keliems youtube griūva (503/tuščia) → job'ai
-dead-letter'inami („po 3 bandymų atsisakau").
+Tikslas: tu gali PAKLAUSTI ir gauti atsakymą iš viso, ką HERA ištraukė (extracted/*/full.md, growth/*.md,
+skills/*/SKILL.md), pagrįstą tik vault'o turiniu (be haliucinacijų).
 
-1) PRIMARY youtube kelias = **subtitrai**. Įdiek `youtube-transcript-api` (pip į hera venv). YouTube video
-   ekstrakcijai PIRMIAUSIA bandyk paimti gatavus subtitrus (bet kuri kalba; prioritetas originalas/en/lt;
-   jei tik auto-generated — imk juos) → full.md iš transkripto. Greita, be atsisiuntimo, be Gemini transkripcijos.
-   - Jei subtitrų NĖRA arba transcript-api irgi blokuojamas iš VPS IP → FALLBACK į esamą Gemini-native (kaip dabar).
-   - Ištestuok ant kelių realių URL; parodyk, ar transcript-api veikia iš VPS IP (jei blokuota — pranešk, spręsim proxy).
+1) `hera_query.py` — funkcija answer(question):
+   - INDEKSUOK vault'ą: extracted/*/full.md + growth/*.md + skills/*/SKILL.md; suskaidyk į gabalus (chunks).
+   - RETRIEVE top-K relevant chunks (panaudok esamus leksinius helperius iš hera_common; jei nesunku — Gemini
+     embeddings kaip papildoma, bet neprivaloma).
+   - GENERUOK atsakymą per Gemini free, GRIEŽTAI grįstą TIK retrieve'intais chunk'ais + nurodyk ŠALTINIUS
+     (job id / video pavadinimas / failas). Jei atsakymo vault'e NĖRA — pasakyk „nerandu vault'e", NEfantazuok.
+   - CLI: `hera_query.py "klausimas"` (testavimui).
 
-2) RE-DRIVE: surask dead-letter'intus / nepavykusius youtube job'us (pvz. 20260707T191953Z-tv60mf ir kiti)
-   → paleisk juos iš naujo per NAUJĄ subtitrų kelią. Neliesk jau sėkmingai apdorotų (pvz. chw25r).
-   Parodyk, kiek atgaivinta / kiek dar nepavyko.
+2) ROUTING (be n8n keitimo): processor'iuje, kai ateina TEXT job'as, kurio turinys prasideda „?" (arba
+   „klausimas:") → traktuok kaip UŽKLAUSĄ: paleisk hera_query ir atsakymą siųsk į Telegram (su šaltiniais).
+   Įprasti text job'ai (be „?") — apdorojami kaip dabar (nekeisti).
 
-3) Po apdorojimo — HERA selektorius + trajektorijos + (jei tinka) skill/growth kaip įprasta.
+3) Užklausas irgi loginK kaip ATDP trajektorijas (kind=query) + reward vėliau, kad ReasoningBank mokytųsi,
+   kuri paieška veikė.
 
-4) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push nedaryk (nėra creds).
+4) SELF-TEST (€0): užduok 2–3 klausimus ant esamo vault'o, pvz.:
+   - „? kas yra ATDP ir self-evolving agentai?"
+   - „? ką HERA sužinojo apie atmintį (AutoMem/parametrinė)?"
+   Parodyk atsakymus SU šaltiniais; patikrink, kad be turinio vault'e → „nerandu".
 
-Į Telegram: ar transcript-api veikia iš VPS, kiek youtube job'ų atgaivinta/apdorota, kiek liko,
-ir aiškiai „YOUTUBE FIX BAIGTAS" arba ko trūksta.
+5) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push nedaryk (nėra creds).
+
+Į Telegram: kaip klausti („?" prefiksas), self-test atsakymai su šaltiniais, ir aiškiai „FAZĖ 6 BAIGTA".
