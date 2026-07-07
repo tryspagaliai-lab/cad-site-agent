@@ -130,4 +130,15 @@ set -a; . /root/ai_digest.env; set +a; python3 /root/ai_digest.py   # turi parod
   multimodalis: tekstas/vaizdas/audio/video/pdf; ilgi media chunkinami) → pilnas rezultatas į /opt/hera-vault/ → HERA selektorius (antra Gemini/agent pakopa)
   atrenka „naudinga augimui" → kandidatai į augimo eilę. (Vėliau sinchronizuoti į claudeaios-vault, kai bus GitHub write.)
 - **Stadijos:** 2a url+text · 2b youtube+audio+video (chunk+transcribe) · 2c image (vision) · 2d HERA selektorius.
+- **Statusas 2026-07-07:** branduolys pastatytas — url✅ + image✅ ekstraktoriai duoda full.md; youtube❌ (taisoma),
+  hera-processor servisas + HERA selektorius (growth) — taisoma užduotimi `6118390`.
+
+### Strateginė kryptis (vartotojas 2026-07-07)
+- **PARSER (HERA ingest) = pagrindinis NAUJŲ GALIMYBIŲ šaltinis.** Vartotojas siunčia turinį (url/video/failai),
+  HERA giliai ištraukia + atrenka, kas verta sistemos augimui/plėtrai → self-evolving kilpa. Tai prioritetas.
+- **Digest ir Parser = ta pati mašina, priešingos kryptys** (digest stumia naujienas → tu; parser traukia tavo turinį → sistema),
+  tas pats botas @tryspagaliabot (chat 725037198) ir tas pats Gemini free variklis.
+- **Planas: SUJUNGTI į vieną HERA info-pipeline'ą** — visi šaltiniai (tavo įkelti + digest naujienos) → tas pats gilus ištraukimas →
+  HERA selektorius nukreipia: *paviešinti* (Telegram) / *saugoti* (vault) / *pasiūlyti augimui* (growth). Digest tampa dar vienu HERA šaltiniu.
+  Daryti PO to, kai Fazė 2 stabili.
 ```
