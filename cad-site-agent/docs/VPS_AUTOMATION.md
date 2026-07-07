@@ -86,3 +86,23 @@
 ```bash
 set -a; . /root/ai_digest.env; set +a; python3 /root/ai_digest.py   # turi parodyti "issiusta i Telegram"
 ```
+
+## HERA / „Link Parser" botas (2026-07-07 diagnostika + GitHub auditas)
+- **Botas = n8n workflow „Link Parser" (`linkparserwork01`), ACTIVE VPS'e** (docker `n8n-n8n-1`).
+  Pollina Telegram (@tryspagaliabot, chat 725037198), failus PRIIMA ir deda į eilę
+  `pending-ingest/` konteineryje (store-and-forward). Gyvas kodas — node „Poll & Process";
+  backup `/root/zz_all_backup.json`.
+- **Worker'is (HERA ingest bridge, port 8799) — TIK laptope** (`tryspagaliai-inspiron-5748`,
+  Tailscale `100.68.100.14`). Node'e užkoduota `INGEST_BRIDGE='http://100.68.100.14:8799'`.
+  Laptopas offline → failai kaupiasi eilėje (nepradingsta), bet neapdorojami.
+- **GitHub auditas (2026-07-07):** ingest-bridge worker'io kodo GitHub'e NĖRA —
+  `INGEST_BRIDGE`, `pending-ingest`, `flushPendingJobs`, `8799` = 0 rezultatų visuose repo.
+  → tas worker'is egzistuoja **tik laptope** (jei laptopo nebėra — prarastas / atkurti iš n8n node kontrakto).
+- **HERA agentų frameworkas** (ne šis failų worker'is) trackinamas repo **`tryspagaliai-lab/agentos-sessions`**:
+  `hera_runner`, „HERA Controller", `HERA CheckpointManager (vault mirror)`, `hera-core`, `hera-rebuild-phase1`.
+- **SVARBU:** `agentos-sessions` README = *„AgentOS Bridge — async message bus tarp chat-Claude ↔ Claude Code"*.
+  Tai reiškia, kad ši sesijoje ad-hoc pastatyta `inbox/`+cron grandinė DUBLIUOJA jau egzistuojančią
+  AgentOS Bridge infrastruktūrą — vėliau verta konsoliduoti (naudoti agentos-sessions vietoj cad-site-agent/inbox).
+- Variantui B (HERA worker VPS'e) reikia arba (a) laptopo bent kartą — parsinešti worker'io kodą,
+  arba (b) atkurti minimalų 8799 HTTP servisą pagal n8n node payload kontraktą (be originalios logikos).
+```
