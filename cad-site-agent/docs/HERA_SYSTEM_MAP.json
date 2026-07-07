@@ -1,7 +1,25 @@
 {
   "sistema": "HERA — self-evolving žinių pipeline + AgentOS valdymo tiltas",
-  "atnaujinta": "2026-07-07",
+  "atnaujinta": "2026-07-08",
   "stackas": "€0 (Gemini free), VPS Hetzner agentos-1, be GPU/treniravimo",
+
+  "vault_busena_2026_07_08": {
+    "istraukta_video_full_md": 18,
+    "skills": 9,
+    "skills_sarasas": [
+      "agentines-atminties-konsolidavimas",
+      "agentinis-kodo-refaktorizavimas",
+      "ai-wargaming-metodika",
+      "automem-llm-atminties-optimizavimas",
+      "automem-meta-atminties-optimizavimas",
+      "llm-skills-kurimas",
+      "multi-skill-markdown-synthesis",
+      "savaime-evoliucionuojanciu-agentu-atstatymas",
+      "sona-triju-lygiu-mokymosi-kaskada"
+    ],
+    "growth_failu": 12,
+    "trajektorijos_dienos": 3
+  },
 
   "infrastruktura": {
     "vps": "Hetzner agentos-1, 77.42.94.63, Ubuntu 24.04, root",
@@ -30,14 +48,14 @@
       "image_pdf": "Gemini vision + OCR — VEIKIA",
       "youtube": "4-šaltinių grandinė: transcript-api(proxy) -> Piped/Invidious veidrodžiai -> Gemini titrai -> Gemini langai — VEIKIA (per Piped veidrodį, proxy nebūtinas)",
       "audio_video": "ffmpeg chunk + Gemini — VEIKIA",
-      "irodymas": "4/4 užstrigę youtube video atgaivinta, 24-37k simb."
+      "irodymas": "18 video ištraukta; 4/4 užstrigę youtube atgaivinta"
     },
     "3_hera_selektorius": {
       "ka_daro": "atrenka kas verta sistemos augimui; kompetencija -> SKILL.md, žinia -> growth/.md",
-      "statusas": "VEIKIA (pvz. ai-wargaming-metodika skill 9.0/10)"
+      "statusas": "VEIKIA (9 įgūdžiai autonomiškai distiliuoti iš siųstų video)"
     },
     "4_atmintis_ir_trajektorijos": {
-      "atdp_lite": "kiekvienas veiksmas -> trajectories/*.jsonl (tipizuotas, reward laukas atnaujinamas vėliau) — VEIKIA",
+      "atdp_lite": "kiekvienas veiksmas -> trajectories/*.jsonl (tipizuotas, reward atnaujinamas vėliau) — VEIKIA",
       "skill_tuple": "SKILL.md su (intent, method, difficulty, tool_hint) + 3-lygių įkėlimas + top-k atranka — VEIKIA",
       "reasoningbank": "'kas suveikė' atmintis; reward realiai kreipia atranką (3.88->5.68) — VEIKIA"
     },
@@ -52,42 +70,43 @@
     "6_router_ir_query": {
       "auto_router": "sistema PATI klasifikuoja: question / ingest / feedback (be prefiksų)",
       "vault_query": "klausimas -> RAG per vault -> atsakymas SU šaltiniais, arba 'nerandu'",
-      "statusas": "STATOMA (task 080fb58)"
+      "statusas": "VEIKIA ✅ (2026-07-07 patvirtinta gyvai: klausimas/ingest/feedback teisingai klasifikuota BE prefiksų; 'kas yra ATDP?' -> RAG su 3 šaltiniais)"
     }
   },
 
   "duomenu_srautas": [
-    "1. Siunti turinį į @tryspagaliabot",
+    "1. Siunti turinį ar klausimą į @tryspagaliabot",
     "2. n8n Link Parser priima -> hera-ingest (8799) -> pending eilė",
-    "3. hera-processor: [tuoj] router klasifikuoja intenciją",
+    "3. hera-processor: hera_router klasifikuoja intenciją (question/ingest/feedback)",
     "4a. ingest -> gilus ištraukimas -> vault/extracted",
-    "4b. question -> RAG per vault -> atsakymas į Telegram",
+    "4b. question -> RAG per vault -> atsakymas SU šaltiniais į Telegram",
+    "4c. feedback -> atnaujina reward",
     "5. selektorius -> growth/ arba skills/",
     "6. trajektorija + reward loginami; savireguliacija fone (Loop B/C, outer-loop)"
   ],
 
   "ar_veikia_kaip_sugalvota": {
-    "verdiktas": "TAIP — pagrindinė kilpa veikia; viena dalis (6) dar statoma",
-    "priima_ir_istraukia": "TAIP (patikrinta realiais video/failais)",
-    "atrenka_ir_gamina_igudzius": "TAIP",
-    "mokosi_is_saves": "TAIP (reward realiai kreipia sprendimus, ne dekoracija)",
-    "supranta_intencija_ir_atsako": "STATOMA (Fazė 6)",
+    "verdiktas": "TAIP — pilna kilpa (1-6) veikia: priima -> ištraukia -> atrenka -> mokosi -> supranta intenciją -> atsako iš žinių",
+    "priima_ir_istraukia": "TAIP (patikrinta realiais video/failais; 18 vault'e)",
+    "atrenka_ir_gamina_igudzius": "TAIP (9 skills)",
+    "mokosi_is_saves": "TAIP (reward realiai kreipia sprendimus)",
+    "supranta_intencija_ir_atsako": "TAIP (Fazė 6 baigta, patvirtinta gyvai)",
     "veikia_nemokamai": "TAIP (€0)",
     "valdoma_is_telefono": "TAIP (be terminalo)"
   },
 
   "ribos_ir_rizikos": [
-    "DURABILUMAS: visas HERA kodas TIK VPS'e, GitHub'e NĖRA (nėra push tokeno) — didžiausia rizika",
+    "DURABILUMAS (didžiausia): visas HERA kodas (Fazės 2-6) + 9 skills TIK VPS'e, GitHub'e NĖRA (n8n/hera/ untracked, nėra push tokeno). Jei VPS dingtų — prarandi viską.",
+    "EPISTEMINĖ SPRAGA: sistema saugo ir atkartoja info kaip tiesą — NEtikrina teisingumo. Klaidingas šaltinis -> užtikrintai klaidingas atsakymas. Grounding saugo nuo modelio haliucinacijų, NE nuo klaidingų duomenų vault'e. (Sprendimas: provenance+pasitikėjimas+prieštaravimų aptikimas — būsimas 'episteminis sluoksnis'.)",
     "Gemini free flaky (503) — struktūrizavimo žingsniai kartais stringa, retry padeda",
-    "Sukaupta žinia dar nepanaudojama išorėje (tik query, kai Fazė 6 baigta)",
-    "Savireguliacijos pasiūlymai remiasi subjektyviu LLM verdiktu -> žmogaus promote būtina (taip ir padaryta)",
+    "Savireguliacijos ir skill juodraščiai remiasi subjektyviu LLM verdiktu -> žmogaus promote būtina (taip ir padaryta)",
     "Digest ir HERA dar nesujungti į vieną kilpą",
     "YouTube per viešus veidrodžius (Piped) — jei nustotų, reikės proxy (HERA_YT_PROXY paruoštas)"
   ],
 
   "kas_toliau": [
-    "Fazė 6 užbaigimas (auto-router + query) — vyksta",
-    "Kodo apsauga į GitHub (reikia scoped tokeno)",
+    "PIRMA: kodo apsauga į GitHub (reikia scoped tokeno) — prieš leidžiant self-code-modification",
+    "Fazė 7 kandidatai: verify-loop (saugus savęs-refaktorizavimas, testai+snapshot+rollback) ARBA episteminis sluoksnis (žinių teisingumas)",
     "Digest sujungimas į HERA kilpą",
     "Sukauptos žinios panaudojimas (agentams / veiksmams)"
   ]
