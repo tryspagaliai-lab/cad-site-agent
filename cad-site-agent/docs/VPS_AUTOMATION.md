@@ -117,4 +117,17 @@ set -a; . /root/ai_digest.env; set +a; python3 /root/ai_digest.py   # turi parod
   Backup: `/root/linkparser_pre_cutover.json` (rollback NEREKOMENDUOJAMAS — senas bridge miręs). Eilė flush'inta: 3 job'ai, photo.jpg atkurtas (validus JPEG).
 - **BUG pataisytas:** n8n flush kelyje failą siunčia kaip JSON-Buffer envelope (`{type:Buffer,data:[...]}`); worker `/file` dabar atsuka į raw baitus.
 - **LIKO Fazė 2:** tikroji HERA apdorojimo logika (ką daryti su url/youtube/file/text/council_decision — parsingas, vault indeksavimas) — originalo nėra, reikės apibrėžti iš naujo.
+
+### Fazė 2 — reikalavimai (iš vartotojo 2026-07-07) + GitHub auditas
+- **Org turi 5 repo:** claudeaios-vault (priv, VAULT — HERA žinių saugykla), agentos-sessions (priv, sesijų archyvas + chat↔CC tiltas, HERA specai/logai),
+  cad-site-agent (viešas), cad-cleanup-knowledge (viešas), shakespeare-automation (priv). **Atskiro HERA/`hera-core` repo NĖRA** —
+  HERA runtime + ingest worker gyveno lokaliai (laptope) → tikėtina prarasti. Panaudojamo HERA pipeline kodo/speco GitHub'e nerasta (code search visur 0).
+- **Vartotojo Fazės 2 reikalavimai:** NE santrauka, o **gilus, pilnas ištraukimas**. Ilgi video/audio **karpomi gabalais**, kiekvienas gabalas apdorojamas,
+  rezultatai sujungiami (nesvarbu trukmė/ilgis). Tas pats su image formatais. Po ištraukimo — **HERA agento darbas: atrinkti iš info tai,
+  kas tinka SISTEMOS augimui / tobulėjimui / plėtrai** (self-evolving system agents).
+- **Kind'ai:** url / youtube / file(image,pdf,audio,video) / text / council_decision.
+- **Siūloma architektūra (statoma iš nulio VPS'e):** fetch sluoksnis (readability url; yt-dlp+ffmpeg media) → deep-extract per Gemini (free tier, €0;
+  multimodalis: tekstas/vaizdas/audio/video/pdf; ilgi media chunkinami) → pilnas rezultatas į /opt/hera-vault/ → HERA selektorius (antra Gemini/agent pakopa)
+  atrenka „naudinga augimui" → kandidatai į augimo eilę. (Vėliau sinchronizuoti į claudeaios-vault, kai bus GitHub write.)
+- **Stadijos:** 2a url+text · 2b youtube+audio+video (chunk+transcribe) · 2c image (vision) · 2d HERA selektorius.
 ```
