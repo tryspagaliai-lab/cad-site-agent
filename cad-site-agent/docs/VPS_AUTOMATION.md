@@ -160,4 +160,10 @@ set -a; . /root/ai_digest.env; set +a; python3 /root/ai_digest.py   # turi parod
   - Self-test: 3 outer-loop pasiūlymai visi replay-PAGERĖJO→ACCEPTED; RIC blokuoja `rm -rf /opt/hera-vault`, praleidžia failo rašymą.
 - **⚠️ SVARBU — durabilumas:** VISAS HERA kodas (Fazės 2–4) gyvena TIK VPS'e (`/opt/hera-processor/`, `/opt/hera-ingest/`, kopija `/opt/cad-site-agent/n8n/hera/`). GitHub'e NĖRA (VPS neturi push creds). Rizika = laptopo istorija. Apsaugoti reikia scoped tokeno.
 - **⚠️ Patikimumas:** self-improvement sprendimai remiasi Gemini free (flaky, 503) ir subjektyviu LLM verdiktu → `proposals/approved/` laikyti žmogaus-peržiūrimu prieš promote į gamybą (kaip ir pastatyta).
+
+### Fazė 5 — SONA verdiktas + planas (2026-07-07)
+- **SONA (Self-Optimizing Neural Architecture) — PRIIMTA dalinai (8.5).** Filosofija „intelektas kilpoje, ne modelyje" = HERA vizija.
+- IMAM (be treniravimo): trys laiko kilpos (Loop A per-query / B valandinė klasterizacija+kokybė / C savaitinė konsolidacija), ReasoningBank (kas suveikė → kreipia routing), EWC-lite (svarbos laukas saugo įrodytus skills). Panaudoja jau loginamą `reward` lauką → uždaro kilpą.
+- ATIDĖTA (GPU/overkill): LoRA+EWC svorių treniravimas, hiperbolinė (Poincaré) geom., GNN reranking, dinaminis MinCut RuVector. (Embedding-retrieval — nebent lengvas Fazės 4 patobulinimas.)
+- **Fazė 5 (statoma, task žemiau):** Loop B (klasterizacija+kokybės balai → silpnų sričių raportas) · Loop C (vault konsolidacija: merge/prune STAGED + concept index) · ReasoningBank (reward-kreipiamas routing) · EWC-lite (importance laukas).
 ```
