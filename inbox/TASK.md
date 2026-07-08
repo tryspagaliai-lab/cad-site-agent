@@ -1,33 +1,32 @@
-UŽDUOTIS — HERA Fazė 6: INTENCIJŲ MARŠRUTIZATORIUS + „paklausk vault'o" (RAG). Autonomiškai.
-NELIESK veikiančių Fazės 2–5 ir youtube kelio — tik PRIDĖK priekinį routerį + query kelią. Nemokama (Gemini free).
-Atsiskaityk į Telegram TRUMPAI, aiškiu galutiniu statusu.
+UŽDUOTIS — VPS Claude Code sutvirtinimas (saugumas + privatumas + kaštai). Autonomiškai, ATSARGIAI.
+KRITIŠKA: blogas ~/.claude/settings.json gali nulaužti runner'į (visą automatiką). Todėl:
+BACKUP -> keitimas -> JSON validacija -> testas `claude -p` -> jei lūžta, ROLLBACK. Atsiskaityk į Telegram TRUMPAI.
 
-ESMĖ: sistema turi PATI SUSIVOKTI, kas atsiųsta — klausimas, turinys ar grįžtamasis ryšys — ir pati nukreipti.
-JOKIŲ rankinių prefiksų (nebent kaip papildoma užuomina). Router = HERA smegenų priekis.
+Kontekstas: VPS Claude Code (kuris vykdo HERA per runner) veikia --dangerously-skip-permissions (bypass).
+Deny taisyklės tikrinamos PIRMA ir galioja NET bypass režime — tai kietas saugumo gardas.
 
-1) INTENCIJŲ ROUTER (`hera_router.py`). Kiekvienam ateinančiam job'ui nustatyk intenciją per Gemini free
-   (greitas klasifikatorius) — klasės:
-   - `question` — vartotojas klausia / nori atsakymo iš sukauptos žinios → RAG atsakymas.
-   - `ingest` — turinys, kurį reikia įsisavinti (url/youtube/failas/straipsnis/esminis tekstas) → esamas Fazės 2 kelias.
-   - `feedback` — vertinimas apie ankstesnį rezultatą → atnaujink to job'o reward (delayed).
-   - `other/unclear` — DEFAULT į `ingest` (saugu). Media numatytai `ingest`; TEKSTĄ klasifikuok visada.
-   Klasifikaciją loginK į trajektorijas (auditas + ReasoningBank). „?" prefiksas — tik neprivaloma užuomina.
+1) BACKUP: `cp ~/.claude/settings.json ~/.claude/settings.json.bak-$(date +%s)` (jei failo nėra — pažymėk).
 
-2) QUERY kelias (`hera_query.py`) — kai router nusprendžia `question`:
-   - indeksuok vault'ą (extracted/*/full.md + growth/*.md + skills/*/SKILL.md), suskaidyk į chunk'us;
-   - retrieve top-K (leksiniai helperiai iš hera_common; Gemini embeddings — neprivaloma);
-   - Gemini free atsakymas GRIEŽTAI iš retrieve'intų chunk'ų + ŠALTINIAI (job id/video/failas);
-   - jei vault'e nėra — „nerandu vault'e", NEfantazuok. CLI: `hera_query.py "klausimas"`.
+2) PRIDĖK į ~/.claude/settings.json (išlaikyk esamą turinį, tik papildyk):
+   - permissions.deny (SAUGUMAS — apsaugo raktus nuo autonominio agento):
+     "Read(/root/ai_digest.env)", "Read(/root/hera.env)", "Read(**/.env)", "Read(**/*.env)"
+     PASTABA: tai blokuoja Read ĮRANKĮ; bash sourcing (`. /root/ai_digest.env`) NEpaliestas, digest/HERA veiks.
+     NEDĖK `Bash(git push *)` deny — push mums reikės kodo backup'ui.
+   - env (privatumas + kontekstas): "DISABLE_TELEMETRY":"1", "DISABLE_ERROR_REPORTING":"1",
+     "DISABLE_NON_ESSENTIAL_MODEL_CALLS":"1", "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY":"1",
+     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE":"75"
+   - top-level: "cleanupPeriodDays": 365
+   - effort/model routing: TIK jei patvirtini teisingą settings raktą Claude Code v2.1.201 (patikrink `claude --help`/docs);
+     jei neaišku — PRALEISK (negadink spėdamas).
 
-3) INTEGRACIJA: processor'iuje kiekvienas job'as pirma per hera_router → į teisingą kelią. Be n8n keitimo.
+3) VALIDACIJA: `python3 -c "import json;json.load(open('/root/.claude/settings.json'));print('JSON OK')"`.
+   Jei nevalidus — grąžink backup ir STOP.
 
-4) SELF-TEST (€0): mišrūs pavyzdžiai, parodyk teisingą atskyrimą:
-   - „kas yra ATDP ir self-evolving agentai?" → question → atsakymas su šaltiniais (dabar vault'e yra ~5+ AI video)
-   - koks nors tekstas/URL → ingest
-   - „tas wargaming skill buvo naudingas" → feedback → reward atnaujintas
-   Parodyk klasifikaciją + rezultatą kiekvienam.
+4) TESTAS: `IS_SANDBOX=1 claude -p "atsakyk vienu žodžiu: OK" --dangerously-skip-permissions` — turi grąžinti atsakymą.
+   Papildomai patikrink, kad deny veikia: agentas turi NEGALĖTI Read'inti /root/hera.env.
+   Jei testas lūžta ar runner rizikuoja — ROLLBACK į backup.
 
-5) DURABILUMAS: kodą į /opt/cad-site-agent/n8n/hera/. Push nedaryk.
+5) Nekeisk repo .claude/ (tik globalų ~/.claude/settings.json). Kitos fazės/HERA nepaliestos.
 
-Į Telegram: kaip veikia auto-routing (be prefiksų), self-test klasifikacijos + query atsakymai su šaltiniais,
-ir aiškiai „FAZĖ 6 BAIGTA".
+Į Telegram: kokie nustatymai pridėti, JSON validus?, `claude -p` testas praėjo?, deny veikia?, ir aiškiai
+„VPS SUTVIRTINIMAS BAIGTAS" arba (jei rollback) kas nepavyko.
