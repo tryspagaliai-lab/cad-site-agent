@@ -1,25 +1,23 @@
-UŽDUOTIS — Pataisyk: tekstinis KLAUSIMAS iš Telegram nepasiekia HERA (ingest eilė tuščia 3h),
-o URL'ai praeina. Router+query (Fazė 6) veikia, bet job'as neatkeliauja. Autonomiškai, atsargiai.
-Atsiskaityk į Telegram TRUMPAI.
+UŽDUOTIS — HERA model-fallback (procesoriaus atsparumas Gemini 503). Autonomiškai, atsargiai.
+NELIESK kitų fazių/logikos — tik gemini.py sluoksnį. Nemokama (visi Gemini free modeliai). Atsiskaityk į Telegram TRUMPAI.
 
-DIAGNOZĖ (rask tikrą priežastį):
-1) n8n „Link Parser" (linkparserwork01): kaip Telegram trigger'is priima žinutes? Ar paprasto TEKSTO žinutė
-   (be URL) forward'inama į hera-ingest (8799) kaip kind=text? Patikrink node logiką (ar filtruoja tik url/media,
-   ar meta text be entities). Eksportuok ir peržiūrėk „Poll & Process".
-2) Ar n8n vis dar POLL'ina Telegramą? Patikrink n8n vykdymų istoriją/logus (docker logs n8n-n8n-1 --tail 100)
-   dėl paskutinių kelių valandų — ar buvo gauta žinučių po 17:00, ar polling sustojo/kliūva (pvz. 409 conflict).
-3) Ar žinutė apskritai pasiekė botą? (atsargiai — NEdaryk getUpdates, jei n8n poll'ina; naudok n8n logus).
+Problema: /opt/hera-processor/gemini.py prikaltas prie vieno modelio (gemini-flash-latest), be fallback.
+Tas modelis dabar globaliai 503'ina → job'ai dead-letter'ina. (n8n turi fallback, procesorius — ne.)
 
-FIX:
-4) Padaryk, kad paprasto teksto žinutė (klausimas) BŪTŲ forward'inama į hera-ingest kaip kind=text →
-   tada hera_router ją klasifikuos (question/ingest/feedback). Jei polling sustojęs — restart'ink n8n švariai.
-5) GEMINI 503 atsparumas query kelyje: jei Gemini atsakymo generavimui persistentiškai 503'ina, vietoj TYLOS
-   nusiųsk į Telegram aiškų „⏳ Gemini šiuo metu perkrautas, bandyk vėliau" (kad vartotojas nebūtų paliktas be žinios).
-   (Backoff/retry jau yra — tik užtikrink graceful pranešimą.)
+1) MODELIŲ FALLBACK. gemini.py: vietoj vieno modelio — SĄRAŠAS, konfigūruojamas env `HERA_GEMINI_MODELS`
+   (kableliais), su protingu default: `gemini-flash-latest,gemini-2.5-flash,gemini-2.0-flash,gemini-flash-lite-latest`.
+   Logika: bandyk 1-ą modelį (su esamu retry/backoff); jei persistentiškai 503/quota/unavailable → **rollink į kitą**
+   modelį sąraše; grąžink pirmą sėkmę. Išlaikyk esamą elgseną (thinkingBudget=0 ir t.t.), NEkeisk API rakto/kvietimų
+   formato. Suderink su laikinu `HERA_GEMINI_MODEL` override (jei nustatytas — pirmas sąraše).
+   LoginK, kuris modelis suveikė (į trajektorijų meta arba processor log).
 
-TESTAS:
-6) Sumuliuok/realiai patikrink: tekstinis klausimas „kas yra ATDP?" → turi pasiekti hera-ingest → router=question →
-   query → atsakymas su šaltiniais atgal į Telegram. Parodyk, kad pilnas kelias veikia iš Telegram pusės.
+2) TESTAS: (a) unit — kai 1-as modelis 503, ar rolina į kitą ir grąžina rezultatą; (b) realus — paleisk ištraukimą
+   ir query su dabar 503'inančiu flash-latest → turi PRAEITI per fallback (pvz. gemini-2.5-flash). Parodyk, kuris suveikė.
 
-Neliesk kitų fazių. Push nedaryk. Į Telegram: kokia buvo tikroji priežastis, kas pataisyta, ar testas praėjo,
-ir „KLAUSIMŲ KELIAS BAIGTAS".
+3) RE-DRIVE: dead-letter'intus job'us (pvz. 20260708T165445Z-ljsqy5 ir kt., kritusius dėl 503) paleisk iš naujo
+   per naują fallback kelią. Suskaičiuok atgaivinta/liko.
+
+4) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push nedaryk.
+
+Į Telegram: modelių sąrašas, testas (fallback veikia?), kiek dead-letter atgaivinta, ir aiškiai
+„MODEL-FALLBACK BAIGTAS".
