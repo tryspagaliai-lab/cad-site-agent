@@ -1,6 +1,13 @@
 UŽDUOTIS — HERA MODELIŲ TARYBA (council_decision, Fazė 7). Autonomiškai, atsargiai.
 Statyk PILNĄ automatinę tarybą kad veiktų per API be rankinio klijavimo. Atsiskaityk į Telegram TRUMPAI.
 
+*** ATNAUJINTA: OPENROUTER_API_KEY JAU ĮDĖTAS į /root/hera.env. ***
+PIRMA PATIKRINK ar raktas veikia (GET https://openrouter.ai/api/v1/models su Authorization: Bearer <key>
+iš env — grąžink tik HTTP statusą + kiek NEMOKAMŲ modelių rasta, NErodyk rakto). Jei 200 — tęsk su pilna
+open-source taryba. Jei modulis hera_council.py jau pastatytas praeitą kartą — NEstatyk iš naujo, tik
+PALEISK realų testą (4b) su pilna open-source sudėtimi ir raportuok kurie juror'iai realiai balsavo.
+Jei rakto patikra nepavyko (401/403) — parašyk Telegram kad raktas negalioja, ir sustok.
+
 KONTEKSTAS (valdymo hierarchija — LAIKYK):
 - HERA Gemini selektorius = greitas PIRMAS filtras (klysta: NVIDIA straipsniui davė 8.0, realiai off-domain).
 - TARYBA = tvirtas "antras vartas": keli modeliai kartu IŠGRYNINA + PATVIRTINA ar verta sistemai.
