@@ -28,10 +28,12 @@ SAUGUMAS (privaloma):
       gauk modelių sąrašą (GET /models), filtruok NEMOKAMUS (`:free` / pricing=0), ir atrink ĮVAIRIŲ
       ŠEIMŲ juror'ius (po vieną iš: MiMo/Xiaomi, GLM/z-ai, Qwen, Kimi/Moonshot, DeepSeek, Llama, Mistral).
       Tai originali tavo taryba (MiMo + GLM + Qwen + Kimi + open-source).
-      *** MiMo (Xiaomi) — PRIVALOMAS narys. *** Būtinai paieškok modelių sąraše "mimo" ARBA "xiaomi"
-      (case-insensitive) ir įtrauk jį kaip juror'į. Jei MiMo OpenRouter'yje NĖRA (nei free, nei apskritai) —
-      NEtylėk: raporte į Telegram aiškiai parašyk "MiMo: nepasiekiamas per OpenRouter" ir pasiūlyk kelią
-      (atskiras MiMo API raktas / endpoint). Tas pats principas Kimi — būtinai įtrauk jei yra.
+      *** PRIVALOMI nariai: MiMo (Xiaomi) IR Nex-N2 Pro. *** Būtinai paieškok modelių sąraše (case-insensitive):
+      - "mimo" ARBA "xiaomi" -> MiMo;
+      - "nex" ARBA "nex-n2" ARBA "n2 pro" -> Nex-N2 Pro (tai originalus "NX2.5 pro").
+      Įtrauk juos kaip juror'ius. Jei kurio NĖRA OpenRouter'yje (nei free, nei apskritai) — NEtylėk: raporte į
+      Telegram aiškiai parašyk kuris nepasiekiamas ("MiMo: nepasiekiamas" / "Nex-N2 Pro: nepasiekiamas") ir
+      pasiūlyk kelią (atskiras API raktas / endpoint tam modeliui). Tas pats principas Kimi — būtinai įtrauk jei yra.
       Kiekvienas balsuoja atskirai. Sąrašą laikyk konfigūruojamą env `HERA_COUNCIL_MODELS` (kableliais)
       su protingu default; jei kuris modelis nepasiekiamas — praleisk, imk kitą tos pačios/kitos šeimos,
       BET MiMo/Kimi trūkumą visada įvardink raporte (ne tyliai).
@@ -62,6 +64,6 @@ SAUGUMAS (privaloma):
 
 5) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push NEDARYK.
 
-ATSISKAITYMAS į Telegram (TRUMPAI, be raktų): tarybos nariai kurie balsavo (AIŠKIAI pažymėk ar MiMo ir Kimi
-dalyvavo, ar ne — jei ne, kodėl), testo rezultatas (ar pagavo NVIDIA off-domain), kur protokolas saugomas,
-ir aiškiai „TARYBA BAIGTA". NErodyk jokių rakto reikšmių.
+ATSISKAITYMAS į Telegram (TRUMPAI, be raktų): tarybos nariai kurie balsavo (AIŠKIAI pažymėk ar MiMo, Nex-N2 Pro
+ir Kimi dalyvavo, ar ne — jei ne, kodėl), testo rezultatas (ar pagavo NVIDIA off-domain), kur protokolas
+saugomas, ir aiškiai „TARYBA BAIGTA". NErodyk jokių rakto reikšmių.
