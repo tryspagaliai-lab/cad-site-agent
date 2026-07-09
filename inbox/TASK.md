@@ -1,25 +1,44 @@
-UŽDUOTIS — TARYBOS PATAISA (GREITAI, FOKUSUOTAI). NEperstatyk, NEleisk viso pytest. <10 min, timeout saugiklis yra.
-2 problemos iš prod log: (1) 413 Payload Too Large — juror'iams siunčiamas VISAS ~29k tekstas, dauguma Groq atmeta;
-(2) ingest'as TYLUS — vartotojas negauna jokios žinutės kad turinys priimtas+įvertintas. Atsiskaityk Telegram TRUMPAI.
+UŽDUOTIS — GROWTH UŽRAŠAS + DISTILL PAPILDYMAS (LENGVA, TIK VAULT TURINYS, BE KODO KEITIMO). <10 min.
+NEperstatyk servisų, NEleisk pytest, NEkeisk hera_*.py kodo. Atsiskaityk Telegram TRUMPAI.
 
 SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk.
 
-1) FIX 413 (svarbiausia): hera_council.py — prieš siunčiant kandidatą juror'iams, NEsiųsk viso ištraukto teksto.
-   Sukonstruok TRUMPĄ juror digest'ą (konfig env HERA_COUNCIL_MAXCHARS, default ~4000): selektoriaus santrauka/priežastis
-   + kandidato pradžia (pirmi ~3000 simb.) + metaduomenys (šaltinis, tipas, selektoriaus balas). Juror vertina
-   keep/drop + domain_fit iš digest'o — jam nereikia viso teksto. Taip dingsta 413. Palik ribą konfigūruojamą.
-   (Jei jau yra koks truncate — sutvarkyk kad realiai <maxchars visiems tiekėjams; Groq limitas mažesnis.)
+KONTEKSTAS: šiandien (2026-07-09 ~19:41) per pipeline praėjo Schmidhuberio interviu ištraukimas („Unsupervised
+Learning" podcast, Jacob Effron / Redpoint). Claude (kuratorius, antras vartas) peržiūrėjo ir verdiktas: domain fit
+mišrus (~6/10), verta GROWTH užrašo (ne SKILL — nėra atkartojamos metodikos), plius 3 principai papildo HERA dizainą.
 
-2) INGEST ACK (Telegram): kai taryba/selektorius apdoroja ĮKELTĄ turinį (ne klausimą), nusiųsk vieną TRUMPĄ žinutę:
-   „📥 Priimta: <trumpas pavadinimas> | selektorius <score> | taryba <final_action> (<n balsų>) | skill/growth: <kelias>".
-   Rask kur ingest kelias baigiasi (dispatcher/processor) ir įterpk šį pranešimą (naudok esamą Telegram siuntimą,
-   /root/ai_digest.env kreds). Fail-safe: jei siuntimas krenta — neblokuok. NErodyk jokių raktų.
+1) GROWTH UŽRAŠAS: sukurk /opt/hera-vault/growth/2026-07-09-schmidhuber-godel-smalsumas.md su šiuo turiniu
+   (gali performuluoti, esmę išlaikyk):
 
-3) TESTAS (greitas, be viso suite): perleisk council_decision ant JAU ištraukto kandidato 20260709T170609Z-ubbvs8
-   (SwarmResearch, score 9.0) su nauju digest'u. Patikrink: ar dingo 413, kiek juror'ių dabar balsavo (turi būti daugiau
-   nei 3), koks council verdiktas. Parodyk balsavusius su balais.
+   Šaltinis: interviu su Jürgen Schmidhuber, „Unsupervised Learning" (Jacob Effron, Redpoint), ištraukta per
+   HERA pipeline 2026-07-09. Kuratoriaus (Claude) verdiktas: growth, ne skill. On-domain dalys HERA'i:
 
-4) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push NEDARYK.
+   a) GÖDELIO MAŠINOS PRINCIPAS (2003): sistema keičia savo kodą TIK pateikusi įrodymą, kad pakeitimas padidins
+      naudingumą. HERA atitikmuo (jau įgyvendinta): outer-loop -> kontrafaktinis replay (PAGERĖJO/PABLOGĖJO) ->
+      staged į proposals/ -> žmogaus gate. Replay = praktinė Gödelio „įrodymo" aproksimacija. Išvada-principas:
+      pakeitimas be replay įrodymo = automatiškai atmetamas, nepriklausomai nuo LLM verdikto (formuluotė būsimam
+      reward-hacking sargui). NIEKADA auto-promote — dabar tai turi teorinį pagrindą.
 
-TELEGRAM (trumpai): (1) 413 pataisytas? kiek juror'ių dabar balsuoja SwarmResearch kandidatui (prieš/po), (2) ingest
-ACK įjungtas? (taip), (3) „TARYBOS PATAISA BAIGTA". BE raktų.
+   b) DIRBTINIS SMALSUMAS / SUSPAUDIMO PROGRESAS (1990): vidinis reward = skirtumas tarp bitų, reikalingų duomenims
+      aprašyti prieš ir po mokymosi. HERA pritaikymas: stagnaciją matuoti ne tik balų kreive, bet „ar naujas
+      ingest'as prideda išmokstamo naujumo" — jei selektoriaus balai aukšti, bet vault'e konceptai dubliuojasi
+      (naujumo nėra), STAGNATION-REDIRECTION heartbeat turi nukreipti kitur. (DISTILL kandidatas #4.)
+
+   c) TINGUMO PRINCIPAS: intelektas = tikslo siekimas su kuo mažiau resursų; kaštai įtraukti į tikslo funkciją.
+      HERA pritaikymas: į trajektorijų reward įtraukti kaštų dedamąją (LLM kvietimų sk., retry'ai, digest dydis) —
+      pigesnis kelias iki to paties rezultato = aukštesnis reward. Dera su €0 stack'u. (DISTILL kandidatas #5.)
+
+   Off-domain (neplėtoti): investicijų burbulas/CapEx, robotikos hardware, MOF chemija, saugumo nuomonės,
+   tiesiniai transformatoriai (HERA netreniruoja modelių).
+
+2) DISTILL SĄRAŠO PAPILDYMAS: jei /opt/hera-vault/skills/ yra skill'as swarm-research-git-atmintis (ar panašiu
+   vardu iš SwarmResearch ingest'o) — pridėk jame sekciją „DISTILL kandidatai HERA'i (draft, human_gate)" su
+   kandidatais #4 (compression-progress stagnacijos metrika) ir #5 (kaštų dedamoji reward'e) iš aukščiau, ir
+   nuoroda į growth užrašą. Jei tokio skill'o NĖRA — vietoj to sukurk
+   /opt/hera-vault/proposals/distill-kandidatai-2026-07-09.md (draft, human_gate=True) su abiem kandidatais.
+   NIEKO nepromote'ink, NIEKO nekeisk kode — tik staged tekstas.
+
+3) TRAJEKTORIJA: jei paprasta — įrašyk šį veiksmą į trajectories (tipas: curation/growth). Jei nepatogu — praleisk.
+
+TELEGRAM (trumpai, be raktų): (1) growth užrašo kelias, (2) kur padėti DISTILL kandidatai (skill'e ar proposals/),
+(3) „GROWTH+DISTILL BAIGTA".
