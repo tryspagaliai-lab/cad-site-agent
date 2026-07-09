@@ -1,39 +1,41 @@
-UŽDUOTIS — TARYBA: PRIJUNGTI GROQ kaip PAGRINDINIUS open-source juror'ius. Atsargiai, autonomiškai.
-Taryba (hera_council.py) pastatyta ir veikia (19/19 unit, pagavo NVIDIA off-domain). NEstatyk iš naujo.
-KONTEKSTAS: OpenRouter free tier grąžino 429 (bendra ~50 užklausų/parą be kredito) → open-source nebalsavo.
-Sprendimas: GROQ_API_KEY jau įdėtas į /root/hera.env. Groq turi tikrai naudingą free tier'ą ir hostina stiprius
-open-source modelius. Prijunk Groq kaip PAGRINDINĮ open-source tiekėją; OpenRouter palik kaip antrinį/egzotiniam.
+UŽDUOTIS — TARYBA: (A) AKTYVUOK prod'e + (B) PARUOŠK NVIDIA NIM tiekėją. Atsargiai, autonomiškai.
+Taryba (hera_council.py) veikia (26/26 unit, Groq 5/5 pagavo NVIDIA off-domain). NEperstatyk branduolio.
 Atsiskaityk į Telegram TRUMPAI, BE raktų.
 
 SAUGUMAS: raktų reikšmių NIEKADA nespausdink, necommit'ink, nerodyk Telegram/chate. Tik pavadinimai/prefiksai/statusai.
 
-1) ENV: įsitikink kad /root/hera.env raktai pasiekia os.environ (jei praeita pataisa jau įkelia failą — gerai;
-   jei ne — hera_council pats perskaito /root/hera.env trūkstamiems raktams). Patikra: ar yra GROQ_API_KEY,
-   OPENROUTER_API_KEY, OPENAI_API_KEY (rodyk TIK taip/ne + prefiksą, pvz "gsk_", ne reikšmę).
+A) AKTYVAVIMAS PROD'e (vartotojo sprendimas: taryba KIEKVIENAM įrašui):
+   - Įrašyk `HERA_COUNCIL=1` į /root/hera.env (jei dar nėra), chmod 600.
+   - Įsitikink kad hera-processor mato šį kintamąjį (per EnvironmentFile drop-in, kurį jau pridėjai) ->
+     `systemctl daemon-reload` (jei reikia) + `systemctl restart hera-processor`; patikrink `systemctl is-active`.
+   - Patvirtink kad dispatcher.augment_verdict dabar REALIAI kviečia tarybą įkeliamam turiniui
+     (ne tik teste). Rezultatas VISADA lieka human_gate=True, staged į proposals/council/ — JOKIO auto-promote.
+   - APSAUGA nuo limitų: kadangi taryba eina kiekvienam įrašui, įsitikink kad prie 429/klaidų ji fail-safe
+     krenta į mažiau balsų (min 2 galioja; <2 -> stage_for_review), NIEKADA neblokuoja ir nemeta ingest'o.
 
-2) GROQ TIEKĖJAS hera_council.py — nauja juror grupė per Groq API (OpenAI-suderinamas:
-   POST https://api.groq.com/openai/v1/chat/completions, Authorization: Bearer <GROQ_API_KEY>).
-   - Gauk modelių sąrašą GET https://api.groq.com/openai/v1/models; atrink ĮVAIRIŲ ŠEIMŲ juror'ius
-     (po vieną iš: Llama, Qwen, DeepSeek, Kimi/Moonshot, GPT-OSS, Gemma) — tikslas 4-5 balsai.
-     Konfigūruojama env `HERA_GROQ_MODELS` (kableliais) su protingu default; jei modelis dingęs — imk kitą.
-   - Tas pats struktūrizuotas prompt'as, tas pats JSON verdiktas {verdict, score, domain_fit, reason}, tvirtas parse.
-   - Retry/backoff (429/5xx + Retry-After) ir stagger, kaip OpenRouter kelyje.
+B) NVIDIA NIM TIEKĖJAS (paruošk KODĄ; raktas gali dar nebūti — tada tyliai skip):
+   - Naujas juror tiekėjas per NVIDIA NIM (OpenAI-suderinamas): POST https://integrate.api.nvidia.com/v1/chat/completions,
+     Authorization: Bearer <NVIDIA_API_KEY> (skaityk iš os.environ / /root/hera.env self-load).
+   - GET https://integrate.api.nvidia.com/v1/models -> atrink ĮVAIRIŲ ŠEIMŲ juror'ius, prioritetas tiems,
+     kurių Groq NETURI: DeepSeek, GLM/zai, Kimi/Moonshot, Qwen (case-insensitive paieška sąraše).
+     Konfigūruojama env `HERA_NVIDIA_MODELS` (kableliais) su protingu default; jei modelis dingęs — imk kitą.
+   - Tas pats struktūrizuotas prompt'as / JSON verdiktas {verdict, score, domain_fit, reason}, tvirtas parse,
+     retry/backoff (429/5xx + Retry-After), stagger. NVIDIA global limitas ~40 RPM — nedaryk lygiagrečiai per daug.
+   - Jei NVIDIA_API_KEY NĖRA — praleisk tyliai ("nvidia: no key"), taryba veikia iš Groq+Gemini.
 
-3) JUROR PRIORITETAS: Groq open-source = PAGRINDINIAI; Gemini free = papildomi (1-2); OpenRouter = antrinis
-   (bandyk TIK jei Groq davė <3 balsus ARBA egzotiniam MiMo/Nex-N2 Pro); OpenAI = kraštutinis tie-breaker
-   (tik nesutarime/prie ribos). Bet kuris juror gali kristi; min 2 galiojantys balsai = verdiktas, <2 → review.
+C) PRIORITETAS (atnaujintas): Groq (Llama/Qwen/GPT-OSS) + NVIDIA NIM (DeepSeek/GLM/Kimi/Qwen) = PAGRINDINIAI
+   open-source juror'iai; Gemini free = papildomi (1-2); OpenRouter = tik jei <3 balsai; OpenAI = kraštutinis
+   tie-breaker. Tikslas 5-6 galiojantys balsai iš įvairių šeimų.
 
-4) MiMo / Nex-N2 Pro: pabandyk rasti Groq IR OpenRouter modelių sąrašuose (case-insensitive "mimo"/"xiaomi",
-   "nex"/"nex-n2"/"n2 pro"). Jei nėra nė vienoje — NEtylėk, raporte aiškiai: "MiMo: nerastas Groq/OpenRouter",
-   "Nex-N2 Pro: nerastas" ir pasiūlyk kelią (atskiras tiekėjas/endpoint). NEblokuok tarybos dėl jų nebuvimo.
+D) PATIKRA + TESTAS:
+   - Env patikra: GROQ/NVIDIA/OPENROUTER/OPENAI (taip/ne + prefiksas, NE reikšmė).
+   - Jei NVIDIA raktas YRA: GET /models -> kiek radai, ir ar sąraše yra DeepSeek/GLM/Kimi/Qwen (įvardink).
+   - RE-RUN NVIDIA off-domain testas su pilna sudėtim; raporte KURIE nariai balsavo (vardai+score/verdict),
+     council_score, domain_fit, final_action, ar tie-breaker kviestas. Protokolas -> proposals/council/.
+   - Unit: NVIDIA juror parse + atranka (fabrikuoti atsakymai). Visi testai turi PRAEITI.
 
-5) RE-RUN NVIDIA testas su pilna sudėtim (Groq + Gemini). Raporte: KURIE juror'iai realiai balsavo
-   (vardai + score/verdict kiekvieno), council_score, domain_fit, final_action, ar tie-breaker kviestas.
-   Ar taryba vėl pagavo off-domain? Protokolas -> proposals/council/<job>.json (human_gate=True).
-   Taip pat greitas unit: Groq juror parse + atranka (fabrikuoti atsakymai). Turi PRAEITI.
+E) DURABILUMAS: pakeistą kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push NEDARYK.
 
-6) DURABILUMAS: pakeistą kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push NEDARYK.
-
-TELEGRAM (trumpai, be raktų): (1) ar Groq raktas įsiskaito (taip + prefiksas), (2) kiek Groq modelių atrinkta ir
-KURIE (vardai), (3) NVIDIA testo verdiktas + kurie nariai balsavo su balais, (4) MiMo/Nex-N2 Pro — rasti ar ne,
-(5) aiškiai „OPEN-SOURCE TARYBA VEIKIA (Groq)" arba kas dar trūksta.
+TELEGRAM (trumpai, be raktų): (1) TARYBA prod'e AKTYVI? (HERA_COUNCIL=1, servisas active), (2) NVIDIA raktas
+yra/nėra; jei yra — kiek modelių + ar DeepSeek/GLM/Kimi rasti, (3) testo verdiktas + kurie nariai balsavo su balais,
+(4) aiškiai „TARYBA AKTYVI (Groq+Gemini)" ir „NVIDIA PARUOŠTA/LAUKIA RAKTO".
