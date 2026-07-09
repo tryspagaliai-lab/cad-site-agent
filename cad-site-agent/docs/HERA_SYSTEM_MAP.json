@@ -38,6 +38,13 @@
     "pastaba": "run_shell MCP tiltas blokuotas web sesijoje; naudojam GitHub kaip vamzdį"
   },
 
+  "valdymo_hierarchija": {
+    "principas": "HERA selektorius (Gemini free) = greitas PIRMAS filtras, NE galutinė instancija. Claude (protingesnis modelis) = antras vartas / kuratorius. Vartotojas = galutinis sprendimas.",
+    "srautas": "HERA siūlo (draft/staged, NIEKADA auto-promote į gamybą) -> Claude peržiūri/atrenka/pataiso -> vartotojas patvirtina",
+    "jau_imontuota": "skill'ai = 'draft'; outer-loop -> proposals/approved/ su žmogaus gate; EWC-lite saugo įrodytus skills",
+    "salyga": "Kad Claude galėtų realiai vertinti HERA OUTPUT'us (skills/growth/proposals), juos reikia MATYTI -> vault+kodas į GitHub (backup). Iki tol Claude vertina tik ĮVESTĮ (turinį), ne HERA sprendimus."
+  },
+
   "hera_pipeline": {
     "1_priemimas_ingest": {
       "ka_daro": "priima url / youtube / file(image,pdf,audio,video) / text / council_decision",
