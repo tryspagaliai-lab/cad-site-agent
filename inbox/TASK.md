@@ -1,44 +1,43 @@
-UŽDUOTIS — GROWTH UŽRAŠAS + DISTILL PAPILDYMAS (LENGVA, TIK VAULT TURINYS, BE KODO KEITIMO). <10 min.
+UŽDUOTIS — SKILL DRAFT: VERSLO IDENTITETAS + SVETAINĖ AI ĮRANKIAIS (LENGVA, TIK VAULT TURINYS, BE KODO KEITIMO). <10 min.
 NEperstatyk servisų, NEleisk pytest, NEkeisk hera_*.py kodo. Atsiskaityk Telegram TRUMPAI.
 
 SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk.
 
-KONTEKSTAS: šiandien (2026-07-09 ~19:41) per pipeline praėjo Schmidhuberio interviu ištraukimas („Unsupervised
-Learning" podcast, Jacob Effron / Redpoint). Claude (kuratorius, antras vartas) peržiūrėjo ir verdiktas: domain fit
-mišrus (~6/10), verta GROWTH užrašo (ne SKILL — nėra atkartojamos metodikos), plius 3 principai papildo HERA dizainą.
+KONTEKSTAS: šiandien ~20:22 per pipeline praėjo YouTube gido ištraukimas („Claude Design 2026 gidas", fiktyvi
+„Apex Roofing" įmonė). Claude (kuratorius, antras vartas) verdiktas: čia YRA atkartojama metodika -> SKILL draft
+(ne growth). Domain fit HERA'i vidutinis (~5-6/10), bet praktinė vertė vartotojo verslui aukšta.
 
-1) GROWTH UŽRAŠAS: sukurk /opt/hera-vault/growth/2026-07-09-schmidhuber-godel-smalsumas.md su šiuo turiniu
-   (gali performuluoti, esmę išlaikyk):
+1) SKILL DRAFT: sukurk /opt/hera-vault/skills/verslo-identitetas-ir-svetaine-ai-irankiais/SKILL.md
+   (status: draft, human_gate — kaip visi skills; NIEKO nepromote'ink). Tuple:
+   intent: nuo nulio sukurti verslo identitetą, svetainę, reklamas, skaidres ir sutartį AI įrankiais per 1 dieną
+   method: workflow žemiau
+   difficulty: vidutinis
+   tool_hint: Claude Design, Higgsfield, Claude Code, Netlify CLI
 
-   Šaltinis: interviu su Jürgen Schmidhuber, „Unsupervised Learning" (Jacob Effron, Redpoint), ištraukta per
-   HERA pipeline 2026-07-09. Kuratoriaus (Claude) verdiktas: growth, ne skill. On-domain dalys HERA'i:
+   TURINYS — atskirk DVI dalis:
 
-   a) GÖDELIO MAŠINOS PRINCIPAS (2003): sistema keičia savo kodą TIK pateikusi įrodymą, kad pakeitimas padidins
-      naudingumą. HERA atitikmuo (jau įgyvendinta): outer-loop -> kontrafaktinis replay (PAGERĖJO/PABLOGĖJO) ->
-      staged į proposals/ -> žmogaus gate. Replay = praktinė Gödelio „įrodymo" aproksimacija. Išvada-principas:
-      pakeitimas be replay įrodymo = automatiškai atmetamas, nepriklausomai nuo LLM verdikto (formuluotė būsimam
-      reward-hacking sargui). NIEKADA auto-promote — dabar tai turi teorinį pagrindą.
+   A) NESENSTANTIS KARKASAS (pagrindinė vertė):
+      1. Dizaino sistema PIRMA — įmonės pavadinimas + pitch, logotipas SVG (vektorinis, redaguojamas tekstas/spalvos),
+         šriftų pora + spalvų paletė parenkamos atskiru LLM pokalbiu (pigesniu modeliu), viskas į brand guide
+         su komponentais (kortelės, mygtukai, semantinės būsenos) PRIEŠ kuriant bet kokį asset'ą.
+      2. Asset'ai generuojami PAGAL dizaino sistemą — svetainė, skaidrės, dokumentai, video reklamos naudoja tą pačią sistemą.
+      3. Placeholder pattern'as: svetainė kuriama su vaizdų vietos užpildais + AI pati pateikia prompt'ą ir aspect
+         ratio kiekvienam vaizdui -> vaizdai generuojami atskirai pagal tuos prompt'us -> įterpiami pagal numerį.
+      4. Video reklama = 3 dalių struktūra (problema -> reakcija -> sprendimas), kiekviena scena generuojama atskirai,
+         montažas + tekstas + CTA atskiru žingsniu.
+      5. Viskas eksportuojama į VIENĄ repo (Claude Code), deploy su env kintamaisiais secrets'ams
+         (ADMIN_USERNAME/ADMIN_PASSWORD), admin skydelis leads peržiūrai.
+   B) ĮRANKIŲ SNAPSHOT 2026-07 (sensta, keisis): Claude Design (dizaino sistemos, slides, documents, animacijos);
+      Higgsfield: Recraft V4.1 vector mode (SVG logo), Seedream 4.5 (foto), Kling 3.0 (video); Netlify CLI deploy.
 
-   b) DIRBTINIS SMALSUMAS / SUSPAUDIMO PROGRESAS (1990): vidinis reward = skirtumas tarp bitų, reikalingų duomenims
-      aprašyti prieš ir po mokymosi. HERA pritaikymas: stagnaciją matuoti ne tik balų kreive, bet „ar naujas
-      ingest'as prideda išmokstamo naujumo" — jei selektoriaus balai aukšti, bet vault'e konceptai dubliuojasi
-      (naujumo nėra), STAGNATION-REDIRECTION heartbeat turi nukreipti kitur. (DISTILL kandidatas #4.)
+   PROVENANCE + EPISTEMINĖ ŽYMA (privaloma skill'e): šaltinis — YouTube marketingo turinys (aifoundations.io promo),
+   metodika atrodo reali, bet teiginiai NEPATIKRINTI nepriklausomai; žingsniai gali neveikti pažodžiui. Promo dalių
+   (kursai, prenumeratos, mentorystė) į skill'ą NEDĖK.
 
-   c) TINGUMO PRINCIPAS: intelektas = tikslo siekimas su kuo mažiau resursų; kaštai įtraukti į tikslo funkciją.
-      HERA pritaikymas: į trajektorijų reward įtraukti kaštų dedamąją (LLM kvietimų sk., retry'ai, digest dydis) —
-      pigesnis kelias iki to paties rezultato = aukštesnis reward. Dera su €0 stack'u. (DISTILL kandidatas #5.)
+2) Jei selektorius/taryba šiam ingest'ui jau sukūrė savo skill/growth failą iš to paties turinio — NEdubliuok:
+   palik jų failą, o šitą draft'ą sukurk kaip kuratoriaus versiją su nuoroda į aną (arba papildyk aną, jei paprasčiau).
 
-   Off-domain (neplėtoti): investicijų burbulas/CapEx, robotikos hardware, MOF chemija, saugumo nuomonės,
-   tiesiniai transformatoriai (HERA netreniruoja modelių).
+3) TRAJEKTORIJA: jei paprasta — įrašyk veiksmą į trajectories (tipas: curation/skill-draft). Jei nepatogu — praleisk.
 
-2) DISTILL SĄRAŠO PAPILDYMAS: jei /opt/hera-vault/skills/ yra skill'as swarm-research-git-atmintis (ar panašiu
-   vardu iš SwarmResearch ingest'o) — pridėk jame sekciją „DISTILL kandidatai HERA'i (draft, human_gate)" su
-   kandidatais #4 (compression-progress stagnacijos metrika) ir #5 (kaštų dedamoji reward'e) iš aukščiau, ir
-   nuoroda į growth užrašą. Jei tokio skill'o NĖRA — vietoj to sukurk
-   /opt/hera-vault/proposals/distill-kandidatai-2026-07-09.md (draft, human_gate=True) su abiem kandidatais.
-   NIEKO nepromote'ink, NIEKO nekeisk kode — tik staged tekstas.
-
-3) TRAJEKTORIJA: jei paprasta — įrašyk šį veiksmą į trajectories (tipas: curation/growth). Jei nepatogu — praleisk.
-
-TELEGRAM (trumpai, be raktų): (1) growth užrašo kelias, (2) kur padėti DISTILL kandidatai (skill'e ar proposals/),
-(3) „GROWTH+DISTILL BAIGTA".
+TELEGRAM (trumpai, be raktų): (1) skill kelias + status draft, (2) ar buvo selektoriaus dublis ir kaip išspręsta,
+(3) šio ingest'o selektoriaus balas ir tarybos verdiktas jei randami loguose/proposals, (4) „SKILL DRAFT BAIGTA".
