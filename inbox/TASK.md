@@ -1,69 +1,40 @@
-UŽDUOTIS — HERA MODELIŲ TARYBA (council_decision, Fazė 7). Autonomiškai, atsargiai.
-Statyk PILNĄ automatinę tarybą kad veiktų per API be rankinio klijavimo. Atsiskaityk į Telegram TRUMPAI.
+UŽDUOTIS — TARYBA: ĮJUNGTI OPEN-SOURCE JUROR'IUS (OpenRouter raktas neįsiskaitė). Atsargiai, autonomiškai.
+Taryba (hera_council.py) jau pastatyta ir veikia (14/14 unit, pagavo NVIDIA off-domain). NEstatyk iš naujo.
+PROBLEMA: praeitas paleidimas rašė "OpenRouter nėra rakto → skip", NORS OPENROUTER_API_KEY jau įdėtas į
+/root/hera.env. Vadinasi raktas nepasiekia os.environ. Tavo darbas — kad įsiskaitytų ir open-source nariai
+(MiMo, Nex-N2 Pro, GLM, Qwen, Kimi ir kt.) REALIAI balsuotų. Atsiskaityk į Telegram TRUMPAI, BE raktų.
 
-*** ATNAUJINTA: OPENROUTER_API_KEY JAU ĮDĖTAS į /root/hera.env. ***
-PIRMA PATIKRINK ar raktas veikia (GET https://openrouter.ai/api/v1/models su Authorization: Bearer <key>
-iš env — grąžink tik HTTP statusą + kiek NEMOKAMŲ modelių rasta, NErodyk rakto). Jei 200 — tęsk su pilna
-open-source taryba. Jei modulis hera_council.py jau pastatytas praeitą kartą — NEstatyk iš naujo, tik
-PALEISK realų testą (4b) su pilna open-source sudėtimi ir raportuok kurie juror'iai realiai balsavo.
-Jei rakto patikra nepavyko (401/403) — parašyk Telegram kad raktas negalioja, ir sustok.
+SAUGUMAS: raktų reikšmių NIEKADA nespausdink, necommit'ink, nerodyk Telegram/chate. Tik pavadinimai/statusai.
 
-KONTEKSTAS (valdymo hierarchija — LAIKYK):
-- HERA Gemini selektorius = greitas PIRMAS filtras (klysta: NVIDIA straipsniui davė 8.0, realiai off-domain).
-- TARYBA = tvirtas "antras vartas": keli modeliai kartu IŠGRYNINA + PATVIRTINA ar verta sistemai.
-- Rezultatas VISADA lieka draft/staged (proposals/), NIEKADA auto-promote į gamybą. Žmogus tvirtina.
-- Įvairovė > vienas modelis. Nesutarimas tarp modelių = signalas žmogui peržiūrėti.
+1) DIAGNOZĖ — kodėl OPENROUTER_API_KEY nepasiekia kodo:
+   - Patikrink ar /root/hera.env REALIAI turi eilutę `OPENROUTER_API_KEY=...` (tikslus pavadinimas, be tarpų,
+     be BOM). Parodyk TIK: ar eilutė yra (taip/ne) ir rakto ILGIS bei prefiksas (pvz "sk-or-...", pirmi 6 simb.),
+     NErodyk viso rakto.
+   - Nustatyk kaip hera-processor gauna aplinką: ar systemd servisas turi `EnvironmentFile=/root/hera.env`?
+     (`systemctl cat hera-processor.service`). Ar `hera_env.py` / loader'is įkelia /root/hera.env, ar tik
+     /root/ai_digest.env? Testas praeitą kartą irgi neturėjo rakto — vadinasi loaderis jo neįkelia.
 
-SAUGUMAS (privaloma):
-- Raktus SKAITYK TIK iš /root/hera.env per os.environ. NIEKADA nespausdink, necommit'ink, nerodyk chate/Telegram.
-- Pirma sutvarkyk /root/hera.env: pašalink pasenusią placeholder eilutę `OPENAI_API_KEY=sk-TAVO_RAKTAS`
-  (palik TIK tikrą raktą; jei dubliuota — dedup, chmod 600). Neišvesk rakto reikšmės niekur.
+2) PATAISA (padaryk ABU, kad būtų tvirta):
+   a) KODE: hera_council.py (ir bendras loaderis, jei yra hera_env.py) — jei env kintamojo NĖRA os.environ,
+      pats perskaityk /root/hera.env (paprastas KEY=VALUE parse, ignoruok #komentarus/tuščias) ir įkelk
+      trūkstamus raktus į os.environ. Taip council veikia nepriklausomai nuo systemd aplinkos.
+   b) SYSTEMD: jei hera-processor.service neturi `EnvironmentFile=/root/hera.env` — pridėk (drop-in
+      /etc/systemd/system/hera-processor.service.d/env.conf su [Service] EnvironmentFile=-/root/hera.env),
+      `systemctl daemon-reload` + `systemctl restart hera-processor`. Jei jau turi — palik.
 
-1) TARYBOS BRANDUOLYS — naujas modulis hera_council.py (/opt/hera-processor/):
-   Funkcija council_decision(candidate) -> verdiktas. Kandidatas = HERA selektoriaus output
-   (ištrauktas turinys + selektoriaus balas/priežastis).
-   PAGRINDINĖ TARYBA = OPEN-SOURCE MODELIAI (jų daug, nemokami, įvairūs). ChatGPT tik kraštutiniu atveju.
-   Nariai (juror'iai):
-   a) OPEN-SOURCE per OPENROUTER free (PAGRINDINIAI juror'iai) — jei /root/hera.env yra OPENROUTER_API_KEY:
-      gauk modelių sąrašą (GET /models), filtruok NEMOKAMUS (`:free` / pricing=0), ir atrink ĮVAIRIŲ
-      ŠEIMŲ juror'ius (po vieną iš: MiMo/Xiaomi, GLM/z-ai, Qwen, Kimi/Moonshot, DeepSeek, Llama, Mistral).
-      Tai originali tavo taryba (MiMo + GLM + Qwen + Kimi + open-source).
-      *** PRIVALOMI nariai: MiMo (Xiaomi) IR Nex-N2 Pro. *** Būtinai paieškok modelių sąraše (case-insensitive):
-      - "mimo" ARBA "xiaomi" -> MiMo;
-      - "nex" ARBA "nex-n2" ARBA "n2 pro" -> Nex-N2 Pro (tai originalus "NX2.5 pro").
-      Įtrauk juos kaip juror'ius. Jei kurio NĖRA OpenRouter'yje (nei free, nei apskritai) — NEtylėk: raporte į
-      Telegram aiškiai parašyk kuris nepasiekiamas ("MiMo: nepasiekiamas" / "Nex-N2 Pro: nepasiekiamas") ir
-      pasiūlyk kelią (atskiras API raktas / endpoint tam modeliui). Tas pats principas Kimi — būtinai įtrauk jei yra.
-      Kiekvienas balsuoja atskirai. Sąrašą laikyk konfigūruojamą env `HERA_COUNCIL_MODELS` (kableliais)
-      su protingu default; jei kuris modelis nepasiekiamas — praleisk, imk kitą tos pačios/kitos šeimos,
-      BET MiMo/Kimi trūkumą visada įvardink raporte (ne tyliai).
-   b) GEMINI free — pridėk 1-2 Gemini modelius kaip papildomus juror'ius (per esamą fallback sąrašą).
-   c) OPENROUTER rakto NĖRA — praleisk open-source tyliai (be klaidos, "openrouter: skipped"),
-      tada taryba veikia bent iš Gemini juror'ių + prašyk žmogaus pridėti raktą (raportuok Telegram).
-   d) OPENAI/ChatGPT = MOKAMAS KRAŠTUTINIS TIE-BREAKER, NE kiekvienam kandidatui:
-      kviesk TIK kai open-source juror'iai stipriai nesutaria IR balas arti promote ribos.
-      Skaityk OPENAI_API_KEY iš env; jei nėra — praleisk tyliai. Default: taupyk, retai kviesk.
-   Kiekvienas juror gauna TĄ PATĮ struktūrizuotą prompt'ą: grąžink JSON {verdict: keep/drop/revise,
-   score: 0-10, domain_fit: 0-10, reason: "..."}. Parse tvirtai (fallback jei modelis grąžina ne JSON).
+3) PATIKRA OpenRouter: su įkeltu raktu GET https://openrouter.ai/api/v1/models
+   -> grąžink HTTP statusą + kiek NEMOKAMŲ (`:free`/pricing=0) modelių. Modelių sąraše paieškok ir raporte
+   pažymėk ar RANDA (case-insensitive): MiMo ("mimo"/"xiaomi"), Nex-N2 Pro ("nex"/"n2 pro"/"nex-n2"),
+   GLM ("glm"/"z-ai"), Qwen, Kimi ("kimi"/"moonshot"), DeepSeek. Kurių nėra — įvardink aiškiai.
 
-2) AGREGACIJA: surink visų juror'ių balsus -> council verdiktas:
-   - median score + verdict balsų dauguma; pažymėk disagreement (std/skirtumą).
-   - final_action: promote_candidate / stage_for_review / drop — bet VISADA tik SIŪLYMAS.
-   - Įrašyk pilną tarybos protokolą (kas ką balsavo + priežastys) į vault: proposals/council/<job_id>.json.
-   - Integruok su selektoriumi: council verdiktas AUGINA/PERRAŠO vieno-Gemini balą (bet žmogaus gate lieka).
-     NEliesk esamos selektoriaus logikos destruktyviai — pridėk sluoksnį virš jo (jei council pasiekiamas).
+4) RE-RUN TARYBOS TESTAS (4b) ant TO PATIES NVIDIA kandidato, dabar su PILNA sudėtim:
+   Gemini juror'iai + OpenRouter open-source juror'iai (privalomai bandyk MiMo ir Nex-N2 Pro).
+   Raporte: KURIE juror'iai realiai balsavo (vardai + jų score/verdict), council_score, final_action,
+   ar tie-breaker (OpenAI) buvo kviestas. Protokolas -> proposals/council/<job>.json.
+   Jei koks privalomas narys (MiMo/Nex-N2 Pro) OpenRouter'yje neegzistuoja — aiškiai parašyk ir pasiūlyk kelią.
 
-3) ATSPARUMAS: naudok esamą Gemini fallback (jei model-fallback task jau atliktas — remkis juo;
-   jei ne — bent retry/backoff + rollink per modelius). Bet kuris juror gali kristi (503/timeout) —
-   taryba turi veikti su likusiais (min 2 balsai = galioja; <2 = "nepakanka balsų, į review").
+5) DURABILUMAS: pakeistą kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push NEDARYK.
 
-4) TESTAS:
-   (a) unit — sufabrikuoti juror balsai (sutarimas / nesutarimas / vienas krito) -> teisingas agregatas + tie-breaker trigeris.
-   (b) realus — paleisk council_decision ant EGZISTUOJANČIO vault kandidato (pvz. NVIDIA straipsnis, kurį Gemini pervertino).
-      Parodyk: ar taryba pagavo off-domain klaidą (žemesnis domain_fit nei vieno Gemini 8.0)? Kiek juror'ių balsavo, kuris tie-breaker'is (jei buvo).
-
-5) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push NEDARYK.
-
-ATSISKAITYMAS į Telegram (TRUMPAI, be raktų): tarybos nariai kurie balsavo (AIŠKIAI pažymėk ar MiMo, Nex-N2 Pro
-ir Kimi dalyvavo, ar ne — jei ne, kodėl), testo rezultatas (ar pagavo NVIDIA off-domain), kur protokolas
-saugomas, ir aiškiai „TARYBA BAIGTA". NErodyk jokių rakto reikšmių.
+TELEGRAM (trumpai, be raktų): (1) ar raktas dabar įsiskaito (taip/ne + prefiksas), (2) kiek free modelių OpenRouter,
+(3) kurie tarybos nariai REALIAI balsavo (ypač MiMo, Nex-N2 Pro, Kimi — yra/nėra), (4) NVIDIA testo verdiktas,
+(5) aiškiai „OPEN-SOURCE TARYBA VEIKIA" arba kas dar trūksta.
