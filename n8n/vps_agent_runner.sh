@@ -50,8 +50,13 @@ send_tg() {
 echo "$(date -Is) RUN blob=$BLOB" >>"$LOG"
 send_tg "🤖 VPS agentas: gauta nauja užduotis, vykdau…"
 
-OUT=$(cd "$REPO" && IS_SANDBOX=1 "$CLAUDE_BIN" -p "$TASK" --dangerously-skip-permissions 2>&1)
+# timeout 15 min — kad pakibęs modelio/tinklo kvietimas ar claude -p niekada nelaikytų lock'o amžinai
+OUT=$(cd "$REPO" && IS_SANDBOX=1 timeout -k 30 900 "$CLAUDE_BIN" -p "$TASK" --dangerously-skip-permissions 2>&1)
 RC=$?
+if [ "$RC" = 124 ] || [ "$RC" = 137 ]; then
+  OUT="⏱️ Užduotis NUTRAUKTA po 15 min (timeout) — galimai pakibęs modelio/tinklo kvietimas.
+${OUT}"
+fi
 
 echo "$(date -Is) DONE rc=$RC" >>"$LOG"
 printf '%s\n' "$OUT" >"/root/agent_result_${BLOB:0:12}.txt"
