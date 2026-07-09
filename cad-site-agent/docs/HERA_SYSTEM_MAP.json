@@ -1,6 +1,6 @@
 {
   "sistema": "HERA — self-evolving žinių pipeline + AgentOS valdymo tiltas",
-  "atnaujinta": "2026-07-08",
+  "atnaujinta": "2026-07-09",
   "stackas": "€0 (Gemini free), VPS Hetzner agentos-1, be GPU/treniravimo",
 
   "vault_busena_2026_07_08": {
@@ -111,17 +111,30 @@
     "YouTube per viešus veidrodžius (Piped) — jei nustotų, reikės proxy (HERA_YT_PROXY paruoštas)"
   ],
 
-  "council_decision_atkurta": {
-    "kas": "MODELIŲ TARYBA (jury) — po HERA apdorojimo susirenka keli modeliai (MiMo, GLM5.2, ChatGPT, Gemini, Qwen/NX2.5, Kimi + open-source) ir kartu IŠGRYNINA + PATVIRTINA, ar idėja/info verta sistemai plėtoti. Įvairovė > vienas modelis.",
-    "rysys": "Tai tvirtoji 'antro varto' versija (valdymo_hierarchija). Jau dalinai dokumentuota kaip 'tandemo tikrintojai' Kimi/MiMo (docs/agent-status/kimi.md, mimo.md) — pusiau rankinis VERDICT srautas.",
-    "kodel_svarbu": "Vienas Gemini selektorius klysta (pvz. NVIDIA straipsniui davė 8.0, realiai off-domain). Taryba tokią klaidą pagautų.",
-    "statusas": "ATKURTA konceptualiai; ekstraktorius/automatika NEpastatyta (laptopo logika prarasta). Fazė 7 kandidatas.",
-    "atviras_klausimas": "Ar originali taryba veikė rankiniu būdu (paste į kiekvieną chat) ar per API? Kuriuos modelius pasiekiam nemokamai/API dabar?"
+  "council_decision_faze7": {
+    "kas": "MODELIŲ TARYBA (jury) — po HERA selektoriaus keli nepriklausomi modeliai balsuoja {verdict, score, domain_fit, reason}, agreguojama į council verdiktą. Įvairovė > vienas modelis.",
+    "statusas": "PASTATYTA IR VEIKIA — Fazė 7 baigta 2026-07-09. hera_council.py, aktyvi prod'e (HERA_COUNCIL=1, kiekvienam įrašui). 38/38 unit testų.",
+    "nariai_gyvai": "7 balsuotojai: GLM (native Zhipu, nemokamas) + Groq×5 (Llama-4-scout, qwen3.6, qwen3-32b, gpt-oss-120b, gpt-oss-20b) + Gemini-2.5-flash. Prioritetas: native+Groq+NVIDIA = pagrindiniai; Gemini papildomi; OpenRouter tik jei <3 balsai; OpenAI kraštutinis tie-breaker.",
+    "tiekejai": {
+      "groq": "VEIKIA (gsk) — Llama/Qwen/GPT-OSS, nemokamas",
+      "zhipu_glm": "VEIKIA (native, nemokamas glm-4.5-flash) — balsuoja",
+      "gemini": "VEIKIA (free) — papildomi balsai",
+      "deepseek": "raktas galioja, 402 (0 balanso) — įsijungs papildžius",
+      "mimo_xiaomi": "raktas galioja, 402 (0 balanso) — įsijungs papildžius",
+      "openrouter": "antrinis (free tier 429-limituotas)",
+      "openai": "kraštutinis tie-breaker (mokamas, retai)",
+      "nvidia_nim": "paruošta kode, rakto dar nėra (nvapi-)",
+      "nex_n2_pro": "tik OpenRouter mokamas — nemokamo/native kelio nėra"
+    },
+    "human_gate": "VISADA staged į proposals/council/<job>.json su human_gate=True, auto_promoted=False. Dubliai vengiami (native pirmenybė prieš NVIDIA/OpenRouter tos pačios šeimos).",
+    "irodymas": "NVIDIA off-domain testas (selektorius davė 8.0): 7 nariai VISI drop -> council_score 1.0, domain_fit 1.0 -> DROP. Tie-breaker nereikėjo (sutarimas). Taryba pagavo selektoriaus klaidą.",
+    "durabilumas": "kodas /opt/hera-processor/ + kopija /opt/cad-site-agent/n8n/hera/ — TIK VPS'e, GitHub'e DAR NĖRA (push nedarytas)."
   },
 
   "kas_toliau": [
-    "PIRMA: kodo apsauga į GitHub (reikia scoped tokeno) — prieš leidžiant self-code-modification",
-    "Fazė 7 kandidatai: (a) MODELIŲ TARYBA (council_decision atkūrimas — multi-model jury), (b) episteminis sluoksnis (žinių teisingumas + provenance), (c) verify-loop (saugus savęs-refaktorizavimas)",
+    "PIRMA (didžiausia rizika): VISO HERA kodo (Fazės 2-7 + taryba + 9 skills) apsauga į GitHub — dabar tik VPS'e, untracked. VPS dingtų -> prarandi viską.",
+    "Nebūtina: DeepSeek + MiMo balansų papildymas (402) -> +2 native balsai taryboje automatiškai",
+    "Fazė 8 kandidatai: (a) episteminis sluoksnis (žinių teisingumas + provenance), (b) verify-loop (saugus savęs-refaktorizavimas)",
     "Digest sujungimas į HERA kilpą",
     "Sukauptos žinios panaudojimas (agentams / veiksmams)"
   ]
