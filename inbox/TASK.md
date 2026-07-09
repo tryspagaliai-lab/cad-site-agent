@@ -14,15 +14,21 @@ SAUGUMAS (privaloma):
 
 1) TARYBOS BRANDUOLYS — naujas modulis hera_council.py (/opt/hera-processor/):
    Funkcija council_decision(candidate) -> verdiktas. Kandidatas = HERA selektoriaus output
-   (ištrauktas turinys + selektoriaus balas/priežastis). Nariai (juror'iai) — kas NEMOKAMA/pasiekiama DABAR:
-   a) GEMINI free — panaudok fallback SĄRAŠĄ kaip ATSKIRUS juror'ius įvairovei
-      (pvz. gemini-flash-latest, gemini-2.5-flash, gemini-2.0-flash) — kiekvienas balsuoja atskirai.
-   b) OPENROUTER free — jei /root/hera.env yra OPENROUTER_API_KEY, pridėk 1-2 nemokamus modelius
-      (pvz. tuos su ":free" sufiksu). Jei rakto NĖRA — praleisk tyliai (be klaidos), pažymėk "openrouter: skipped".
-   c) OPENAI/ChatGPT = MOKAMAS TIE-BREAKER, NE kiekvienam kandidatui:
-      kviesk TIK kai (i) free juror'iai nesutaria (verdiktų dispersija didelė) ARBA
-      (ii) balas aukštas (arti promote ribos) — t.y. brangus balsas tik kai realiai lemia sprendimą.
-      Skaityk OPENAI_API_KEY iš env; jei nėra — praleisk tyliai.
+   (ištrauktas turinys + selektoriaus balas/priežastis).
+   PAGRINDINĖ TARYBA = OPEN-SOURCE MODELIAI (jų daug, nemokami, įvairūs). ChatGPT tik kraštutiniu atveju.
+   Nariai (juror'iai):
+   a) OPEN-SOURCE per OPENROUTER free (PAGRINDINIAI juror'iai) — jei /root/hera.env yra OPENROUTER_API_KEY:
+      gauk modelių sąrašą (GET /models), filtruok NEMOKAMUS (`:free` / pricing=0), ir atrink ĮVAIRIŲ
+      ŠEIMŲ 4-6 juror'ius (po vieną iš: Llama, Qwen, DeepSeek, GLM/z-ai, Kimi/Moonshot, Mistral —
+      tai atitinka originalią tarybą GLM/Qwen/Kimi/MiMo). Kiekvienas balsuoja atskirai.
+      Sąrašą laikyk konfigūruojamą env `HERA_COUNCIL_MODELS` (kableliais) su protingu default;
+      jei kuris modelis nepasiekiamas — praleisk, imk kitą tos pačios/kitos šeimos.
+   b) GEMINI free — pridėk 1-2 Gemini modelius kaip papildomus juror'ius (per esamą fallback sąrašą).
+   c) OPENROUTER rakto NĖRA — praleisk open-source tyliai (be klaidos, "openrouter: skipped"),
+      tada taryba veikia bent iš Gemini juror'ių + prašyk žmogaus pridėti raktą (raportuok Telegram).
+   d) OPENAI/ChatGPT = MOKAMAS KRAŠTUTINIS TIE-BREAKER, NE kiekvienam kandidatui:
+      kviesk TIK kai open-source juror'iai stipriai nesutaria IR balas arti promote ribos.
+      Skaityk OPENAI_API_KEY iš env; jei nėra — praleisk tyliai. Default: taupyk, retai kviesk.
    Kiekvienas juror gauna TĄ PATĮ struktūrizuotą prompt'ą: grąžink JSON {verdict: keep/drop/revise,
    score: 0-10, domain_fit: 0-10, reason: "..."}. Parse tvirtai (fallback jei modelis grąžina ne JSON).
 
