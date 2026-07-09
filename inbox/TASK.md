@@ -26,10 +26,15 @@ SAUGUMAS (privaloma):
    Nariai (juror'iai):
    a) OPEN-SOURCE per OPENROUTER free (PAGRINDINIAI juror'iai) — jei /root/hera.env yra OPENROUTER_API_KEY:
       gauk modelių sąrašą (GET /models), filtruok NEMOKAMUS (`:free` / pricing=0), ir atrink ĮVAIRIŲ
-      ŠEIMŲ 4-6 juror'ius (po vieną iš: Llama, Qwen, DeepSeek, GLM/z-ai, Kimi/Moonshot, Mistral —
-      tai atitinka originalią tarybą GLM/Qwen/Kimi/MiMo). Kiekvienas balsuoja atskirai.
-      Sąrašą laikyk konfigūruojamą env `HERA_COUNCIL_MODELS` (kableliais) su protingu default;
-      jei kuris modelis nepasiekiamas — praleisk, imk kitą tos pačios/kitos šeimos.
+      ŠEIMŲ juror'ius (po vieną iš: MiMo/Xiaomi, GLM/z-ai, Qwen, Kimi/Moonshot, DeepSeek, Llama, Mistral).
+      Tai originali tavo taryba (MiMo + GLM + Qwen + Kimi + open-source).
+      *** MiMo (Xiaomi) — PRIVALOMAS narys. *** Būtinai paieškok modelių sąraše "mimo" ARBA "xiaomi"
+      (case-insensitive) ir įtrauk jį kaip juror'į. Jei MiMo OpenRouter'yje NĖRA (nei free, nei apskritai) —
+      NEtylėk: raporte į Telegram aiškiai parašyk "MiMo: nepasiekiamas per OpenRouter" ir pasiūlyk kelią
+      (atskiras MiMo API raktas / endpoint). Tas pats principas Kimi — būtinai įtrauk jei yra.
+      Kiekvienas balsuoja atskirai. Sąrašą laikyk konfigūruojamą env `HERA_COUNCIL_MODELS` (kableliais)
+      su protingu default; jei kuris modelis nepasiekiamas — praleisk, imk kitą tos pačios/kitos šeimos,
+      BET MiMo/Kimi trūkumą visada įvardink raporte (ne tyliai).
    b) GEMINI free — pridėk 1-2 Gemini modelius kaip papildomus juror'ius (per esamą fallback sąrašą).
    c) OPENROUTER rakto NĖRA — praleisk open-source tyliai (be klaidos, "openrouter: skipped"),
       tada taryba veikia bent iš Gemini juror'ių + prašyk žmogaus pridėti raktą (raportuok Telegram).
@@ -57,5 +62,6 @@ SAUGUMAS (privaloma):
 
 5) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push NEDARYK.
 
-ATSISKAITYMAS į Telegram (TRUMPAI, be raktų): tarybos nariai kurie balsavo, testo rezultatas
-(ar pagavo NVIDIA off-domain), kur protokolas saugomas, ir aiškiai „TARYBA BAIGTA". NErodyk jokių rakto reikšmių.
+ATSISKAITYMAS į Telegram (TRUMPAI, be raktų): tarybos nariai kurie balsavo (AIŠKIAI pažymėk ar MiMo ir Kimi
+dalyvavo, ar ne — jei ne, kodėl), testo rezultatas (ar pagavo NVIDIA off-domain), kur protokolas saugomas,
+ir aiškiai „TARYBA BAIGTA". NErodyk jokių rakto reikšmių.
