@@ -111,9 +111,17 @@
     "YouTube per viešus veidrodžius (Piped) — jei nustotų, reikės proxy (HERA_YT_PROXY paruoštas)"
   ],
 
+  "council_decision_atkurta": {
+    "kas": "MODELIŲ TARYBA (jury) — po HERA apdorojimo susirenka keli modeliai (MiMo, GLM5.2, ChatGPT, Gemini, Qwen/NX2.5, Kimi + open-source) ir kartu IŠGRYNINA + PATVIRTINA, ar idėja/info verta sistemai plėtoti. Įvairovė > vienas modelis.",
+    "rysys": "Tai tvirtoji 'antro varto' versija (valdymo_hierarchija). Jau dalinai dokumentuota kaip 'tandemo tikrintojai' Kimi/MiMo (docs/agent-status/kimi.md, mimo.md) — pusiau rankinis VERDICT srautas.",
+    "kodel_svarbu": "Vienas Gemini selektorius klysta (pvz. NVIDIA straipsniui davė 8.0, realiai off-domain). Taryba tokią klaidą pagautų.",
+    "statusas": "ATKURTA konceptualiai; ekstraktorius/automatika NEpastatyta (laptopo logika prarasta). Fazė 7 kandidatas.",
+    "atviras_klausimas": "Ar originali taryba veikė rankiniu būdu (paste į kiekvieną chat) ar per API? Kuriuos modelius pasiekiam nemokamai/API dabar?"
+  },
+
   "kas_toliau": [
     "PIRMA: kodo apsauga į GitHub (reikia scoped tokeno) — prieš leidžiant self-code-modification",
-    "Fazė 7 kandidatai: verify-loop (saugus savęs-refaktorizavimas, testai+snapshot+rollback) ARBA episteminis sluoksnis (žinių teisingumas)",
+    "Fazė 7 kandidatai: (a) MODELIŲ TARYBA (council_decision atkūrimas — multi-model jury), (b) episteminis sluoksnis (žinių teisingumas + provenance), (c) verify-loop (saugus savęs-refaktorizavimas)",
     "Digest sujungimas į HERA kilpą",
     "Sukauptos žinios panaudojimas (agentams / veiksmams)"
   ]
