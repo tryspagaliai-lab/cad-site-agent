@@ -1,35 +1,37 @@
-UŽDUOTIS — DURABILUMAS: HERA kodo backup į PRIVATŲ GitHub repo (naudok VPS esamą tokeną). Atsargiai.
-Tikslas: apsaugoti visą HERA kodą+skills, kad VPS mirtis nereikštų viską prarasti. Atsiskaityk į Telegram TRUMPAI.
+UŽDUOTIS — DURABILUMAS: HERA kodo backup į PRIVATŲ GitHub repo. Dabar yra GITHUB_TOKEN /root/hera.env. Atsargiai.
+Tikslas: sukurti privatų repo ir nustumti visą HERA kodą+skills, kad VPS mirtis nereikštų viską prarasti.
+Atsiskaityk į Telegram TRUMPAI, BE tokeno/raktų.
 
 SAUGUMAS (KRITIŠKA):
-- VPS origin remote turi įmontuotą GitHub tokeną. NIEKADA jo nespausdink, nerodyk Telegram/log, neįrašyk į failą.
-  Tokeną gauk tik programiškai: `git -C /opt/cad-site-agent remote get-url origin`. Prieš siųsdamas bet ką į
-  Telegram — perfiltruok output'ą kad jokia `ghp_`/`github_pat_`/token reikšmė nepatektų.
-- PRIEŠ commit'inant — patikrink kad backup'inamame kode NĖRA raktų/paslapčių:
-  grep -rInE '(sk-[A-Za-z0-9]|gsk_[A-Za-z0-9]|nvapi-[A-Za-z0-9]|tp-[A-Za-z0-9]|AIza[A-Za-z0-9]|ghp_|github_pat_|xox[bp]-)' <backup dirs>.
-  Jei RANDA tikrą raktą — NUTRAUK, NEcommit'ink, raportuok kur rado (be reikšmės). .env failų NEIMK niekada.
+- Tokeną skaityk TIK iš os.environ GITHUB_TOKEN (per hera_env self-load iš /root/hera.env). NIEKADA jo
+  nespausdink, nerodyk Telegram/log/chate, neįrašyk į failą ar git config plaintext. Prieš siųsdamas ką nors į
+  Telegram — perfiltruok kad jokia `ghp_`/`github_pat_` reikšmė nepatektų.
+- PRIEŠ commit'inant — secret-scan backup'inamą kodą:
+  grep -rInE '(sk-[A-Za-z0-9]{10}|gsk_[A-Za-z0-9]|nvapi-[A-Za-z0-9]|tp-[A-Za-z0-9]{6}|AIza[A-Za-z0-9]|ghp_[A-Za-z0-9]|github_pat_|xox[bp]-)' <backup dirs>
+  Jei RANDA tikrą raktą/tokeną — NUTRAUK, NEcommit'ink, raportuok kur (be reikšmės). .env failų NEIMK NIEKADA.
 
 ŽINGSNIAI:
-1) TOKENAS + SCOPE TESTAS: iš origin URL ištrauk tokeną (nespausdink). Pabandyk sukurti PRIVATŲ repo per API:
-   curl -s -o /dev/null -w '%{http_code}' -H "Authorization: token <TOKEN>" -H "Accept: application/vnd.github+json" \
-     https://api.github.com/user/repos -d '{"name":"hera-core-backup","private":true,"description":"HERA core backup (VPS durability)"}'
-   - 201 = sukurta. 422 = jau egzistuoja (gerai). 403/404 = tokenas neturi teisės kurti repo -> NUTRAUK ir raportuok
-     "tokenas be repo-create scope" (tada spręsim: naujas tokenas arba viešas repo). NErodyk tokeno.
+1) SCOPE TESTAS: su GITHUB_TOKEN sukurk PRIVATŲ repo per API (User-Agent header būtinas):
+   curl -s -w '\n%{http_code}' -H "Authorization: token $GITHUB_TOKEN" -H "User-Agent: hera-backup" \
+     -H "Accept: application/vnd.github+json" https://api.github.com/user/repos \
+     -d '{"name":"hera-core-backup","private":true,"description":"HERA core backup (VPS durability)"}'
+   - 201 = sukurta. 422 = jau yra (gerai). 401/403 = tokenas be teisės -> NUTRAUK, raportuok "tokenas be repo scope"
+     (be reikšmės). Nustatyk repo pilną vardą (owner/hera-core-backup) iš atsakymo arba /user.
 
-2) JEI repo yra: sustatyk backup staging katalogą (pvz /tmp/hera-backup), į jį nukopijuok:
-   - /opt/hera-processor/ VISĄ kodą (*.py, konfigai) — BE __pycache__, BE *.env, BE .git;
-   - HERA vault distiliuotą vertę: skills/ (SKILL.md), growth/, proposals/ (įsk. proposals/council) — jei egzistuoja
-     (rask kelią, pvz /opt/hera-vault/); NEIMK didelių žalių media/extracted binarų (tik .md/.json/.jsonl tekstą,
-     apribok kad repo nebūtų milžiniškas).
-   - trumpą README.md: kas tai, kaip atkurti (servisai hera-ingest/hera-processor, env iš /root/hera.env — NElaikomas čia).
-   Pridėk .gitignore: `*.env`, `__pycache__/`, `*.pyc`, stambūs binarai.
+2) STAGING (/tmp/hera-backup, švarus): nukopijuok:
+   - /opt/hera-processor/ VISĄ kodą (*.py, extractors/, konfigai) — BE __pycache__, *.pyc, *.env, .git;
+   - /opt/hera-ingest/worker.py (jei yra);
+   - vault distiliatas (rask kelią, pvz /opt/hera-vault/): skills/ (SKILL.md), growth/ (*.md), proposals/ (įsk.
+     proposals/council/*.json) — TIK .md/.json/.jsonl tekstas; NEIMK work/ , extracted/ žalių/binarų/didelių media.
+   - README.md: kas tai, servisai (hera-ingest/hera-processor), env laikomas /root/hera.env (NE čia), kaip atkurti.
+   - .gitignore: *.env, __pycache__/, *.pyc, work/, extracted/, *.mp4, *.zip, dideli binarai.
 
-3) git init staging'e, git add, commit "HERA core backup <data>", push į hera-core-backup (main) su tokenu iš origin
-   (susikonstruok push URL pakeisdamas repo vardą origin URL'e; tokeno nespausdink). Force NEDARYK (naujas repo).
+3) git init, add, commit "HERA core backup <data ISO>", push į privatų repo (main). Push URL su tokenu iš env
+   (https://x-access-token:$GITHUB_TOKEN@github.com/OWNER/hera-core-backup.git) — tokeno NEspausdink, NEpalik
+   git config remote plaintext (naudok ephemeral push URL, po push pašalink remote arba naudok `git push <url>`).
 
-4) Raportuok Telegram (BE tokeno, BE raktų): repo sukurtas/egzistuoja (taip), kiek failų + apytikslis dydis
-   nustumta, ar secret-scan švarus, ir aiškiai „HERA BACKUP PADARYTAS: github.com/tryspagaliai-lab/hera-core-backup (privatus)".
-   Jei kur nutrūko (scope/secret) — aiškiai kodėl.
+4) TELEGRAM (be tokeno/raktų): repo (privatus) sukurtas/egzistuoja, kiek failų + apytikslis dydis nustumta,
+   secret-scan švarus (taip/ne), ir aiškiai „HERA BACKUP PADARYTAS: <owner>/hera-core-backup (privatus)".
+   Jei nutrūko (scope/secret) — kodėl.
 
-GREIČIO: tai git operacijos, ne modelių kvietimai — turi būti greita (<5 min). Jei kopijuojant vault randi GB dydžio
-duomenų — apribok tik tekstiniais artefaktais ir raportuok kad žali media praleisti.
+GREIČIO: git operacijos, ne modeliai — <5 min. Jei vault didelis — tik tekstiniai artefaktai, žali media praleisti.
