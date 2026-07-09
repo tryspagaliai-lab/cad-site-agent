@@ -1,23 +1,48 @@
-UŽDUOTIS — HERA model-fallback (procesoriaus atsparumas Gemini 503). Autonomiškai, atsargiai.
-NELIESK kitų fazių/logikos — tik gemini.py sluoksnį. Nemokama (visi Gemini free modeliai). Atsiskaityk į Telegram TRUMPAI.
+UŽDUOTIS — HERA MODELIŲ TARYBA (council_decision, Fazė 7). Autonomiškai, atsargiai.
+Statyk PILNĄ automatinę tarybą kad veiktų per API be rankinio klijavimo. Atsiskaityk į Telegram TRUMPAI.
 
-Problema: /opt/hera-processor/gemini.py prikaltas prie vieno modelio (gemini-flash-latest), be fallback.
-Tas modelis dabar globaliai 503'ina → job'ai dead-letter'ina. (n8n turi fallback, procesorius — ne.)
+KONTEKSTAS (valdymo hierarchija — LAIKYK):
+- HERA Gemini selektorius = greitas PIRMAS filtras (klysta: NVIDIA straipsniui davė 8.0, realiai off-domain).
+- TARYBA = tvirtas "antras vartas": keli modeliai kartu IŠGRYNINA + PATVIRTINA ar verta sistemai.
+- Rezultatas VISADA lieka draft/staged (proposals/), NIEKADA auto-promote į gamybą. Žmogus tvirtina.
+- Įvairovė > vienas modelis. Nesutarimas tarp modelių = signalas žmogui peržiūrėti.
 
-1) MODELIŲ FALLBACK. gemini.py: vietoj vieno modelio — SĄRAŠAS, konfigūruojamas env `HERA_GEMINI_MODELS`
-   (kableliais), su protingu default: `gemini-flash-latest,gemini-2.5-flash,gemini-2.0-flash,gemini-flash-lite-latest`.
-   Logika: bandyk 1-ą modelį (su esamu retry/backoff); jei persistentiškai 503/quota/unavailable → **rollink į kitą**
-   modelį sąraše; grąžink pirmą sėkmę. Išlaikyk esamą elgseną (thinkingBudget=0 ir t.t.), NEkeisk API rakto/kvietimų
-   formato. Suderink su laikinu `HERA_GEMINI_MODEL` override (jei nustatytas — pirmas sąraše).
-   LoginK, kuris modelis suveikė (į trajektorijų meta arba processor log).
+SAUGUMAS (privaloma):
+- Raktus SKAITYK TIK iš /root/hera.env per os.environ. NIEKADA nespausdink, necommit'ink, nerodyk chate/Telegram.
+- Pirma sutvarkyk /root/hera.env: pašalink pasenusią placeholder eilutę `OPENAI_API_KEY=sk-TAVO_RAKTAS`
+  (palik TIK tikrą raktą; jei dubliuota — dedup, chmod 600). Neišvesk rakto reikšmės niekur.
 
-2) TESTAS: (a) unit — kai 1-as modelis 503, ar rolina į kitą ir grąžina rezultatą; (b) realus — paleisk ištraukimą
-   ir query su dabar 503'inančiu flash-latest → turi PRAEITI per fallback (pvz. gemini-2.5-flash). Parodyk, kuris suveikė.
+1) TARYBOS BRANDUOLYS — naujas modulis hera_council.py (/opt/hera-processor/):
+   Funkcija council_decision(candidate) -> verdiktas. Kandidatas = HERA selektoriaus output
+   (ištrauktas turinys + selektoriaus balas/priežastis). Nariai (juror'iai) — kas NEMOKAMA/pasiekiama DABAR:
+   a) GEMINI free — panaudok fallback SĄRAŠĄ kaip ATSKIRUS juror'ius įvairovei
+      (pvz. gemini-flash-latest, gemini-2.5-flash, gemini-2.0-flash) — kiekvienas balsuoja atskirai.
+   b) OPENROUTER free — jei /root/hera.env yra OPENROUTER_API_KEY, pridėk 1-2 nemokamus modelius
+      (pvz. tuos su ":free" sufiksu). Jei rakto NĖRA — praleisk tyliai (be klaidos), pažymėk "openrouter: skipped".
+   c) OPENAI/ChatGPT = MOKAMAS TIE-BREAKER, NE kiekvienam kandidatui:
+      kviesk TIK kai (i) free juror'iai nesutaria (verdiktų dispersija didelė) ARBA
+      (ii) balas aukštas (arti promote ribos) — t.y. brangus balsas tik kai realiai lemia sprendimą.
+      Skaityk OPENAI_API_KEY iš env; jei nėra — praleisk tyliai.
+   Kiekvienas juror gauna TĄ PATĮ struktūrizuotą prompt'ą: grąžink JSON {verdict: keep/drop/revise,
+   score: 0-10, domain_fit: 0-10, reason: "..."}. Parse tvirtai (fallback jei modelis grąžina ne JSON).
 
-3) RE-DRIVE: dead-letter'intus job'us (pvz. 20260708T165445Z-ljsqy5 ir kt., kritusius dėl 503) paleisk iš naujo
-   per naują fallback kelią. Suskaičiuok atgaivinta/liko.
+2) AGREGACIJA: surink visų juror'ių balsus -> council verdiktas:
+   - median score + verdict balsų dauguma; pažymėk disagreement (std/skirtumą).
+   - final_action: promote_candidate / stage_for_review / drop — bet VISADA tik SIŪLYMAS.
+   - Įrašyk pilną tarybos protokolą (kas ką balsavo + priežastys) į vault: proposals/council/<job_id>.json.
+   - Integruok su selektoriumi: council verdiktas AUGINA/PERRAŠO vieno-Gemini balą (bet žmogaus gate lieka).
+     NEliesk esamos selektoriaus logikos destruktyviai — pridėk sluoksnį virš jo (jei council pasiekiamas).
 
-4) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push nedaryk.
+3) ATSPARUMAS: naudok esamą Gemini fallback (jei model-fallback task jau atliktas — remkis juo;
+   jei ne — bent retry/backoff + rollink per modelius). Bet kuris juror gali kristi (503/timeout) —
+   taryba turi veikti su likusiais (min 2 balsai = galioja; <2 = "nepakanka balsų, į review").
 
-Į Telegram: modelių sąrašas, testas (fallback veikia?), kiek dead-letter atgaivinta, ir aiškiai
-„MODEL-FALLBACK BAIGTAS".
+4) TESTAS:
+   (a) unit — sufabrikuoti juror balsai (sutarimas / nesutarimas / vienas krito) -> teisingas agregatas + tie-breaker trigeris.
+   (b) realus — paleisk council_decision ant EGZISTUOJANČIO vault kandidato (pvz. NVIDIA straipsnis, kurį Gemini pervertino).
+      Parodyk: ar taryba pagavo off-domain klaidą (žemesnis domain_fit nei vieno Gemini 8.0)? Kiek juror'ių balsavo, kuris tie-breaker'is (jei buvo).
+
+5) DURABILUMAS: kodą kopijuok į /opt/cad-site-agent/n8n/hera/. Push NEDARYK.
+
+ATSISKAITYMAS į Telegram (TRUMPAI, be raktų): tarybos nariai kurie balsavo, testo rezultatas
+(ar pagavo NVIDIA off-domain), kur protokolas saugomas, ir aiškiai „TARYBA BAIGTA". NErodyk jokių rakto reikšmių.
