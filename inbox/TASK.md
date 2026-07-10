@@ -1,42 +1,27 @@
-UŽDUOTIS — NAPMEM FAZĖ A: AKTYVI ATMINTIES NAVIGACIJA + VAULT SYNC Į GITHUB (VARTOTOJAS PATVIRTINO DIEGIMĄ).
-<15 min, fokusuotai. NEleisk viso pytest — tik taikinius testus. Atsiskaityk Telegram TRUMPAI.
+UŽDUOTIS — NAPMEM-A ATSTATYMAS PO TIMEOUT (SIAURA: TIK NARŠYMO KILPA, BE VAULT SYNC). <12 min, griežtai.
+Ankstesnė užduotis (NapMem-A + vault sync) NUTRAUKTA po 15 min (rc=124) — kodas gali būti PUSIAU pakeistas.
+NEleisk pytest. Vault sync NEDARYK (GITHUB_TOKEN dar keičiamas — bus atskira užduotis). Atsiskaityk Telegram TRUMPAI.
 
-SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk. Vault sync — TIK į PRIVATŲ repo, prieš pirmą push — secret-scan.
+SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk.
 
-KONTEKSTAS: NapMem tyrimas (Qwen/Alibaba, 2026-07-07, šiandien praėjo per pipeline): atmintis = veiksmų erdvė,
-ne DB; aktyvus naršymas su biudžetu > vienkartinis RAG. RL mums nepasiekiamas (€0), bet HERA turi trajektorijas+
-reward+replay — naršymo prompt'ą tobulins outer-loop (evoliucinis kelias vietoj GRPO).
+0) PIRMIAUSIA BŪKLĖ (2 min): systemctl is-active hera-processor hera-ingest; python3 -c "import" pagrindinių
+   modulių sintaksei (hera_query.py ir kas liesta). Jei servisas krito ar failas pusiau redaguotas — PIRMA
+   grąžink į veikiančią būseną (git diff /opt/cad-site-agent/n8n/hera/ kopijos atžvilgiu padės pamatyti kas keista).
 
-DALIS 1 — AKTYVI NARŠYMO KILPA query kelyje (/opt/hera-processor/):
+1) UŽBAIK NARŠYMO KILPĄ (tik tiek, minimaliai):
+   - Įrankiai: search_records, get_record, search_extracted, get_extracted, stop_and_answer.
+   - Biudžetas: max 5 kvietimai (HERA_NAV_BUDGET, default 5); pasiekus — atsakyti iš surinkto.
+   - Jungiklis: HERA_NAV=1 įjungia, HERA_NAV=0 = senas vienkartinis RAG (rollback be kodo). Įjunk =1 /root/hera.env.
+   - Kiekvienam LLM/įrankio kvietimui — GRIEŽTAS timeout (pvz. 60s) + 1 retry, kad kilpa niekada nekabėtų
+     (greičiausiai timeout'ą sukėlė kabantis kvietimas — būtinai apsisaugok).
+   - document_bounded grounding taisyklė lieka galioti kilpoje.
+   - Trajektorija: naršymo veiksmų seka loginama (kaip buvo prašyta).
 
-1) Vietoj vienkartinio RAG (question intent'ui) — naršymo kilpa: Gemini gauna atminties ĮRANKIUS:
-   search_records (paieška growth/+skills/ santraukose), get_record (pilnas įrašas), search_extracted
-   (paieška extracted/ žaliuose tekstuose), get_extracted (pilnas/fragmentas), stop_and_answer.
-   Kilpa: klausimas -> veiksmas -> stebėjimas -> ... -> atsakymas. BIUDŽETAS: max 5 įrankių kvietimai
-   (env HERA_NAV_BUDGET, default 5); pasiekus limitą — atsakyti iš to, kas surinkta.
-2) SAUGIKLIS: env jungiklis HERA_NAV=1 įjungia kilpą; HERA_NAV=0 — senas vienkartinis RAG (rollback be kodo).
-   Įjunk HERA_NAV=1 /root/hera.env'e. document_bounded skill'ų grounding taisyklė (jei vakar įdiegta) LIEKA
-   galioti ir kilpoje.
-3) TRAJEKTORIJA: kiekvienas naršymas loginamas su veiksmų seka (kokie įrankiai, kiek žingsnių, ar biudžetas
-   viršytas) — kad reward/replay vėliau galėtų lyginti naršymo strategijas.
-4) TESTAS: 2 klausimai ant esamo vault (pvz. „kas yra ATDP?" ir klausimas, kuriam reikia gilyn į extracted) —
-   parodyk veiksmų sekas ir atsakymus; + HERA_NAV=0 regresija (senas kelias tebeveikia).
+2) TESTAS (greitas): 1 klausimas per kilpą („kas yra ATDP?") — parodyk veiksmų seką ir atsakymą;
+   1 regresija su HERA_NAV=0 (senas kelias veikia). Jei kilpa stringa >2 min — HERA_NAV=0, pažymėk FAILED
+   ir ataskaitoje aprašyk kur stringa (nekartok iki timeout!).
 
-DALIS 2 — VAULT SYNC Į GITHUB (durabilumas + kad chat-Claude matytų vault'ą):
+3) DURABILUMAS: pakeistų failų kopija į /opt/cad-site-agent/n8n/hera/ (lokaliai; push niekur NEDARYK).
 
-5) Sukurk PRIVATŲ repo tryspagaliai-lab/hera-vault (GITHUB_TOKEN iš env, kaip hera-core-backup atveju).
-   /opt/hera-vault: git init (jei dar ne), .gitignore: ingest/ eilės šiukšlės jei didelės/binarinės — spręsk pats,
-   bet growth/, skills/, extracted/, proposals/, trajectories/ PRIVALO būti sync'inami.
-6) PRIEŠ pirmą push: secret-scan (grep raktų pattern'ų: sk-, gsk_, ghp_, nvapi-, AIza, token=...) — radus,
-   išvalyk/ignoruok tą failą ir pažymėk ataskaitoje.
-7) Auto-sync: cron kas 30 min (flock, kaip runner'io pamoka): jei /opt/hera-vault turi pakeitimų ->
-   commit (žinutė su data) + push. Skriptas /usr/local/bin/hera_vault_sync.sh.
-8) DURABILUMAS: naujo/pakeisto kodo kopija į /opt/cad-site-agent/n8n/hera/ + push į hera-core-backup
-   (secret-scan prieš push). Į viešą cad-site-agent repo push NEDARYK.
-
-9) ŠALUTINĖ PATIKRA: ar vakarykštės užduotys įvykdytos — (a) normatyviniai skill'ai (7469949), (b) n8n Link
-   Parser YT fix (a65ae1a)? Jei kuri NE — pažymėk ataskaitoje, pats nedaryk.
-
-TELEGRAM (trumpai, be raktų): (1) naršymo kilpa veikia? — 2 testų veiksmų sekos trumpai, (2) HERA_NAV=1 prod'e,
-rollback=HERA_NAV=0, (3) hera-vault repo sukurtas+push'intas, cron sync įjungtas, secret-scan švarus?
-(4) šalutinė patikra a/b (taip/ne), (5) „NAPMEM-A + VAULT-SYNC BAIGTA".
+TELEGRAM (trumpai, be raktų): (1) ar rasta pusiau padarytos būklės ir kas sutvarkyta, (2) kilpa veikia? testo
+veiksmų seka trumpai, (3) HERA_NAV=1 prod'e (ar 0 jei FAILED + priežastis), (4) „NAPMEM-A ATSTATYTA" arba „FAILED".
