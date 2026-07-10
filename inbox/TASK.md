@@ -1,25 +1,29 @@
-UŽDUOTIS — NAPMEM FAZĖ C: ŠVIEŽIAS INDEKSAS + CACHE-HIT METRIKA (VIENA SIAURA UŽDUOTIS). <10 min.
-NEleisk pytest — tik taikinius testus. LLM kvietimams — griežti timeout'ai (60s + 1 retry). Telegram TRUMPAI.
+UŽDUOTIS — DIAGNOSTIKA + FIX: YOUTUBE IŠTRAUKIMO GRANDINĖ NUTRŪKO PER 21s (VIENA SIAURA UŽDUOTIS). <12 min.
+NEleisk pytest. Telegram TRUMPAI.
 
-SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk.
+SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk (loguose cituojamas eilutes maskuok jei reikia).
 
-KONTEKSTAS: kuratorius rado, kad index/concepts.md pasenęs (2026-07-07: rodo 1 skill / 8 RB įrašus, realybė —
-~20 skills / 34 RB). Savaitinis Loop C nespėja su kasdieniu augimu — naršymo kilpai indeksas beveik nenaudingas.
-Plius LLM-Wiki webinaro (o3srk6, council promote_candidate) DISTILL #9: cache-hit ROI metrika.
+SIMPTOMAS: 2026-07-10 ~17:33 vartotojas siuntė youtu.be/uCKhOmth2ms?is=... („Multi-agent is a trap", Sierra
+podcast, viešas video). Normalizacija SUVEIKĖ (pateko į pipeline, „Analizuoju video..."), bet po 21s grįžo
+„Klaida (400): video privatus, regionui apribotas, arba Gemini negalėjo jo apdoroti". 21s per greitai 4 šaltinių
+grandinei (transcript-api -> Piped/Invidious -> Gemini titrai -> Gemini langai) — įtariam ankstyvą nutrūkimą.
 
-1) INDEKSO ŠVIEŽINIMAS:
-   a) Pergeneruok index/concepts.md DABAR (su timeout'ais; jei generavimas naudoja LLM ant kiekvieno skill —
-      apsvarstyk deterministinę versiją iš frontmatter'ių, LLM tik santraukoms kur būtina).
-   b) Prijunk prie Loop B (kasdienis) — indeksas atsinaujina kasdien, ne kas savaitę. Loop C lieka gilesnei
-      konsolidacijai (merge/prune), bet indekso šviežinimą perima Loop B.
-2) CACHE-HIT METRIKA naršymo kilpoje: į trajektorijos įrašą pridėk cache_hit lauką — true, kai atsakymas gautas
-   iš L2+ santraukų (records/skills/profile) NEnusileidžiant į žalią extracted; false kai reikėjo žalio teksto
-   arba nerasta. Loop B raporte — cache-hit % ir vidutinis įrankių kvietimų sk. per query. Tai matuoja, ar
-   vault'as realiai apsimoka (Dosu pattern: cache-hit = ~2x pigesnė užklausa).
-3) TESTAS: (a) concepts.md rodo realų skill skaičių (~20) ir šviežią datą; (b) 1 query per kilpą -> trajektorijoje
-   matosi cache_hit reikšmė; (c) regresija: „kas yra ATDP?" veikia.
-4) DURABILUMAS: kodo kopija į /opt/cad-site-agent/n8n/hera/ (be push į viešą!) + push į PRIVATŲ hera-core-backup
-   (askpass, secret-scan). Viešo repo NELIESK.
+1) RASK LOGUOSE šio job'o įrašus (video ID uCKhOmth2ms): kuris grandinės šaltinis buvo bandytas, kuo baigėsi
+   KIEKVIENAS (status kodai/exception), ar visi 4 realiai išbandyti, ar grandinė nutrūko ties pirmu/antru.
+   Ar 400 iš Gemini (jam padavė video URL?) ar iš veidrodžio?
+2) PATIKRINK ŠALTINIUS RANKA tam pačiam ID: transcript-api, bent 2 Piped/Invidious veidrodžiai (curl, ar gyvi
+   apskritai?), Gemini titrų kelias. Užsirašyk kas realiai veikia šiandien.
+3) FIX pagal radinį (minimalus):
+   a) jei grandinė nutrūksta anksti dėl exception/klaidos klasifikavimo — sutvarkyk, kad VISI šaltiniai būtų
+      išbandyti prieš pasiduodant, o klaidos žinutė sakytų kurie šaltiniai bandyti.
+   b) jei Piped/Invidious veidrodžiai išvis mirę — atnaujink veidrodžių sąrašą gyvais (patikrink ranka) ir/arba
+      įjunk HERA_YT_PROXY kelią jei sukonfigūruotas.
+   c) jei 400 iš Gemini video kelio — patikrink ar Gemini apskritai gali tą video (region lock realus?); jei
+      realus apribojimas — tai ne bug'as, bet žinutė turi skirti „šaltiniai nepasiekiami" nuo „video privatus".
+4) TESTAS: perleisk uCKhOmth2ms per ištraukimą — tikslas: transkriptas gautas ARBA aiški ataskaita kurie 4/4
+   šaltiniai bandyti ir kodėl krito. Jei pavyko — leisk pipeline'ui baigti normaliai (selektorius+taryba+ACK).
+5) DURABILUMAS: pakeitimai (jei buvo) į /opt/cad-site-agent/n8n/hera/ kopiją + push į PRIVATŲ hera-core-backup.
+   Viešo repo neliesk.
 
-TELEGRAM (trumpai, be raktų): (1) indeksas šviežias — kiek skills/growth/RB rodo, Loop B hook įjungtas,
-(2) cache_hit loginamas — testo query reikšmė, (3) regresija OK, (4) privatus backup push OK, (5) „NAPMEM-C BAIGTA".
+TELEGRAM (trumpai, be raktų): (1) kuris šaltinis ką grąžino (4 eilutės), (2) diagnozė a/b/c viena raide+sakiniu,
+(3) kas pataisyta, (4) ar uCKhOmth2ms galiausiai ištrauktas (taip/ne + kodėl), (5) „YT GRANDINĖS FIX BAIGTA".
