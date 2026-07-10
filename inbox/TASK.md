@@ -1,28 +1,27 @@
-UŽDUOTIS — N8N MELAGINGO „400 PRIVATUS" KELIO IŠJUNGIMAS + EILĖS ACK (VIENA SIAURA UŽDUOTIS, TIK N8N). <12 min.
-HERA kodo NEliesk. NEleisk pytest. Telegram TRUMPAI.
+UŽDUOTIS — VAULT HIGIENA: EVICTION ŽYMĖJIMAS + DIENOS CHANGELOG + OPEN_QUESTIONS (VIENA UŽDUOTIS, VISKAS
+DETERMINISTINIS — BE LLM KVIETIMŲ). <12 min. NEleisk pytest. Telegram TRUMPAI.
 
-SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk. Backup prieš keitimą.
+SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk. NIEKO netrink — tik žymėk (human gate!).
 
-KONTEKSTAS (iš 17:47 diagnostikos, tavo paties memory): n8n gyvame workflow'e (linkparserwork01) yra atskiras
-SINCHRONINIS Gemini-video kelias, kuris video burst'ų metu grąžina vartotojui MELAGINGĄ „Klaida (400): video
-privatus, regionui apribotas..." — nors HERA jobas dar tik LAUKIA eilėje (dispatcher ~5 min/job dėl tarybos).
-Vartotojas dėl to pagrįstai supyko: sistema sako „neveikia", kai iš tikrųjų „palauk eilėje". Tavo paties
-užrašas: „reiktų jį išjungti/pataisyti n8n sqlite'e".
+KONTEKSTAS: LLM-Wiki webinaro (o3srk6, council promote_candidate) DISTILL #6-#8, vartotojas diegimą patvirtino.
 
-1) BACKUP: eksportuok linkparserwork01 į /root/linkparser_pre_syncfix.json.
-2) IŠJUNK/APEIK sinchroninį Gemini-video kelią youtube nuorodoms: youtube job'ai turi eiti TIK per
-   hera-ingest (8799) eilę (async), be jokio sinchroninio bandymo, kuris gali grąžinti klaidą vartotojui.
-3) EILĖS ACK vietoj melo: priėmus youtube/url/file job'ą, atsakyk vartotojui iškart trumpai:
-   „🔎 Priimta į eilę (pozicija N)" — poziciją paimk iš pending eilės ilgio (GET į 8799 jei yra endpoint'as,
-   arba suskaičiuok pending katalogą; jei sunku — bent „🔎 Priimta, apdorojama eilės tvarka, ~5 min/darbas").
-   NIEKADA nerodyk klaidos, kol HERA grandinė realiai nebandė ir nekrito — klaidas praneša processor'ius
-   savo žinute (jis dabar sako tiesą — kurie šaltiniai bandyti).
-4) Publikuok (publish, kaip mcprouterdesk001 pamoka), workflow lieka ACTIVE.
-5) TESTAS: per n8n CLI/exec paduok testinę youtube nuorodą (gali būti ta pati uCKhOmth2ms — bet ji jau apdorota,
-   tad geriau bet koks kitas trumpas viešas video ARBA dry-run be realaus siuntimo jei įmanoma) — patikrink:
-   (a) vartotojui grįžta eilės ACK, ne klaida; (b) jobas atsiranda pending eilėje.
-6) DURABILUMAS: patch skriptas į /opt/cad-site-agent/n8n/ (lokaliai, be push į viešą). Jei buvo pakeitimų
-   /opt/hera-ingest — push į privatų hera-core-backup.
+1) #6 EVICTION ŽYMĖJIMAS (Loop C): savaitinės konsolidacijos metu pažymėk kandidatus archyvavimui —
+   įrašai (growth/skills), kurių: (a) nė karto neskaitė naršymo kilpa / RAG (pagal trajektorijas),
+   (b) žemas importance (<0.3 ar pan.), (c) superseded dublikatai. Žymė frontmatter'yje:
+   eviction_candidate: true + priežastis. NETRINK ir NEarchyvuok pats — tik žymė + sąrašas changelog'e,
+   sprendžia žmogus/kuratorius. Deterministinis (statistika iš trajektorijų + frontmatter), be LLM.
+2) #7 DIENOS CHANGELOG (Loop B): į Loop B Telegram raportą pridėk „kas naujo vault'e per parą" bloką —
+   pigiausias kelias: /opt/hera-vault yra git repo (sync cron commit'ina) -> git log --since=1day --stat
+   santrauka: +N skills, +M growth, pakeisti X, eviction kandidatų Y. 3-5 eilutės max.
+3) #8 OPEN_QUESTIONS.md: sukurk /opt/hera-vault/OPEN_QUESTIONS.md (jei nėra). Du pigūs rašymo hook'ai:
+   (a) hera_council: kai balsai stipriai išsiskiria (pvz. score spread >4 tarp juror'ių) — append klausimas
+   „ar <kandidatas> vertas? taryba pasidalino X vs Y"; (b) naršymo kilpa: kai atsakymas nerastas
+   (found=false) — append „vault'e nėra atsakymo į: <klausimas>". Su data, be dublikatų (jei toks pat
+   klausimas jau yra — praleisk). Loop B raporte — atvirų klausimų skaičius.
+4) TESTAS (greitas, deterministinis): (a) Loop C dry-run ar tiesiog funkcijos kvietimas — eviction kandidatų
+   sąrašas sugeneruotas (kiek, kokie); (b) Loop B raporto generavimas — changelog blokas matosi;
+   (c) dirbtinai įrašyk 1 testinį open question per hook'ą — failas atsirado/papildytas.
+5) DURABILUMAS: kodo kopija į /opt/cad-site-agent/n8n/hera/ (be push į viešą) + push į PRIVATŲ hera-core-backup.
 
-TELEGRAM (trumpai, be raktų): (1) sinchroninis kelias išjungtas?, (2) eilės ACK veikia — testo pavyzdys,
-(3) backup kelias, (4) „N8N EILĖS FIX BAIGTA".
+TELEGRAM (trumpai, be raktų): (1) eviction kandidatų kiek pažymėta (ir 2-3 pavyzdžiai), (2) changelog blokas
+Loop B raporte — pavyzdys, (3) OPEN_QUESTIONS.md sukurtas + hook'ai veikia, (4) backup OK, (5) „VAULT HIGIENA BAIGTA".
