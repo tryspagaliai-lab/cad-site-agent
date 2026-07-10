@@ -1,27 +1,28 @@
-UŽDUOTIS — VAULT HIGIENA: EVICTION ŽYMĖJIMAS + DIENOS CHANGELOG + OPEN_QUESTIONS (VIENA UŽDUOTIS, VISKAS
-DETERMINISTINIS — BE LLM KVIETIMŲ). <12 min. NEleisk pytest. Telegram TRUMPAI.
+UŽDUOTIS — NAUJO HERA BOTO PRIJUNGIMAS (@tryspagaliai_hera_bot) (VIENA SIAURA UŽDUOTIS). <12 min.
+NEleisk pytest. Telegram TRUMPAI. SVARBU: tokenų NIEKUR nespausdink — HERA_BOT_TOKEN jau yra /root/hera.env.
 
-SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk. NIEKO netrink — tik žymėk (human gate!).
+TIKSLAS: naujas botas @tryspagaliai_hera_bot = GRYNAS HERA interfeisas (ingest + klausimai + feedback + ACK +
+Loop B raportai). Senas @tryspagaliabot LIEKA: AI digest + VPS agento (runner) ataskaitos. chat_id tas pats 725037198.
 
-KONTEKSTAS: LLM-Wiki webinaro (o3srk6, council promote_candidate) DISTILL #6-#8, vartotojas diegimą patvirtino.
+0) Patikrink kad HERA_BOT_TOKEN yra /root/hera.env (neprint'ink reikšmės; tik yra/nėra). Jei NĖRA — STOP,
+   ataskaitoje „TOKENO NĖRA", nieko nekeisk.
+1) OUTBOUND (paprasčiausia dalis): hera-processor tg siuntimas (ACK, atsakymai, Loop B raportai, council
+   žinutės) -> naudok HERA_BOT_TOKEN vietoj senojo. Runner'io/digest'o siuntimo NELIESK (jie lieka per seną).
+   Testas: išsiųsk per naują botą „🤖 HERA botas prijungtas ✅" į 725037198.
+2) INBOUND: n8n pusėje prijunk naujo boto žinučių priėmimą į tą patį kelią (writeIngestJob -> 8799):
+   BACKUP pirma (/root/linkparser_pre_herabot.json). Saugiausias kelias — nauja Telegram credential su
+   HERA_BOT_TOKEN ir Link Parser poll'as perjungiamas į naują botą (arba dubliuotas workflow naujam botui,
+   senojo polling'ą palik kol patvirtinta). Eilės ACK („🔎 Priimta...") turi grįžti per NAUJĄ botą.
+3) SUDERINAMUMAS: jei vartotojas per klaidą siųs turinį į SENĄ botą — nieko baisaus neturi nutikti (arba
+   toliau veikia kaip anksčiau, arba trumpas atsakymas „siųsk į @tryspagaliai_hera_bot"). Pasirink paprastesnį.
+4) TESTAS: (a) outbound per naują botą suveikė (žinutė išsiųsta, HTTP 200); (b) inbound — dry-run arba realus:
+   ataskaitoje paprašyk vartotojo nusiųsti į @tryspagaliai_hera_bot žinutę „labas HERA" kaip galutinį E2E testą.
+5) ROLLBACK: jei kas lūžta — grąžink backup'ą, senas botas lieka pilnai veikiantis, ataskaitoje FAILED+kodėl.
+6) ŠALUTINĖ PATIKRA (1 eilutė): ar vault higienos užduotis (d55c07e — eviction žymės/OPEN_QUESTIONS.md) buvo
+   įvykdyta anksčiau — taip/ne. Jei ne, pačios užduoties nedaryk, tik pažymėk.
+7) DURABILUMAS: pakeitimai į /opt/cad-site-agent/n8n/hera/ kopiją (be push į viešą) + push į PRIVATŲ
+   hera-core-backup; n8n patch skriptas į /opt/cad-site-agent/n8n/ lokaliai.
 
-1) #6 EVICTION ŽYMĖJIMAS (Loop C): savaitinės konsolidacijos metu pažymėk kandidatus archyvavimui —
-   įrašai (growth/skills), kurių: (a) nė karto neskaitė naršymo kilpa / RAG (pagal trajektorijas),
-   (b) žemas importance (<0.3 ar pan.), (c) superseded dublikatai. Žymė frontmatter'yje:
-   eviction_candidate: true + priežastis. NETRINK ir NEarchyvuok pats — tik žymė + sąrašas changelog'e,
-   sprendžia žmogus/kuratorius. Deterministinis (statistika iš trajektorijų + frontmatter), be LLM.
-2) #7 DIENOS CHANGELOG (Loop B): į Loop B Telegram raportą pridėk „kas naujo vault'e per parą" bloką —
-   pigiausias kelias: /opt/hera-vault yra git repo (sync cron commit'ina) -> git log --since=1day --stat
-   santrauka: +N skills, +M growth, pakeisti X, eviction kandidatų Y. 3-5 eilutės max.
-3) #8 OPEN_QUESTIONS.md: sukurk /opt/hera-vault/OPEN_QUESTIONS.md (jei nėra). Du pigūs rašymo hook'ai:
-   (a) hera_council: kai balsai stipriai išsiskiria (pvz. score spread >4 tarp juror'ių) — append klausimas
-   „ar <kandidatas> vertas? taryba pasidalino X vs Y"; (b) naršymo kilpa: kai atsakymas nerastas
-   (found=false) — append „vault'e nėra atsakymo į: <klausimas>". Su data, be dublikatų (jei toks pat
-   klausimas jau yra — praleisk). Loop B raporte — atvirų klausimų skaičius.
-4) TESTAS (greitas, deterministinis): (a) Loop C dry-run ar tiesiog funkcijos kvietimas — eviction kandidatų
-   sąrašas sugeneruotas (kiek, kokie); (b) Loop B raporto generavimas — changelog blokas matosi;
-   (c) dirbtinai įrašyk 1 testinį open question per hook'ą — failas atsirado/papildytas.
-5) DURABILUMAS: kodo kopija į /opt/cad-site-agent/n8n/hera/ (be push į viešą) + push į PRIVATŲ hera-core-backup.
-
-TELEGRAM (trumpai, be raktų): (1) eviction kandidatų kiek pažymėta (ir 2-3 pavyzdžiai), (2) changelog blokas
-Loop B raporte — pavyzdys, (3) OPEN_QUESTIONS.md sukurtas + hook'ai veikia, (4) backup OK, (5) „VAULT HIGIENA BAIGTA".
+TELEGRAM ataskaita per SENĄ kanalą kaip visada (trumpai, be raktų): (1) outbound per naują botą OK?,
+(2) inbound prijungtas — per ką (credential perjungta/dubliuotas workflow), (3) prašymas vartotojui: siųsk
+„labas HERA" į @tryspagaliai_hera_bot, (4) vault higiena anksčiau įvykdyta taip/ne, (5) „HERA BOTAS PRIJUNGTAS".
