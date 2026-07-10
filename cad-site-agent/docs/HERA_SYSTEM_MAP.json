@@ -1,141 +1,78 @@
 {
   "sistema": "HERA — self-evolving žinių pipeline + AgentOS valdymo tiltas",
-  "atnaujinta": "2026-07-09",
-  "stackas": "€0 (Gemini free), VPS Hetzner agentos-1, be GPU/treniravimo",
+  "atnaujinta": "2026-07-10 (didžioji evoliucijos diena: NapMem A/B/C, docbound skills, higiena, privatus durabilumas, pilnavertis kuratorius, atskiras HERA botas)",
+  "stackas": "€0 (Gemini free + Groq + GLM), VPS Hetzner agentos-1, be GPU/treniravimo",
 
-  "vault_busena_2026_07_08": {
-    "istraukta_video_full_md": 18,
-    "skills": 9,
-    "skills_sarasas": [
-      "agentines-atminties-konsolidavimas",
-      "agentinis-kodo-refaktorizavimas",
-      "ai-wargaming-metodika",
-      "automem-llm-atminties-optimizavimas",
-      "automem-meta-atminties-optimizavimas",
-      "llm-skills-kurimas",
-      "multi-skill-markdown-synthesis",
-      "savaime-evoliucionuojanciu-agentu-atstatymas",
-      "sona-triju-lygiu-mokymosi-kaskada"
-    ],
-    "growth_failu": 12,
-    "trajektorijos_dienos": 3
+  "vault_busena_2026_07_10": {
+    "skills": 26,
+    "growth": 34,
+    "reasoningbank_irasu": 40,
+    "nauji_failai": {
+      "profile/PROFILE.md": "L4 profilis — 43 teiginiai su provenance; regeneruojamas per Loop C; naršymo kilpos read_profile įrankis",
+      "OPEN_QUESTIONS.md": "atviri klausimai žmogui — pildo council (balsų spread>4) ir nav (found=false) hook'ai, dedup",
+      "index/concepts.md": "ŠVIEŽINAMAS KAS VALANDĄ per Loop B (deterministinis, be LLM) — anksčiau savaitinis ir pasenęs"
+    },
+    "eviction": "24 kandidatai pažymėti dry-run (1 skill + 23 superseded growth); realų žymėjimą (write) atlieka savaitinis Loop C; NIEKAS netrinama be žmogaus"
+  },
+
+  "durabilumas_ISSPRESTA_2026_07_10": {
+    "hera-vault": "PRIVATUS repo tryspagaliai-lab/hera-vault — visas vault (203+ failų), cron sync kas 30 min (flock + secret-scan + GIT_ASKPASS, tokenas niekada .git/config'e)",
+    "hera-core-backup": "PRIVATUS repo — visas /opt/hera-processor kodas, push po kiekvieno keitimo",
+    "POLITIKA_GRIEZTA": "HERA kodas/vault viešame repo NIEKADA (vartotojo direktyva 2026-07-10). Tik: lokali kopija /opt/cad-site-agent/n8n/hera/ (be push) + privatūs repo. Vieša šaka napmem-phase-b buvo klaida — ištrinta.",
+    "github_token": "pergeneruotas (repo scope), senas 0-scope atšauktas; /root/hera.env",
+    "kuratoriaus_prieiga": "Claude Code sesija mato vault tiesiogiai (add_repo hera-vault -> /workspace/hera-vault); chat-Claude — per claude.ai Project 'HERA' + Add from GitHub"
   },
 
   "infrastruktura": {
     "vps": "Hetzner agentos-1, 77.42.94.63, Ubuntu 24.04, root",
-    "n8n": "docker n8n-n8n-1, workflow 'Link Parser' (linkparserwork01) ACTIVE — priima Telegram žinutes",
-    "telegram_botas": "@tryspagaliabot, chat 725037198 (priima turinį IR siunčia atsakymus)",
-    "llm_variklis": "Google Gemini gemini-flash-latest, free tier, thinkingBudget=0",
-    "servisai": {
-      "hera-ingest.service": "port 8799, priima failus/job'us iš n8n — AKTYVUS",
-      "hera-processor.service": "foninis apdorojimo demonas, Restart=always — AKTYVUS"
-    }
+    "hera_botas_NAUJAS": "@tryspagaliai_hera_bot (id 8878233706) — GRYNAS HERA interfeisas: ingest + klausimai + feedback + ACK + Loop raportai. Tokenas HERA_BOT_TOKEN /root/hera.env + n8n mounted /files/.hera_bot_token (600). Dual-poll n8n Link Parser'yje (savas getUpdates offset state.hera.json).",
+    "senas_botas": "@tryspagaliabot — LIEKA: AI digest + VPS agento (runner) ataskaitos. chat_id abiem 725037198.",
+    "n8n_link_parser": "linkparserwork01 ACTIVE: (1) YouTube URL normalizacija (11-simb. ID, share paramai ?si=/?is= išmetami, resolve aplenkiamas), (2) sinchroninis Gemini-video kelias IŠJUNGTAS — youtube/url TIK į async eilę, (3) eilės ACK '🔎 Priimta, apdorojama eilės tvarka' vietoj melagingu klaidu, (4) dual-poll abu botai -> ta pati 8799 eilė. Backup'ai /root/linkparser_pre_*.json",
+    "servisai": "hera-ingest (8799) + hera-processor — abu active; LLM kvietimai su griežtu timeout 60s + 1 retry (rc=124 pamoka)"
   },
 
   "valdymo_tiltas": {
-    "kaip_veikia": "vartotojas -> chat-Claude -> git inbox/TASK.md -> VPS cron runner -> claude -p (bypass) -> Telegram",
-    "statusas": "VEIKIA (patvirtinta daug kartų)",
-    "pastaba": "run_shell MCP tiltas blokuotas web sesijoje; naudojam GitHub kaip vamzdį"
+    "kaip_veikia": "vartotojas -> chat-Claude -> git inbox/TASK.md (ši šaka) -> VPS cron runner (kas 2 min, flock, 15-min timeout) -> claude -p -> Telegram",
+    "UZDUOCIU_TAISYKLE_BE_ISIMCIU": "viena užduotis = vienas siauras darbas <=10-12 min, JOKIU 'Dalis 1 + Dalis 2' (rc=124 timeout pamoka; vartotojas dėl to pagrįstai pyko). LLM žingsniams visada griežti timeout'ai.",
+    "atkabinimas": "pkill -9 -f 'claude -p'; rm -f /root/.agent_runner.lock"
   },
 
   "valdymo_hierarchija": {
-    "principas": "HERA selektorius (Gemini free) = greitas PIRMAS filtras, NE galutinė instancija. Claude (protingesnis modelis) = antras vartas / kuratorius. Vartotojas = galutinis sprendimas.",
-    "srautas": "HERA siūlo (draft/staged, NIEKADA auto-promote į gamybą) -> Claude peržiūri/atrenka/pataiso -> vartotojas patvirtina",
-    "jau_imontuota": "skill'ai = 'draft'; outer-loop -> proposals/approved/ su žmogaus gate; EWC-lite saugo įrodytus skills",
-    "salyga": "Kad Claude galėtų realiai vertinti HERA OUTPUT'us (skills/growth/proposals), juos reikia MATYTI -> vault+kodas į GitHub (backup). Iki tol Claude vertina tik ĮVESTĮ (turinį), ne HERA sprendimus."
+    "principas": "HERA selektorius = pirmas filtras; Claude = kuratorius/antras vartas (DABAR PILNAVERTIS — mato vault per privatų repo, vertina HERA sprendimus, ne tik įvestį); vartotojas = galutinis.",
+    "DOMENAS_NESIAURINAMAS": "VARTOTOJO DIREKTYVA 2026-07-10 (įrašyta ir PROFILE.md): HERA mokosi PLAČIAI — hardware, robotika, fizinis pasaulis, viskas. Jokių tematinių atmetimo filtrų prompt'uose. Bet koks outer-loop pasiūlymas siaurinti temas — atmetamas automatiškai (žr. proposals #02 REJECTED). Vertę sprendžia balai ir taryba.",
+    "kuratoriaus_pavyzdys": "3 proposals peržiūra: #01+#03 PROMOTED (replay validuoti), #02 REJECTED — replay 'PAGERĖJO' nepagavo savęs-susiaurinimo rizikos (tikrino tik reasoning kokybę ant n=2). Žmogaus/kuratoriaus vartas būtinas."
   },
 
-  "hera_pipeline": {
-    "1_priemimas_ingest": {
-      "ka_daro": "priima url / youtube / file(image,pdf,audio,video) / text / council_decision",
-      "statusas": "VEIKIA"
-    },
-    "2_gilus_istraukimas": {
-      "url": "trafilatura pilnas tekstas -> Gemini struktūra — VEIKIA",
-      "image_pdf": "Gemini vision + OCR — VEIKIA",
-      "youtube": "4-šaltinių grandinė: transcript-api(proxy) -> Piped/Invidious veidrodžiai -> Gemini titrai -> Gemini langai — VEIKIA (per Piped veidrodį, proxy nebūtinas)",
-      "audio_video": "ffmpeg chunk + Gemini — VEIKIA",
-      "irodymas": "18 video ištraukta; 4/4 užstrigę youtube atgaivinta"
-    },
-    "3_hera_selektorius": {
-      "ka_daro": "atrenka kas verta sistemos augimui; kompetencija -> SKILL.md, žinia -> growth/.md",
-      "statusas": "VEIKIA (9 įgūdžiai autonomiškai distiliuoti iš siųstų video)"
-    },
-    "4_atmintis_ir_trajektorijos": {
-      "atdp_lite": "kiekvienas veiksmas -> trajectories/*.jsonl (tipizuotas, reward atnaujinamas vėliau) — VEIKIA",
-      "skill_tuple": "SKILL.md su (intent, method, difficulty, tool_hint) + 3-lygių įkėlimas + top-k atranka — VEIKIA",
-      "reasoningbank": "'kas suveikė' atmintis; reward realiai kreipia atranką (3.88->5.68) — VEIKIA"
-    },
-    "5_savireguliacija": {
-      "outer_loop": "hera_optimize: meta-LLM peržiūri trajektorijas -> siūlo pataisas -> replay validuoja -> STAGED į proposals/approved/ (žmogus promote) — VEIKIA",
-      "kontrafaktinis_replay": "hera_replay: perleidžia job'ą su nauju prompt/skill, PAGERĖJO/PABLOGĖJO — VEIKIA",
-      "loop_B_valandine": "klasterizuoja + kokybės balai -> silpnų sričių raportas — VEIKIA",
-      "loop_C_savaitine": "vault konsolidacija (merge/prune STAGED) + concept index — VEIKIA",
-      "ewc_lite": "importance laukas saugo įrodytus skills nuo perrašymo — VEIKIA",
-      "ric_gardas": "blokuoja tik neatšaukiamas katastrofas (rm -rf, DB drop, force-push...) — VEIKIA"
-    },
-    "6_router_ir_query": {
-      "auto_router": "sistema PATI klasifikuoja: question / ingest / feedback (be prefiksų)",
-      "vault_query": "klausimas -> RAG per vault -> atsakymas SU šaltiniais, arba 'nerandu'",
-      "statusas": "VEIKIA ✅ (2026-07-07 patvirtinta gyvai: klausimas/ingest/feedback teisingai klasifikuota BE prefiksų; 'kas yra ATDP?' -> RAG su 3 šaltiniais)"
-    }
+  "hera_pipeline_nauja_2026_07_10": {
+    "selektorius_sugrieztintas": "prompt'e: (1) valuable=true -> privalomas bent 1 actionable candidate; (2) testinis/pramoginis turinys -> valuable=false score 0.0 iškart. Backup hera_select.py.bak-20260710.",
+    "normatyviniai_dokumentai": "3-ias turinio tipas: taisyklės/spec/standartai -> VISADA skill su document_bounded=true, frontmatter source_doc + knowledge_scope, kūne riba 'žinios apribotos šaltiniu -> dokumente to nėra'. Query grounding: atsakymas TIK iš source_doc su citata. Testuota 3/3. Kerpa epistemine spragą.",
+    "napmem_A_narsymo_kilpa": "HERA_NAV=1 prod'e (rollback =0 be kodo). Įrankiai: search_records, get_record, search_extracted, get_extracted, read_profile, stop_and_answer. Biudžetas HERA_NAV_BUDGET=5. Kiekvienas naršymas -> trajektorija su veiksmų seka + cache_hit lauku. Vietoj vienkartinio RAG.",
+    "napmem_B_L4_profilis": "hera_profile.py -> profile/PROFILE.md (43 teiginiai, kiekvienas su provenance). Loop C regeneruoja.",
+    "napmem_C_metrika": "cache_hit=True kai atsakyta iš L2+ nenusileidžiant į žalią extracted. Pirmi rodikliai: cache-hit 100%, vid. 1.27 įrankio/query — vault apsimoka (Dosu pattern ~2x pigiau).",
+    "higiena_hera_hygiene_py": "#6 eviction žymėjimas (deterministinis: neskaitytas + importance<0.3, arba superseded; TIK žymė, human gate), #7 dienos changelog Loop B raporte (git log iš vault), #8 OPEN_QUESTIONS hooks.",
+    "youtube_grandine": "SVEIKA: transcript-api (VPS IP blokuojamas, normalu) -> Piped (api.piped.private.coffee VEIKIA) -> Invidious -> Gemini. Klaidos žinutė dabar įvardija visus bandytus šaltinius ir skiria 'nepasiekiami' nuo 'privatus/regionui'."
   },
 
-  "duomenu_srautas": [
-    "1. Siunti turinį ar klausimą į @tryspagaliabot",
-    "2. n8n Link Parser priima -> hera-ingest (8799) -> pending eilė",
-    "3. hera-processor: hera_router klasifikuoja intenciją (question/ingest/feedback)",
-    "4a. ingest -> gilus ištraukimas -> vault/extracted",
-    "4b. question -> RAG per vault -> atsakymas SU šaltiniais į Telegram",
-    "4c. feedback -> atnaujina reward",
-    "5. selektorius -> growth/ arba skills/",
-    "6. trajektorija + reward loginami; savireguliacija fone (Loop B/C, outer-loop)"
-  ],
-
-  "ar_veikia_kaip_sugalvota": {
-    "verdiktas": "TAIP — pilna kilpa (1-6) veikia: priima -> ištraukia -> atrenka -> mokosi -> supranta intenciją -> atsako iš žinių",
-    "priima_ir_istraukia": "TAIP (patikrinta realiais video/failais; 18 vault'e)",
-    "atrenka_ir_gamina_igudzius": "TAIP (9 skills)",
-    "mokosi_is_saves": "TAIP (reward realiai kreipia sprendimus)",
-    "supranta_intencija_ir_atsako": "TAIP (Fazė 6 baigta, patvirtinta gyvai)",
-    "veikia_nemokamai": "TAIP (€0)",
-    "valdoma_is_telefono": "TAIP (be terminalo)"
-  },
-
-  "ribos_ir_rizikos": [
-    "DURABILUMAS (didžiausia): visas HERA kodas (Fazės 2-6) + 9 skills TIK VPS'e, GitHub'e NĖRA (n8n/hera/ untracked, nėra push tokeno). Jei VPS dingtų — prarandi viską.",
-    "EPISTEMINĖ SPRAGA: sistema saugo ir atkartoja info kaip tiesą — NEtikrina teisingumo. Klaidingas šaltinis -> užtikrintai klaidingas atsakymas. Grounding saugo nuo modelio haliucinacijų, NE nuo klaidingų duomenų vault'e. (Sprendimas: provenance+pasitikėjimas+prieštaravimų aptikimas — būsimas 'episteminis sluoksnis'.)",
-    "Gemini free flaky (503) — struktūrizavimo žingsniai kartais stringa, retry padeda",
-    "Savireguliacijos ir skill juodraščiai remiasi subjektyviu LLM verdiktu -> žmogaus promote būtina (taip ir padaryta)",
-    "Digest ir HERA dar nesujungti į vieną kilpą",
-    "YouTube per viešus veidrodžius (Piped) — jei nustotų, reikės proxy (HERA_YT_PROXY paruoštas)"
-  ],
-
-  "council_decision_faze7": {
-    "kas": "MODELIŲ TARYBA (jury) — po HERA selektoriaus keli nepriklausomi modeliai balsuoja {verdict, score, domain_fit, reason}, agreguojama į council verdiktą. Įvairovė > vienas modelis.",
-    "statusas": "PASTATYTA IR VEIKIA — Fazė 7 baigta 2026-07-09. hera_council.py, aktyvi prod'e (HERA_COUNCIL=1, kiekvienam įrašui). 38/38 unit testų.",
-    "nariai_gyvai": "7 balsuotojai: GLM (native Zhipu, nemokamas) + Groq×5 (Llama-4-scout, qwen3.6, qwen3-32b, gpt-oss-120b, gpt-oss-20b) + Gemini-2.5-flash. Prioritetas: native+Groq+NVIDIA = pagrindiniai; Gemini papildomi; OpenRouter tik jei <3 balsai; OpenAI kraštutinis tie-breaker.",
-    "tiekejai": {
-      "groq": "VEIKIA (gsk) — Llama/Qwen/GPT-OSS, nemokamas",
-      "zhipu_glm": "VEIKIA (native, nemokamas glm-4.5-flash) — balsuoja",
-      "gemini": "VEIKIA (free) — papildomi balsai",
-      "deepseek": "raktas galioja, 402 (0 balanso) — įsijungs papildžius",
-      "mimo_xiaomi": "raktas galioja, 402 (0 balanso) — įsijungs papildžius",
-      "openrouter": "antrinis (free tier 429-limituotas)",
-      "openai": "kraštutinis tie-breaker (mokamas, retai)",
-      "nvidia_nim": "paruošta kode, rakto dar nėra (nvapi-)",
-      "nex_n2_pro": "tik OpenRouter mokamas — nemokamo/native kelio nėra"
-    },
-    "human_gate": "VISADA staged į proposals/council/<job>.json su human_gate=True, auto_promoted=False. Dubliai vengiami (native pirmenybė prieš NVIDIA/OpenRouter tos pačios šeimos).",
-    "irodymas": "NVIDIA off-domain testas (selektorius davė 8.0): 7 nariai VISI drop -> council_score 1.0, domain_fit 1.0 -> DROP. Tie-breaker nereikėjo (sutarimas). Taryba pagavo selektoriaus klaidą.",
-    "durabilumas": "kodas /opt/hera-processor/ + kopija /opt/cad-site-agent/n8n/hera/ — TIK VPS'e, GitHub'e DAR NĖRA (push nedarytas)."
+  "council_taryba": {
+    "statusas": "VEIKIA, 10-12 balsuotojų (digest fix leido augti nuo 3->7->12). Diferencijuoja: stage_for_review dauguma, promote_candidate stipriems atminties-domeno kandidatams (2x 2026-07-10: Wiki webinaras, Hermes Agent).",
+    "deepseek_mimo": "raktai galioja, 402 (0 balanso) — įsijungtų papildžius",
+    "zinoma_problema": "council ~5 min/job -> burst'ai eiliuojasi; eilės ACK tai padaro matomu. Ateities kandidatas: lygiagretinimas."
   },
 
   "kas_toliau": [
-    "PIRMA (didžiausia rizika): VISO HERA kodo (Fazės 2-7 + taryba + 9 skills) apsauga į GitHub — dabar tik VPS'e, untracked. VPS dingtų -> prarandi viską.",
-    "Nebūtina: DeepSeek + MiMo balansų papildymas (402) -> +2 native balsai taryboje automatiškai",
-    "Fazė 8 kandidatai: (a) episteminis sluoksnis (žinių teisingumas + provenance), (b) verify-loop (saugus savęs-refaktorizavimas)",
-    "Digest sujungimas į HERA kilpą",
-    "Sukauptos žinios panaudojimas (agentams / veiksmams)"
+    "VARTOTOJO TESTAVIMO SESIJA per @tryspagaliai_hera_bot: (1) 'labas HERA' E2E, (2) sugadinta YT nuoroda ?is=, (3) taisyklių PDF -> document_bounded skill, (4) klausimas pagal/už dokumento ribų, (5) feedback -> reward, (6) klausimas apie interesus -> L4 profilis",
+    "chat-Claude prieiga: claude.ai Project 'HERA' + Add from GitHub hera-vault (vartotojas dar nepadaręs)",
+    "Eviction write per savaitinį Loop C (24 kandidatai) — po jo žmogaus peržiūra",
+    "DeepSeek/MiMo balansai (+2 tarybos balsai)",
+    "Council lygiagretinimas (backlog mažinimas)",
+    "Fazė 8 kandidatai: episteminis sluoksnis (provenance+prieštaravimai), verify-loop",
+    "DISTILL likutis: SwarmResearch #1-#3 (STAGNATION-REDIRECTION heartbeat su compression-progress metrika, Explorer/Optimizer outer-loop'e, reward-hacking sargas su Gödelio formuluote 'be replay įrodymo = atmesta')",
+    "Digest sujungimas į HERA kilpą; sukauptų žinių panaudojimas CAD verslui (normatyviniai PDF -> brėžinių validavimas)"
+  ],
+
+  "saugumo_pamokos": [
+    "Tokenai TIK per read -rp į /root/hera.env arba mounted failus (600) — NIEKADA į chat/repo/workflow JSON. Chat'e parodytas tokenas = nutekėjęs = revoke iškart (2x pasitaikė: ghp_ ir pirmasis hera bot tokenas — abu pakeisti).",
+    "Klasikinis GitHub PAT be varnelių = 0 scopes ('public access') — atrodo identiškai, bet negali nieko privataus. Tikrinti: x-oauth-scopes header.",
+    "Klaidos žinutė vartotojui privalo sakyti tiesą: 'eilėje' != 'video privatus'. Melaginga klaida = prarastas pasitikėjimas."
   ]
 }
