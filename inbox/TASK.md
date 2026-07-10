@@ -1,39 +1,48 @@
-UŽDUOTIS — N8N LINK PARSER FIX: YOUTUBE URL NORMALIZACIJA (FOKUSUOTAI, SU BACKUP+ROLLBACK). <15 min.
-NEleisk pytest, hera_*.py NEliesk — keičiamas TIK n8n workflow linkparserwork01. Atsiskaityk Telegram TRUMPAI.
+UŽDUOTIS — HERA PRAPLĖTIMAS: NORMATYVINIAI DOKUMENTAI -> DOKUMENTU APRIBOTI SKILL'AI (VARTOTOJAS PATVIRTINO DIEGIMĄ).
+<15 min, fokusuotai. NEleisk viso pytest — tik taikinius testus. Atsiskaityk Telegram TRUMPAI.
 
 SAUGUMAS: raktų nespausdink/necommit'ink/nerodyk.
 
-KONTEKSTAS (iš 21:00 diagnostikos): sugadinta share nuoroda youtu.be/<id>?is=... (vietoj ?si=) nulaužė n8n
-„Link Parser" httpRequest URL-išskleidimo žingsnį -> 404 po 123s vartotojui, nors pats video galiojantis.
-Sprendimas (vartotojas patvirtino): normalizuoti YouTube nuorodas PRIEŠ resolve, continueOnFail — antras saugiklis.
+KONTEKSTAS: vartotojas (galutinis vartas) patvirtino REALŲ diegimą — ne staged draft'ą. Idėja iš Superhuman AI
+naujienlaiškio „PDF -> Claude skill" (2026-07-10), kuratoriaus (Claude) adaptacija HERA'i. Esmė: taisyklių/spec/
+gairių dokumentai turi virsti SKILL'ais su „žinios apribotos šiuo dokumentu" saugikliu — tai kerpa epistemine
+spragą (skill negali fantazuoti už šaltinio ribų).
 
-1) BACKUP PIRMA: eksportuok esamą workflow į /root/linkparser_pre_ytfix.json
-   (docker exec -u node n8n-n8n-1 n8n export:workflow --id=linkparserwork01 ...). Be backup'o NIEKO nekeisk.
+DIEGIMAS (/opt/hera-processor/, minimalūs pakeitimai esamame kode):
 
-2) PATCH (minimalus, addityvus — metodika kaip patch_router2.py):
-   a) Žingsnyje, kur apdorojama gauta žinutė PRIEŠ httpRequest resolve (Poll & Process ar atitinkamas code node),
-      pridėk YouTube normalizaciją: regex'u ištrauk 11 simbolių video ID iš youtu.be/<ID>, watch?v=<ID>,
-      shorts/<ID>, embed/<ID> ([A-Za-z0-9_-]{11}); jei rasta -> kanoninis https://www.youtube.com/watch?v=<ID>,
-      VISI query parametrai (si/is/feature/t...) išmetami, o httpRequest resolve žingsnis YouTube nuorodai
-      APLENKIAMAS (youtu.be išskleidimo nebereikia — ID jau turim). Ne-YouTube nuorodų elgsena NEKEIČIAMA.
-   b) httpRequest resolve node'ui įjunk continueOnFail (antras saugiklis likusioms nuorodoms) — jei resolve
-      krenta, žinutė turi eiti toliau su originaliu URL, ne grąžinti axios klaidą vartotojui.
-   c) Publikuok pagal veikiančią metodiką (kaip mcprouterdesk001 pamoka: gali reikėti publish, ne vien update)
-      ir įsitikink, kad workflow liko ACTIVE.
+1) SELEKTORIAUS MARŠRUTAS: pridėk trečią turinio tipą „normatyvinis dokumentas" (taisyklės, reglamentai,
+   spec'ai, standartai, gairės — dažnai PDF, bet gali būti ir tekstas). Atpažinimo kriterijus selektoriaus
+   prompt'e: dokumentas nurodo KAIP PRIVALOMA daryti / ko laikytis (ne „žinios apie pasaulį"). Toks turinys
+   -> VISADA skill kandidatas (ne growth), su žyma document_bounded=true.
 
-3) TESTAS:
-   a) Normalizacijos logika: perleisk regex'ą node -e (ar python3) su atvejais: youtu.be/iDo4fIYE98Q?is=55Ex...,
-      youtu.be/iDo4fIYE98Q?si=abc, youtube.com/watch?v=iDo4fIYE98Q&t=10, youtube.com/shorts/<id>, ne-YouTube URL
-      (turi likti nepakeistas). Visi turi duoti teisingą rezultatą.
-   b) E2E per Telegram negali pats — ataskaitoje paprašyk vartotojo persiųsti botui TĄ PAČIĄ sugadintą nuorodą
-      (youtu.be/iDo4fIYE98Q?is=55Ex1GVnvlOx4yzD) kaip galutinį testą.
-   c) DUBLIO PASTABA: šis video jau apdorotas 2x (2ls50k, ne08n5) — jei procesorius turi dedup pagal video ID,
-      trečias siuntimas tik patvirtins flow; jei dedup NĖRA, ataskaitoje pažymėk (būsimam darbui, dabar nekurk).
+2) DOKUMENTU APRIBOTAS SKILL formatas (kai document_bounded=true):
+   a) frontmatter: source_doc: <kelias į extracted šaltinį vault'e>, knowledge_scope: document_bounded,
+      + įprastas tuple (intent, method, difficulty, tool_hint) ir triggers/raktažodžiai.
+   b) skill kūne PRIVALOMA instrukcija: „Tavo žinios apribotos šaltinio dokumentu (source_doc). Taikyk TIK jame
+      esančias taisykles. Jei klausimas/atvejis už dokumento ribų — atsakyk 'dokumente to nėra', NIEKO nespėliok."
+   c) esamų skill'ų formato NEkeisk — tai papildomas potipis.
 
-4) ROLLBACK jei kas negerai: importuok /root/linkparser_pre_ytfix.json atgal ir pažymėk ataskaitoje FAILED+priežastis.
+3) VAULT QUERY su GROUNDING'u: kai RAG atrenka document_bounded skill'ą, atsakymas generuojamas TIK iš source_doc
+   turinio su citata/nuoroda į dokumentą; jei atsakymo dokumente nėra — atsakyk „dokumente to nėra" (ne bendras
+   „nerandu"). Kitų (paprastų) skill'ų query elgsena NEKEIČIAMA.
 
-5) DURABILUMAS: patch skriptą padėk /opt/cad-site-agent/n8n/ (pvz. patch_linkparser_ytnorm.py). Push NEDARYK.
+4) GOVERNANCE NEKEISK: skill kandidatai kaip įprasta pereina selektorių+tarybą, status draft/human_gate lieka,
+   NIEKADA auto-promote. Čia keičiasi tik maršrutas ir formatas, ne vartai.
 
-TELEGRAM (trumpai, be raktų): (1) backup kelias, (2) patch pritaikytas+workflow ACTIVE? (3) normalizacijos testų
-rezultatai (kiek atvejų OK), (4) prašymas vartotojui persiųsti sugadintą nuorodą E2E testui, (5) ar procesorius
-turi dedup pagal video ID (taip/ne), (6) „LINK PARSER FIX BAIGTA".
+5) TESTAS (greitas, be pilno suite):
+   a) sintetinis mini dokumentas (pvz. 15 eilučių „Brėžinių sluoksnių standartas: sluoksnis X privalo...,
+      draudžiama Y...") -> per selektorių: ar klasifikuota normatyviniu? ar skill turi source_doc + constraint?
+   b) query testas: klausimas PAGAL dokumentą -> atsakymas su citata; klausimas UŽ dokumento ribų
+      (pvz. „koks oras Vilniuje") -> „dokumente to nėra".
+   c) regresija: vienas įprastas ingest/query kelias tebeveikia (galima ant esamo vault įrašo, be naujo LLM
+      ištraukimo jei brangu).
+
+6) DURABILUMAS: kodo kopija į /opt/cad-site-agent/n8n/hera/ IR push į PRIVATŲ tryspagaliai-lab/hera-core-backup
+   (GITHUB_TOKEN iš env; PRIEŠ push — secret-scan kaip anksčiau). Į viešą repo push NEDARYK.
+
+7) ŠALUTINĖ PATIKRA: ar ankstesnė užduotis (n8n Link Parser YT normalizacija, backup /root/linkparser_pre_ytfix.json)
+   buvo įvykdyta? Jei NE — pažymėk ataskaitoje „LINKPARSER FIX NEĮVYKDYTAS", pats dabar nedaryk.
+
+TELEGRAM (trumpai, be raktų): (1) selektoriaus maršrutas + skill formatas + grounded query įdiegti? (2) testų
+a/b/c rezultatai, (3) backup push'intas į hera-core-backup? (4) linkparser fix įvykdytas anksčiau (taip/ne),
+(5) „NORMATYVINIAI SKILL'AI ĮDIEGTI".
