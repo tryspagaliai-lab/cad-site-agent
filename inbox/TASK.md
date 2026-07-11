@@ -1,29 +1,39 @@
-UŽDUOTIS — LLM-WIKI #2: ATSAKYMAS -> NAUJAS PUSLAPIS (query synthesis compounding). <12 min.
-NEleisk viso pytest — tik taikinius. LLM kvietimams griežti timeout'ai. Telegram TRUMPAI.
-Fail-safe: rašymo klaida NIEKADA nelaužo atsakymo vartotojui. €0.
+UŽDUOTIS — GRĄŽINTI PILNĄ ANALIZĘ VARTOTOJUI PO APDOROJIMO (dabar mato tik eilės ACK). <12 min.
+NEleisk pytest. Telegram TRUMPAI. Fail-safe: siuntimo klaida NIEKADA nelaužo ingest.
 
-SAUGUMAS: raktų nespausdink/necommit'ink. Nauji puslapiai = DRAFT/human_gate, jokio auto-promote.
+SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta HERA kodą — push į PRIVATŲ hera-core-backup.
 
-KONTEKSTAS: kai HERA atsako į KLAUSIMĄ (vault_query/naršymo kilpa) ir sugeneruoja vertingą SINTEZĘ
-(palyginimą, analizę, ryšį per kelis šaltinius), ji dabar nueina į Telegram ir DINGSTA. Karpathy pattern:
-vertingi atsakymai grąžinami į vault kaip nauji puslapiai, kad žinios kauptųsi.
+PROBLEMA (vartotojo): anksčiau atsiuntus turinį botas grąžindavo PILNĄ skaitomą analizę (santrauka, pagrindiniai
+taškai, konceptai, transkripcija — „PARSER" formatas). Kai perjungėm į eilės ACK („🔎 Priimta, apdorojama eilės
+tvarka"), pilnos analizės grąžinimas dingo. Vartotojas nori JĄ SKAITYTI. Analizė vis tiek generuojama
+(extracted/<data>/<id>/full.md ar panašiai) — tik nebesiunčiama atgal.
 
-1) SINTEZĖS FIKSAVIMAS query kelyje (hera_query/naršymo kilpa): PO atsakymo suformavimo, jei atsakymas yra
-   SUBSTANTIVI sintezė — stage'ink naują /opt/hera-vault/growth/synthesis-<YYYY-MM-DD>-<trumpas-hash>.md.
-   Kriterijus (deterministinis, pigus, kad NEspam'intų): (a) atsakymas rėmėsi >=2 skirtingais šaltinio puslapiais
-   (cituoti/naudoti nav kilpoje), IR (b) atsakymo ilgis > ~300 simb., IR (c) NE „nerandu"/„dokumente to nėra"
-   /pasisveikinimas. Jei kriterijus netenkinamas — NIEKO nerašyk (trivialūs klausimai nekaupiami).
-2) PUSLAPIO FORMATAS: frontmatter (status: draft, human_gate: true, kind: synthesis, source_query: <klausimas>,
-   created, sources: [puslapiai]); kūne — atsakymas + „## Susiję" su `[[nuorodomis]]` į šaltinio puslapius
-   (naudok #1 wiki konvenciją). Provenance: „auto-sintezė iš klausimo, human_gate; NIEKO nepromote'inta".
-3) JUNGIKLIS: HERA_SYNTH=1 įjungia (default 1); =0 rollback be kodo. Įrašyk =1 /root/hera.env.
-4) DEDUP/RIBA: jei labai panaši sintezė jau yra (tas pats klausimo hash) — nekurti dublio. Fail-safe: rašymo
-   klaida -> log + atsakymas vartotojui vis tiek grąžinamas.
-5) TESTAS: (a) klausimas, kuris sintezuoja per >=2 šaltinius -> naujas synthesis puslapis sukurtas su
-   nuorodomis (parodyk kelią + frontmatter, be raktų); (b) trivialus klausimas („kas yra ATDP?" jei 1 šaltinis
-   arba trumpas) -> puslapis NEkuriamas; (c) fail-safe: dirbtinė rašymo klaida -> atsakymas vis tiek grąžintas.
-6) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup (secret-scan).
-   Viešo NELIESK. Nauji puslapiai nusisync'ins per vault cron (ir pateks į lint/grafą).
+1) RASK: (a) kur po ingest apdorojimo guli žmogui skaitoma analizė (greičiausiai /opt/hera-vault/extracted/
+   <data>/<id>/full.md arba struktūrizuotas summary); (b) kur SENIAU ji buvo siunčiama vartotojui (n8n „Poll &
+   Process" sinchroninis kelias ar processor), kad atkurtum tą elgseną.
 
-TELEGRAM (trumpai, be raktų): (1) sintezės fiksavimas veikia (kriterijus), (2) testas — sukurtas synthesis
-puslapio pavyzdys + trivialus praleistas, (3) HERA_SYNTH=1, fail-safe, backup OK, (4) „WIKI SINTEZĖ ĮDIEGTA".
+2) ATKURK PILNOS ANALIZĖS SIUNTIMĄ: kai processor'ius BAIGIA apdoroti ingest'ą (ten kur dabar siunčia trumpą
+   „📥 Priimta: title | selektorius | taryba" ACK), PAPILDOMAI nusiųsk vartotojui PILNĄ analizę (full.md turinį)
+   į tą patį Telegram chat (per tą patį botą, kurį vartotojas naudoja — PARSER/hera bot outbound).
+   - Trumpas eilės ACK gavimo momentu LIEKA.
+   - Pilna analizė ateina PO apdorojimo (~kai baigta).
+
+3) ILGIO TVARKYMAS (Telegram riba ~4096): analizę siųsk DALIMIS — skaidyk į ≤3800 simb. gabalus, po eilučių
+   ribų (ne per vidurį žodžio), su „(dalis k/n)" žyme. (Taip PARSER darydavo anksčiau — kelios žinutės.)
+   Jei dalių labai daug (>8) — vietoj to siųsk kaip .md DOKUMENTĄ (sendDocument) su trumpu antraštės tekstu.
+   Pasirink automatiškai pagal ilgį; aprašyk ataskaitoje ką pasirinkai.
+
+4) JUNGIKLIS: HERA_FULL_ANALYSIS=1 įjungia pilnos analizės siuntimą (default 1); =0 rollback be kodo.
+   Įrašyk =1 /root/hera.env.
+
+5) FAIL-SAFE: siuntimo/skaidymo klaida -> log + tęsk (ingest įrašytas, ACK jau nusiųstas); NIEKADA nelaužk pipeline.
+
+6) TESTAS: (a) paimk 1 JAU apdorotą kandidatą (turintį full.md) ir perleisk siuntimo funkciją -> vartotojas gautų
+   pilną analizę dalimis (arba dokumentu); parodyk kiek dalių/ar dokumentas (be raktų, be viso turinio — tik
+   metrikos); (b) fail-safe: dirbtinė siuntimo klaida -> ingest nesulūžta.
+
+7) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ (ir/ar n8n patch į n8n/) + push į PRIVATŲ hera-core-backup
+   (secret-scan). Viešo repo NELIESK.
+
+TELEGRAM (trumpai, be raktų): (1) pilna analizė vėl grąžinama po apdorojimo (dalimis ar dokumentu — kaip),
+(2) eilės ACK liko gavimo momentu, (3) HERA_FULL_ANALYSIS=1, fail-safe, backup OK, (4) „PILNA ANALIZĖ GRĄŽINTA".
