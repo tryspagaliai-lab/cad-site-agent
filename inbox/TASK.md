@@ -1,21 +1,40 @@
-UŽDUOTIS — HERA BOTUI PER-INGEST SISTEMOS ĮRAŠAS (stebėsenos kanalas). <8 min.
-NEleisk pytest. Telegram TRUMPAI. Fail-safe: siuntimo klaida nelaužo ingest. NEliesk PARSER maršruto.
+UŽDUOTIS — 5a FAZĖ: SANDBOX PAMATAS (bubblewrap no-net + git-worktree izoliacija; BE savęs-keitimo). <13 min, time-boxed.
+NEleisk pytest. Telegram TRUMPAI. Fail-safe. SĄŽININGAI: jei VPS branduolys neleidžia — pasakyk, NEfeikink.
 
 SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta kodą — push į PRIVATŲ hera-core-backup.
 
-TIKSLAS: vartotojas nori stebėti HERA sprendimus atskirame sistemos kanale (HERA botas), atskirai nuo turinio
-skaitymo PARSER'yje. Kiekvienam apdorotam ingest'ui — PAPILDOMAI trumpas SISTEMOS įrašas į HERA botą
-(@tryspagaliai_hera_bot per HERA_BOT_TOKEN). PARSER kelias (santrauka + user ACK) NEKEIČIAMAS.
+KONTEKSTAS: 5 fazės (savęs-tobulinimo) SAUGUMO pamatas. ŠITA užduotis — TIK izoliacijos infrastruktūra + įrodymas.
+JOKIO savęs-keitimo, jokio LLM. Šablonas iš tyrimo: git-worktree + bubblewrap --unshare-net + benchmark-vartai.
 
-1) Dispatcher'yje, kur baigiamas ingest (šalia PARSER ACK), PAPILDOMAI nusiųsk į HERA botą VIENĄ trumpą eilutę:
-   „🧠 ingest: <trumpas title> | sel <score> | taryba <action> (<votes>) | gate: <decision/verdict jei buvo, kitaip —>"
-   Viena eilutė, be transkripcijos, be santraukos (tik sistemos metrikos). Tai stebėsenos log, ne turinys.
-2) JUNGIKLIS HERA_INGEST_LOG=1 (default 1; =0 išjungia). Įrašyk =1 /root/hera.env.
-3) FAIL-SAFE: HERA boto siuntimas try/except — klaida NElaužo ingest, PARSER ACK vis tiek išsiunčiamas.
-   Nedubliuok: PARSER gauna santrauką+user ACK; HERA botas gauna TIK šitą trumpą sistemos eilutę.
-4) TESTAS: perleisk 1 kandidatą (ar sintetinį) -> patikrink, kad HERA bote atsiranda trumpa „🧠 ingest:" eilutė,
-   o PARSER kelias nepakito (santrauka+ACK ten pat). Fail-safe: dirbtinė HERA-send klaida -> ingest OK.
-5) DURABILUMAS: kopija į n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
+1) ĮDIEK bubblewrap: apt-get install -y bubblewrap; bwrap --version. Patikrink NEPRIVILEGIJUOTUS user namespaces
+   (ar veikia be root): `bwrap --unshare-net --ro-bind / / true` -> jei OK, izoliacija galima.
+   Jei NEPAVYKSTA (kernel draudžia unpriv userns, pvz. sysctl) — pabandyk įjungti
+   (sysctl kernel.unprivileged_userns_clone=1 jei egzistuoja) VIENĄ kartą; jei vis tiek ne — STOP, ataskaitoje
+   „bubblewrap unpriv NEVEIKIA ant šio VPS — reikia atsarginio (firejail/nsjail) — nurodyk kernel versiją".
+   NEfeikink veikimo.
 
-TELEGRAM (per HERA botą, trumpai, be raktų): (1) per-ingest sistemos įrašas įjungtas (pavyzdys), (2) PARSER
-maršrutas nepaliestas, (3) fail-safe OK, (4) „HERA STEBĖSENOS LOG ĮJUNGTAS".
+2) hera_sandbox.py: funkcija run_in_sandbox(cmd, writable_dir, timeout=120) — paleidžia cmd bubblewrap'e:
+   --unshare-net (JOKIO tinklo), --ro-bind /usr /usr, --ro-bind /bin /bin, --ro-bind /lib* ..., bazinis kodas
+   read-only, --bind TIK writable_dir rašymui, --die-with-parent, --new-session, no-new-privs, laiko/atminties
+   limitai (timeout + ulimit/systemd-run --scope MemoryMax jei paprasta). Grąžina {rc, stdout_tail, timed_out}.
+   Fail-safe: klaida -> {rc: -1, error}, nekabo.
+
+3) ĮRODYK IZOLIACIJĄ (3 testai, be LLM):
+   a) NO-NET: sandbox'e paleisk `curl -m 5 https://example.com` (ar python urllib) -> turi ŽLUGTI (tinklo nėra).
+      Parodyk, kad be sandbox tas pats curl VEIKTŲ (kontrolė) — įrodo, kad izoliacija reali.
+   b) WRITE-RESTRICT: sandbox'e bandymas rašyti UŽ writable_dir (pvz. /opt/hera-processor/x) -> BLOKUOTA;
+      rašymas Į writable_dir -> OK.
+   c) WORKTREE IZOLIACIJA: sukurk git worktree iš /opt/hera-vault (ar test repo), pakeisk failą worktree'je ->
+      gyvas /opt/hera-vault NEPAKITĘS (izoliuota kopija).
+
+4) BENCHMARK SANDBOX'E: paleisk hera_bench.run() sandbox'e (be tinklo — jis deterministinis, tinklo nereikia) ->
+   turi grąžinti pass_rate 1.0 (9/9). Įrodo, kad matuoklis veikia izoliuotoje aplinkoje (būsimiems vartams).
+   Jei bench reikalauja tinklo/LLM — paleisk be sandbox ir pažymėk (bet jis deterministinis, turėtų veikti).
+
+5) JOKIO SAVĘS-KEITIMO. Tik infrastruktūra + įrodymas. HERA_SANDBOX komentaras kode „5b/5c naudos".
+
+6) DURABILUMAS: hera_sandbox.py kopija į n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
+
+TELEGRAM (per HERA botą, trumpai, be raktų): (1) bubblewrap įdiegtas + unpriv userns VEIKIA/NEVEIKIA (+kernel),
+(2) izoliacijos testai a/b/c (no-net žlugo? write blokuota? worktree izoliuota?), (3) benchmark sandbox'e pass_rate,
+(4) backup OK, (5) „SANDBOX PAMATAS PARUOŠTAS (5a)" arba „SANDBOX NEGALIMAS — <priežastis>".
