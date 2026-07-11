@@ -1,31 +1,29 @@
-UŽDUOTIS — WIKI GRAFO SUJUNGIMAS (deterministinis auto-linkinimas, sumažinti orphan). <12 min.
-NEleisk viso pytest — tik taikinius. Telegram TRUMPAI. €0, BE LLM. Fail-safe: klaida nelaužo HERA.
+UŽDUOTIS — LLM-WIKI #2: ATSAKYMAS -> NAUJAS PUSLAPIS (query synthesis compounding). <12 min.
+NEleisk viso pytest — tik taikinius. LLM kvietimams griežti timeout'ai. Telegram TRUMPAI.
+Fail-safe: rašymo klaida NIEKADA nelaužo atsakymo vartotojui. €0.
 
-SAUGUMAS: raktų nespausdink/necommit'ink. Vault edit'ai eina per git (curator matys diff). Push į PRIVATŲ.
+SAUGUMAS: raktų nespausdink/necommit'ink. Nauji puslapiai = DRAFT/human_gate, jokio auto-promote.
 
-KONTEKSTAS: lint parodė 40 orphan iš 70 — vault dar nesujungtas. Dabar sujungiam DETERMINISTIŠKAI (be LLM),
-kad grafas taptų tikras ir orphan kristų.
+KONTEKSTAS: kai HERA atsako į KLAUSIMĄ (vault_query/naršymo kilpa) ir sugeneruoja vertingą SINTEZĘ
+(palyginimą, analizę, ryšį per kelis šaltinius), ji dabar nueina į Telegram ir DINGSTA. Karpathy pattern:
+vertingi atsakymai grąžinami į vault kaip nauji puslapiai, kad žinios kauptųsi.
 
-1) hera_wikilink.py (deterministinis): kiekvienam skills/growth puslapiui pridėk `[[nuorodas]]` į giminingus
-   puslapius pagal AIŠKIUS, ne spėjamus ryšius:
-   - skill <-> jo source_job growth (jei yra) — dvipusiai;
-   - puslapiai tame pačiame Loop B klasteryje (kind×domenas) — susiek top-artimiausius (pvz. iki 3);
-   - puslapiai, dalinantis >=2 concepts.md tokenais/konceptu — susiek;
-   - esamas `related_*` frontmatter -> paversk `[[]]` kūne (jei dar ne).
-   Ribos: max ~3-5 nuorodos vienam puslapiui (ne perkrauti); dvipusiškumas; dedup; NEliesk jau esamų `[[]]`.
-   Įterpk tvarkingai (pvz. sekcija „## Susiję" puslapio gale). Idempotent (antras paleidimas nedubliuoja).
+1) SINTEZĖS FIKSAVIMAS query kelyje (hera_query/naršymo kilpa): PO atsakymo suformavimo, jei atsakymas yra
+   SUBSTANTIVI sintezė — stage'ink naują /opt/hera-vault/growth/synthesis-<YYYY-MM-DD>-<trumpas-hash>.md.
+   Kriterijus (deterministinis, pigus, kad NEspam'intų): (a) atsakymas rėmėsi >=2 skirtingais šaltinio puslapiais
+   (cituoti/naudoti nav kilpoje), IR (b) atsakymo ilgis > ~300 simb., IR (c) NE „nerandu"/„dokumente to nėra"
+   /pasisveikinimas. Jei kriterijus netenkinamas — NIEKO nerašyk (trivialūs klausimai nekaupiami).
+2) PUSLAPIO FORMATAS: frontmatter (status: draft, human_gate: true, kind: synthesis, source_query: <klausimas>,
+   created, sources: [puslapiai]); kūne — atsakymas + „## Susiję" su `[[nuorodomis]]` į šaltinio puslapius
+   (naudok #1 wiki konvenciją). Provenance: „auto-sintezė iš klausimo, human_gate; NIEKO nepromote'inta".
+3) JUNGIKLIS: HERA_SYNTH=1 įjungia (default 1); =0 rollback be kodo. Įrašyk =1 /root/hera.env.
+4) DEDUP/RIBA: jei labai panaši sintezė jau yra (tas pats klausimo hash) — nekurti dublio. Fail-safe: rašymo
+   klaida -> log + atsakymas vartotojui vis tiek grąžinamas.
+5) TESTAS: (a) klausimas, kuris sintezuoja per >=2 šaltinius -> naujas synthesis puslapis sukurtas su
+   nuorodomis (parodyk kelią + frontmatter, be raktų); (b) trivialus klausimas („kas yra ATDP?" jei 1 šaltinis
+   arba trumpas) -> puslapis NEkuriamas; (c) fail-safe: dirbtinė rašymo klaida -> atsakymas vis tiek grąžintas.
+6) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup (secret-scan).
+   Viešo NELIESK. Nauji puslapiai nusisync'ins per vault cron (ir pateks į lint/grafą).
 
-2) NEDIRBK su LLM (šitas turi būti greitas ir pigus). Jei koks ryšys neaiškus — praleisk (geriau mažiau
-   nuorodų nei klaidingų).
-
-3) PALEISK + PERLINT: po linkinimo paleisk hera_lint.py -> parodyk orphan/dangling/be-out skaičius PRIEŠ (40/1/40)
-   ir PO. Tikslas — orphan reikšmingai mažesnis.
-
-4) TESTAS: (a) 1 skill puslapio pavyzdys su nauja „Susiję" sekcija (be raktų); (b) idempotencija — paleisk 2x,
-   nuorodos nedubliuojasi; (c) lint PO < lint PRIEŠ (orphan sumažėjo).
-
-5) DURABILUMAS: vault pakeitimai commit'inami ir sync'inami (privatus hera-vault per cron arba rankinis sync).
-   hera_wikilink.py kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
-
-TELEGRAM (trumpai, be raktų): (1) auto-linkinimas atliktas, kiek nuorodų pridėta, (2) lint PRIEŠ vs PO
-(orphan skaičius), (3) idempotencija OK, (4) „WIKI GRAFAS SUJUNGTAS".
+TELEGRAM (trumpai, be raktų): (1) sintezės fiksavimas veikia (kriterijus), (2) testas — sukurtas synthesis
+puslapio pavyzdys + trivialus praleistas, (3) HERA_SYNTH=1, fail-safe, backup OK, (4) „WIKI SINTEZĖ ĮDIEGTA".
