@@ -1,35 +1,26 @@
-UŽDUOTIS — 5b FAZĖ: SKILL-KAUPIMO KILPA (SIŪLO naują skill; sandbox+benchmark+human-gate; NE auto-merge). <13 min.
-NEleisk pytest. Telegram TRUMPAI. €0. Fail-safe. LLM kvietimams timeout 60s, NO retry (anti-rc124).
-
-⚠️ GOVERNANCE (nepažeisti): kilpa TIK SIŪLO. NIEKO neauto-merge'ina į gyvą vault. Naujas skill = staged proposal,
-draft/human_gate. Bazinės kilpos/RIC guard/governance/sandbox/benchmark kodo NIEKADA neliesti (užtikrina sandbox
-ro-bind + rašymas tik į worktree skills/).
+UŽDUOTIS — HUMAN-GATE PROMOTE: patvirtintas skill „bwrap-agent-isolation" į gyvą vault. <8 min.
+NEleisk pytest. Telegram TRUMPAI. Fail-safe.
 
 SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta kodą — push į PRIVATŲ hera-core-backup.
 
-KONTEKSTAS: turim sandbox (5a, hera_sandbox.py) + matuoklį (hera_bench). Dabar saugi savęs-tobulinimo forma —
-skill-akrecija (Voyager): sistema rašo NAUJUS skill failus, bazinis kodas nepaliestas.
+KONTEKSTAS: VARTOTOJAS (galutinis vartas) PATVIRTINO 5b pasiūlytą skill'ą. Dabar promote: perkelk juodraštį iš
+staged proposal į gyvą /opt/hera-vault/skills/. Tai pirmas realus žmogaus-vartas -> promote.
 
-1) hera_accretion.py: funkcija propose_skill(gap_description) ->
-   {proposed, benchmark_ok, no_regression, proposal_path, diff_summary, decision}. Žingsniai:
-   a) DRAFT: 1 LLM kvietimas (Gemini flash, 60s, no retry) -> naujo skill juodraštis (skills/<slug>/SKILL.md su
-      tuple, turiniu, provenance, status:draft, human_gate:true). Fail-safe: klaida -> {proposed:false}.
-   b) IZOLIUOTAS RAŠYMAS: git-worktree kopija; įrašyk skill TIK į worktree skills/ (gyvas vault nepaliestas).
-   c) BENCHMARK-VARTAI (sandbox'e): paleisk hera_bench.run() worktree'je per hera_sandbox -> pass_rate turi būti
-      >= baseline (9/9), be regreso. Jei regresas -> decision=reject (nepriimam).
-   d) (jei taikoma) counterfactual replay validacija.
-   e) STAGE PROPOSAL: proposals/accretion/<slug>-<data>.md (arba .json) su skill juodraščiu + benchmark rezultatu +
-      diff santrauka; įrašyk į OPEN_QUESTIONS.md eilutę „skill-akrecija laukia patvirtinimo: <slug>". decision=propose.
-   f) NIEKO nemerge'ink į gyvą /opt/hera-vault/skills/ — tik staged proposal. Žmogus/kuratorius tvirtina vėliau.
-2) JUNGIKLIS HERA_ACCRETION=1 (default 1; =0 išjungia). Kilpa STANDALONE / rankinis trigeris — NEauto-paleisk ant
-   kiekvieno ingest (kad €0 ir kad žmogus valdytų). Įrašyk =1 /root/hera.env.
-3) TESTAS (MAŽAS): propose_skill("Trumpas skill: kaip saugiai izoliuoti agento vykdymą su bubblewrap no-net") ->
-   parodyk: sukurtas draft skill (kelias, be viso turinio), benchmark sandbox'e pass_rate (turi likti 9/9),
-   proposal staged (kelias), decision=propose, IR patvirtink kad gyvas /opt/hera-vault/skills/ NEPAKITĘS
-   (nieko nemerge'inta). Fail-safe: LLM/sandbox klaida -> decision=reject/error, nekabo, nieko nepakeičia.
-4) BENCHMARK REGRESIJA (gyvas): hera_bench.run() gyvai -> 9/9 nepakito (kilpa standalone, neturi liesti).
-5) DURABILUMAS: kopija į n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
+1) Iš proposals/accretion/bwrap-agent-isolation-2026-07-11.md paimk skill juodraštį (frontmatter+turinį) ir
+   sukurk gyvą /opt/hera-vault/skills/bwrap-agent-isolation/SKILL.md. Frontmatter'yje pakeisk:
+   - status: draft -> approved (arba tiesiog palik veikiantį skill formatą kaip kiti gyvi skills)
+   - pridėk: approved_by: vartotojas (žmogaus gate), approved: 2026-07-11
+   Turinį išlaikyk kaip pasiūlyme (nekeisk esmės).
+2) PROPOSAL pažymėk: proposals/accretion/...md antraštėje/statuse „PROMOTED 2026-07-11 (human-gate: vartotojas)".
+3) OPEN_QUESTIONS.md: pažymėk atitinkamą eilutę atlikta — `- [x]` (raktas k:d4f7edd1ef77 „skill-akrecija laukia
+   patvirtinimo: bwrap-agent-isolation"), pridėk „→ PROMOTED".
+4) BENCHMARK po promote: hera_bench.run() gyvai -> turi likti 9/9 (naujas skill neturi sugadinti matuoklio).
+   Jei kristų -> ROLLBACK (ištrink ką tik pridėtą skill) ir pažymėk ataskaitoje.
+5) WIKI: paleisk hera_wikilink.py (arba lint) kad naujas skill įsijungtų į grafą; parodyk ar orphan nepadidėjo.
+6) TRAJEKTORIJA/atmintis: įrašyk promote veiksmą (curation/human-gate-promote).
+7) DURABILUMAS: vault commit+sync (privatus hera-vault per cron/rankinis); jei liesta kodą — hera-core-backup.
+   Viešo NELIESK.
 
-TELEGRAM (per HERA botą, trumpai, be raktų): (1) hera_accretion.py veikia (draft->sandbox->benchmark->proposal),
-(2) testas: skill pasiūlytas, benchmark 9/9, staged proposal, gyvas vault NEPAKITĘS (nieko auto-merge),
-(3) fail-safe OK, (4) benchmark gyvai nepakito, (5) backup OK, (6) „SKILL-KAUPIMO KILPA PARUOŠTA (5b)".
+TELEGRAM (per HERA botą, trumpai, be raktų): (1) skill promote'intas į gyvą skills/, approved_by vartotojas,
+(2) proposal+OPEN_QUESTIONS pažymėti, (3) benchmark po promote 9/9 (ar rollback), (4) wiki grafas OK,
+(5) „SKILL PATVIRTINTAS IR PROMOTE'INTAS (pirmas human-gate ciklas)".
