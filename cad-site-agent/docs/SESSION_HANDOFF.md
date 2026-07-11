@@ -4,6 +4,18 @@
 > kontekstą (laptopas / web / bet kuris modelis — Kimi, MiMo). Atnaujink jį
 > kiekvienos darbo sesijos pabaigoje.
 
+## ⚠️ PIRMENYBĖ — VARTOTOJAS + AUTO-ATMINTIS (2026-07-10)
+- **Kas vartotojas:** alias `cs`, London/Lietuva. **AI sistemų dizaineris/orkestruotojas**
+  (diriguoja AI per specs+review; NE rankinis koderis; metodas chat-Claude specs → Claude Code vykdo).
+  Fonas: **ArchViz / 3D vizualizacija** (3ds Max/V-Ray, ComfyUI, 3D Gaussian Splatting, TouchDesigner) —
+  **NE statybos, niekada nemaišyti.** Netekęs darbo, ieško London creative-tech/AI-automation; HERA jam =
+  **portfolio darbas + kelias į pajamas.** Pilnas strateginis profilis: privatus vault
+  `hera-vault:profile/USER_STRATEGIC_PROFILE.md` (autoritetingas, viršesnis už auto PROFILE.md).
+- **STANDING RULE — auto-atmintis:** VISADA automatiškai, be atskiro prašymo, persistink į vault kiekvieną naują
+  reikšmingą faktą apie vartotoją, tikslus, sprendimus ir sistemos pokyčius. Jam NEREIKIA to prašyti kaskart.
+- **Bendravimas:** konkrečiai, be atsiprašymų, be pamokymų kada ilsėtis, be jau žinomo kartojimo. Lietuviškai.
+- **Domenas HERA'oje NIEKADA nesiaurinamas** (vartotojo direktyva).
+
 **Atnaujinta:** 2026-06-16
 **Rollback SHA (saugus taškas prieš taisykles):** `2fdb3f8`
 
