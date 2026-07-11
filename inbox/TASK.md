@@ -1,39 +1,30 @@
-UŽDUOTIS — GRĄŽINTI PILNĄ ANALIZĘ VARTOTOJUI PO APDOROJIMO (dabar mato tik eilės ACK). <12 min.
-NEleisk pytest. Telegram TRUMPAI. Fail-safe: siuntimo klaida NIEKADA nelaužo ingest.
+UŽDUOTIS — ĮDIEGTI ANTIGRAVITY `agy` CLI VPS'e (TIK diegimas; login interaktyvus, jį darys vartotojas). <12 min.
+NEleisk pytest. Telegram TRUMPAI. NEbandyk interaktyvaus login (užkibtų) — tik įdiek + duok komandą vartotojui.
 
-SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta HERA kodą — push į PRIVATŲ hera-core-backup.
+SAUGUMAS: raktų nespausdink/necommit'ink.
 
-PROBLEMA (vartotojo): anksčiau atsiuntus turinį botas grąžindavo PILNĄ skaitomą analizę (santrauka, pagrindiniai
-taškai, konceptai, transkripcija — „PARSER" formatas). Kai perjungėm į eilės ACK („🔎 Priimta, apdorojama eilės
-tvarka"), pilnos analizės grąžinimas dingo. Vartotojas nori JĄ SKAITYTI. Analizė vis tiek generuojama
-(extracted/<data>/<id>/full.md ar panašiai) — tik nebesiunčiama atgal.
+KONTEKSTAS: vartotojas nori PATS ištestuoti Antigravity prieš išvadą (galutinis vartas — jis). Tyrimas rodo:
+`agy` = grynas Go CLI (github.com/google-antigravity/antigravity-cli), diegiasi į ~/.local/bin, login per
+device-code flow (parodo Google URL + kodą, vartotojas patvirtina browser'yje telefone), free tier ~20 užklausų/d.
 
-1) RASK: (a) kur po ingest apdorojimo guli žmogui skaitoma analizė (greičiausiai /opt/hera-vault/extracted/
-   <data>/<id>/full.md arba struktūrizuotas summary); (b) kur SENIAU ji buvo siunčiama vartotojui (n8n „Poll &
-   Process" sinchroninis kelias ar processor), kad atkurtum tą elgseną.
+1) ĮDIEK `agy` CLI VPS'e oficialiu būdu (curl install script iš antigravity.google/docs ARBA GitHub release
+   binaris Linux x86_64). Įsitikink kad PATH mato (~/.local/bin). Patikra: `agy version` arba `agy --help` -> veikia.
+   Jei diegimas nepavyksta (404/nėra release) — aiškiai pažymėk ataskaitoje kas nepavyko, NEspėliok.
 
-2) ATKURK PILNOS ANALIZĖS SIUNTIMĄ: kai processor'ius BAIGIA apdoroti ingest'ą (ten kur dabar siunčia trumpą
-   „📥 Priimta: title | selektorius | taryba" ACK), PAPILDOMAI nusiųsk vartotojui PILNĄ analizę (full.md turinį)
-   į tą patį Telegram chat (per tą patį botą, kurį vartotojas naudoja — PARSER/hera bot outbound).
-   - Trumpas eilės ACK gavimo momentu LIEKA.
-   - Pilna analizė ateina PO apdorojimo (~kai baigta).
+2) NEDARYK login (interaktyvus — device code). Ataskaitoje duok TIKSLIĄ Termius komandą vartotojui, pvz.:
+   `agy login`  (arba tikslus login subkomandos pavadinimas iš `agy --help`).
+   Aiškiai parašyk seką: paleidi -> agy parodo Google URL + kodą -> atsidarai URL telefone -> įvedi kodą ->
+   prisijungi Google -> baigta. Sesija išsaugoma vietiškai.
 
-3) ILGIO TVARKYMAS (Telegram riba ~4096): analizę siųsk DALIMIS — skaidyk į ≤3800 simb. gabalus, po eilučių
-   ribų (ne per vidurį žodžio), su „(dalis k/n)" žyme. (Taip PARSER darydavo anksčiau — kelios žinutės.)
-   Jei dalių labai daug (>8) — vietoj to siųsk kaip .md DOKUMENTĄ (sendDocument) su trumpu antraštės tekstu.
-   Pasirink automatiškai pagal ilgį; aprašyk ataskaitoje ką pasirinkai.
+3) PARUOŠK SMOKE TEST (bet NEpaleisk be login): sukurk /root/agy_smoke.sh su paprasta komanda (pvz.
+   `agy` prompt'as „atsakyk vienu sakiniu: kas yra 2+2" ar analogiškas ne-interaktyvus iškvietimas pagal
+   `agy --help` sintaksę). Vartotojas jį paleis PO login.
 
-4) JUNGIKLIS: HERA_FULL_ANALYSIS=1 įjungia pilnos analizės siuntimą (default 1); =0 rollback be kodo.
-   Įrašyk =1 /root/hera.env.
+4) FAIL-SAFE laikui: jei diegimas užtrunka — atsiskaityk KĄ spėjai, NEUŽSTRIK iki 15 min.
 
-5) FAIL-SAFE: siuntimo/skaidymo klaida -> log + tęsk (ingest įrašytas, ACK jau nusiųstas); NIEKADA nelaužk pipeline.
+5) DURABILUMAS: agy_smoke.sh + diegimo pastabos į /opt/cad-site-agent/n8n/ lokaliai (be push į viešą).
+   HERA kodo neliesk.
 
-6) TESTAS: (a) paimk 1 JAU apdorotą kandidatą (turintį full.md) ir perleisk siuntimo funkciją -> vartotojas gautų
-   pilną analizę dalimis (arba dokumentu); parodyk kiek dalių/ar dokumentas (be raktų, be viso turinio — tik
-   metrikos); (b) fail-safe: dirbtinė siuntimo klaida -> ingest nesulūžta.
-
-7) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ (ir/ar n8n patch į n8n/) + push į PRIVATŲ hera-core-backup
-   (secret-scan). Viešo repo NELIESK.
-
-TELEGRAM (trumpai, be raktų): (1) pilna analizė vėl grąžinama po apdorojimo (dalimis ar dokumentu — kaip),
-(2) eilės ACK liko gavimo momentu, (3) HERA_FULL_ANALYSIS=1, fail-safe, backup OK, (4) „PILNA ANALIZĖ GRĄŽINTA".
+TELEGRAM (trumpai, be raktų): (1) agy įdiegtas? (`agy version` rezultatas), (2) TIKSLI Termius login komanda +
+seka vartotojui, (3) smoke test paruoštas (kaip paleisti po login), (4) „ANTIGRAVITY ĮDIEGTAS — LAUKIA LOGIN"
+arba „DIEGIMAS NEPAVYKO — <priežastis>".
