@@ -1,24 +1,34 @@
-UŽDUOTIS — HERA NARŠYKLĖS PAMATAS: headless Chromium+Playwright VPS'e (TIK diegimas+testas, be įpynimo). <13 min.
-NEleisk pytest. Telegram TRUMPAI. SVARBU: griežtas laikas — jei diegimas užtrunka, atsiskaityk KĄ spėjai, neužstrik.
+UŽDUOTIS — ĮPINTI NARŠYKLĘ Į HERA URL IŠTRAUKIMĄ (fallback kai trafilatura silpna). <12 min.
+NEleisk viso pytest — tik taikinius. Telegram TRUMPAI. Fail-safe: naršyklės klaida NIEKADA nelaužo ingest.
 
-SAUGUMAS: raktų nespausdink/necommit'ink.
+SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta HERA kodą — push į PRIVATŲ hera-core-backup.
 
-KONTEKSTAS: HERA gaus savo naršyklę — kad galėtų atsidaryti/naršyti/ištraukti JS-sunkius puslapius + žingsnis
-link „sistema daro darbus". ŠITA užduotis TIK pamatas (diegimas+smoke test). Įpynimą į HERA darysim atskirai.
+KONTEKSTAS: naršyklės pamatas paruoštas (/root/brvenv, Playwright+Chromium, /root/br_smoke.py veikia).
+Dabar įpinam į HERA url ištraukimą — kai trafilatura grąžina mažai/tuščią (JS-sunkūs puslapiai, SPA), HERA
+pabando naršykle.
 
-1) IZOLIUOTAS venv /root/brvenv (python3 -m venv); pip install playwright. Tada:
-   - `playwright install-deps chromium` (apt sistemos priklausomybės; root — OK) IR `playwright install chromium`
-     (parsisiunčia Chromium). Jei parsisiuntimas per lėtas/timeout rizika — bandyk system chromium
-     (apt-get install -y chromium-browser ARBA chromium) ir Playwright su executablePath. Pasirink kas greičiau
-     suveikia; aprašyk ką panaudojai.
-2) SMOKE TEST skriptas /root/br_smoke.py: headless paleisk Chromium, atidaryk https://example.com,
-   paimk page.title() ir pirmus ~200 simb. teksto, atspausdink. Paleisk jį — turi parodyti „Example Domain".
-   (Aplinka: PLAYWRIGHT_BROWSERS_PATH jei reikia; headless=True; be sandbox jei root: args=['--no-sandbox'].)
-3) FAIL-SAFE laikui: jei per limitą nespėji visko — įdiek kiek spėji, paleisk ką turi, ir ataskaitoje AIŠKIAI
-   parašyk kas veikia / kas liko (pvz. „venv+playwright OK, chromium parsisiuntimas nespėjo"). NEUŽSTRIK iki 15min.
-4) DURABILUMAS: br_smoke.py kopija į /opt/cad-site-agent/n8n/ lokaliai (be push į viešą). HERA kodo neliesk
-   (tik naujas venv+skriptas), tad hera-core-backup push nereikia.
+1) MODULIS /opt/hera-processor/hera_browser.py: funkcija fetch_rendered(url, timeout=45) ->
+   {title, text, ok} naudojant Playwright headless Chromium (args --no-sandbox, headless=True,
+   PLAYWRIGHT_BROWSERS_PATH kaip pamate). Paima page.title() + matomą tekstą (body innerText, apvalyk tarpus).
+   Jei brvenv Python skiriasi nuo hera venv — kviesk kaip subprocess (/root/brvenv/bin/python worker) su
+   JSON stdout, NE import (kad priklausomybės nesikirstų). Griežtas per-call timeout, 1 retry.
 
-TELEGRAM (trumpai, be raktų): (1) chromium įdiegtas (parsisiųstas ar system), (2) smoke test rezultatas
-(page.title veikia? „Example Domain"?), (3) kas liko jei nespėta, (4) „NARŠYKLĖS PAMATAS PARUOŠTAS" arba
-„DALINAI — <kas liko>".
+2) ĮPYNIMAS į url ekstraktavimą (hera_extract ar kur trafilatura kviečiama): jei trafilatura rezultatas
+   TRUMPAS/tuščias (pvz. <200 simb. arba tuščia) IR HERA_BROWSER=1 -> pabandyk fetch_rendered(url); jei duoda
+   daugiau teksto — naudok jį; kitaip lik prie trafilatura. Kokybiškus trafilatura rezultatus NEKEISK
+   (naršyklė tik fallback — brangesnė/lėtesnė).
+   GRIEŽTAI fail-safe: naršyklės klaida/timeout -> log + tęsk su tuo ką turi (trafilatura ar tuščia),
+   ingest NIEKADA nelūžta.
+
+3) JUNGIKLIS: env HERA_BROWSER=1 įjungia fallback (default 1); =0 rollback be kodo. Įrašyk =1 /root/hera.env.
+
+4) TESTAS: (a) fetch_rendered ant paprasto puslapio -> title+tekstas grįžta; (b) 1 JS-sunkaus/SPA url pavyzdys
+   kur trafilatura duoda mažai -> parodyk, kad naršyklės fallback davė daugiau teksto (simbolių skaičius prieš/po);
+   (c) fail-safe: blogas url -> ingest nesulūžta, grįžta tvarkingai.
+
+5) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup (secret-scan).
+   Viešo repo NELIESK.
+
+TELEGRAM (trumpai, be raktų): (1) hera_browser.py veikia (subprocess/import), (2) įpinta kaip fallback
+(kada kviečiama), fail-safe, HERA_BROWSER=1, (3) testas — trafilatura vs naršyklė simbolių pavyzdys,
+(4) backup OK, (5) „NARŠYKLĖ ĮPINTA Į HERA".
