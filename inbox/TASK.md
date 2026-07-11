@@ -1,29 +1,29 @@
-UŽDUOTIS — PARUOŠTI TELEGRAM ISTORIJOS IŠTRAUKIMO SCRIPTĄ (@FlashCodeMon_bot) (VIENA SIAURA UŽDUOTIS). <10 min.
-NEleisk pytest. Telegram TRUMPAI. Prisijungimas INTERAKTYVUS — jį vykdys VARTOTOJAS Termius'e, NE tu.
+UŽDUOTIS — PATAISYTI tg_pull.py: JUNGTIS KAIP VARTOTOJAS, NE BOTAS (VIENA SIAURA UŽDUOTIS). <10 min.
+NEleisk pytest. Telegram TRUMPAI. Interaktyvaus login NEpaleidinėk (užkibtų) — tik pataisyk + duok komandą.
 
-SAUGUMAS: raktų/sesijos NIEKUR nespausdink/necommit'ink. TG_API_ID/TG_API_HASH jau /root/hera.env.
-Sesijos failas ir istorija — PRIVATU, TIK VPS, jokio push į jokį repo.
+SAUGUMAS: raktų/sesijos/2FA nespausdink/necommit'ink. Privatu, tik VPS.
 
-0) PATIKRA: ar /root/hera.env turi TG_API_ID ir TG_API_HASH (neprint'ink reikšmių, tik yra/nėra). Jei NĖRA — STOP,
-   ataskaitoje „TG API RAKTŲ NĖRA".
+PROBLEMA: vartotojui paleidus tg_pull.py gauta „BotMethodInvalidError: API access for bot users is restricted
+(GetHistoryRequest)". Reiškia klientas prisijungė KAIP BOTAS, ne kaip vartotojo paskyra — botai istorijos
+neskaito. Reikia GRYNO user-login (telefonas+kodas+2FA), JOKIO bot_token.
 
-1) TELETHON: sukurk izoliuotą venv /root/tgvenv (python3 -m venv), pip install telethon. (Nemaišyk su hera venv.)
+1) IŠTRINK sena/sugadintą sesiją: rm -f /root/.tg_session* (kad autentikacija būtų švari, nauja).
 
-2) SCRIPTAS /root/tg_pull.py (Python, Telethon), kuris:
-   - skaito TG_API_ID, TG_API_HASH iš /root/hera.env (os.environ arba parse);
-   - sesijos failas /root/.tg_session (Telethon StringSession faile arba SQLite sesija) — chmod 600;
-   - jungiasi kaip VARTOTOJO paskyra (NE botas); PIRMĄ kartą interaktyviai paprašo telefono nr. ir kodo
-     (Telethon pats prompt'ina) — tai vartotojas įves Termius'e;
-   - po prisijungimo: resolve @FlashCodeMon_bot, ištraukia VISĄ pokalbio istoriją (iter_messages, be limito,
-     su datom/tekstais/nuo ko), rašo į /root/flashcode_history.json (UTF-8, chmod 600). Parodo kiek žinučių ištraukta.
-   - Jei sesija JAU yra (antras paleidimas) — neprašo kodo, iškart traukia.
-   - Būk atsparus: jei @FlashCodeMon_bot nerandamas — aiški klaida; jei rate-limit (FloodWait) — palauk/pranešk.
+2) PATIKRINK /root/tg_pull.py ir pataisyk, kad:
+   - klientas kuriamas TIK su api_id, api_hash + sesijos failu: TelegramClient('/root/.tg_session', api_id, api_hash).
+   - prisijungimas TIK per client.start(phone=...) VARTOTOJO srautu — interaktyvus phone -> code -> 2FA password.
+     JOKIO bot_token niekur (patikrink, ar kode/aplinkoje neįsivėlė HERA_BOT_TOKEN/BOT_TOKEN — jei script'as
+     kur nors ima tokeną, PAŠALINK tą kelią).
+   - jei client.is_bot() True po prisijungimo — nutrauk su aiškia klaida „prisijungta kaip botas, reikia user".
+   - po user-login: resolve @FlashCodeMon_bot -> iter_messages (visa istorija) -> /root/flashcode_history.json (600).
+   - jei paskyra turi 2FA — Telethon pats paprašys password (SessionPasswordNeeded) — tai OK, vartotojas įves.
 
-3) NEPALEIDINĖK pats interaktyvaus login (tu non-interaktyvus, užkibtų). Tik PARUOŠK scriptą + venv.
-   Ataskaitoje duok vartotojui TIKSLIĄ Termius komandą paleidimui, pvz.:
-   `set -a; . /root/hera.env; set +a; /root/tgvenv/bin/python /root/tg_pull.py`
+3) NEpaleisk pats. Ataskaitoje duok TIKSLIĄ vieną komandą vartotojui:
+   set -a; . /root/hera.env; set +a; /root/tgvenv/bin/python /root/tg_pull.py
+   ir aiškiai parašyk seką: telefonas +447516580893 -> kodas iš Telegram -> Telegram 2FA slaptažodis
+   (NE VPS, NE api_hash). Jei 2FA neatsimena — Telegram app Settings > Privacy & Security > Two-Step Verification.
 
-4) DURABILUMAS: patch/script į /opt/cad-site-agent/n8n/ lokaliai (be push į viešą). Sesijos/istorijos NEcommit'ink niekur.
+4) Kopija į /opt/cad-site-agent/n8n/ lokaliai (be push į viešą). Sesijos/istorijos necommit'ink.
 
-TELEGRAM (trumpai, be raktų): (1) TG raktai rasti?, (2) telethon+scriptas paruošti?, (3) TIKSLI Termius komanda
-vartotojui login+ištraukimui (viena eilutė), (4) „TG PULL SCRIPTAS PARUOŠTAS".
+TELEGRAM (trumpai, be raktų): (1) sena sesija ištrinta, (2) tg_pull.py dabar TIK user-login (bot kelio nėra),
+(3) tiksli komanda+seka vartotojui, (4) „TG PULL PATAISYTA — USER LOGIN".
