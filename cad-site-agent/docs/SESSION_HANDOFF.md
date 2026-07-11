@@ -4,6 +4,48 @@
 > kontekstą (laptopas / web / bet kuris modelis — Kimi, MiMo). Atnaujink jį
 > kiekvienos darbo sesijos pabaigoje.
 
+## ⚠️ PIRMENYBĖ — VARTOTOJAS + AUTO-ATMINTIS (2026-07-10)
+- **Kas vartotojas:** **AI sistemų dizaineris/orkestruotojas** (diriguoja AI per specs+review; NE rankinis
+  koderis; metodas chat-Claude specs → Claude Code vykdo). Fonas: **ArchViz / 3D vizualizacija** (3ds Max/V-Ray,
+  ComfyUI, 3D Gaussian Splatting, TouchDesigner) — **NE statybos, niekada nemaišyti.**
+  Pilnas asmeninis/strateginis profilis (tikslai, situacija, prioritetai) — TIK privačiame vault'e
+  `hera-vault:profile/USER_STRATEGIC_PROFILE.md` (autoritetingas). ⚠️ Šis failas VIEŠAS — jokių asmeninių/
+  jautrių detalių čia nerašyti; tik darbinis kontekstas.
+- **STANDING RULE — auto-atmintis:** VISADA automatiškai, be atskiro prašymo, persistink į vault kiekvieną naują
+  reikšmingą faktą apie vartotoją, tikslus, sprendimus ir sistemos pokyčius. Jam NEREIKIA to prašyti kaskart.
+- **Bendravimas:** konkrečiai, be atsiprašymų, be pamokymų kada ilsėtis, be jau žinomo kartojimo. Lietuviškai.
+- **Domenas HERA'oje NIEKADA nesiaurinamas** (vartotojo direktyva).
+
+## Būsimų darbų užrašai (neprarasti)
+- **Godcoder sandbox (2026-07-11):** iš dev-tools video idėja — leisti sistemai keisti PATS savo kodą
+  UŽDAROJE smėlio dėžėje ir testuoti prieš pritaikant. HERA turi outer-loop+replay, bet griežto sandbox NĖRA.
+  Vertas, bet RIMTAS (saugumas: sistema keičia savo kodą) — ne skubus, daryti atsargiai su human-gate.
+- **HERA naršyklė (2026-07-11, diegiama):** headless Chromium+Playwright VPS'e → HERA gali atsidaryti/naršyti/
+  ištraukti/screenshot. Geresnis ingest (JS puslapiai) + žingsnis link „sistema daro darbus". Journey Forge
+  (įrašyti vartotojo naršyklės veiksmus→skills) ATIDĖTA — reikia kompiuterio+plėtinio, telefonu neveiks.
+
+## BŪSENA 2026-07-11 (vėlus vakaras) — savęs-tobulinimo + auto-research statyba
+**Įdiegta ir GYVA (visi €0, fail-safe, HERA_*=1 jungikliai, rollback=0):**
+- PII valymas (hera_pii, Rampart) prieš išorinius modelius; Caveman glaustumas (hera_terse); HERA naršyklė
+  (hera_browser, url fallback JS puslapiams); LLM-wiki: nuorodų grafas+lint (hera_lint, orphan 40→1) +
+  sintezė→puslapis (hera_synth); botų maršrutas (santrauka→PARSER @tryspagliai_bot per PARSER_BOT_TOKEN;
+  HERA botas @tryspagaliai_hera_bot=ataskaitos+per-ingest 🧠 log); sesijų indeksatorius (sessions/index.jsonl).
+- **Savęs-tobulinimo/auto-research planas — fazės:**
+  1. ✅ Matuoklis (hera_bench, held-out, deterministinis, baseline pass_rate 1.0=9/9, NoLiveLLM saugiklis)
+  2. ✅ SearXNG €0 paieška (Docker localhost:8888, JSON, hera_search.py)
+  3. ✅ Research orkestratorius (hera_research: plan→search→fetch→CoVe→synthesize; HARD budget/timeout anti-rc124)
+  4. ✅ Auto-research saugiklis GYVAS (hera_gate: trigeris promote/high-skill/nesutarimas → vault-check + research;
+     decision pass/block/escalate; ACK praturtintas „🔎 patikrinta: supported 0.X"; escalate→OPEN_QUESTIONS)
+  5. 🔨 Sandbox (5a=bubblewrap no-net+git-worktree izoliacija BE savęs-keitimo; 5b=skill-kaupimo kilpa;
+     5c=siaura prompt/skill savikorekcija). PRIVALOMI saugikliai: no-net sandbox, rašymas tik skills/,
+     benchmark-be-regreso vartai, human-gate, git-atšaukiama, RIC guard, tripwires.
+**Tyrimų verdiktai (gilios paieškos):** Godcoder/DGM→per brangu/rizikinga, rink skill-akreciją+siaurą sandbox;
+Karpathy llm-council=deliberacija (ne verifikacija), LLM-wiki=contradiction-check; €0 stack=SearXNG+plonas
+orkestratorius (ne sunkūs karkasai); Shepherd=alfa, tik atšaukiamas pėdsakas (NE reali izoliacija)→statyti savo.
+**Antigravity:** `agy` v1.1.1 įdiegtas VPS, laukia vartotojo Google login (`agy` Termius'e) — testui, ne diegimui.
+**Nebaigta/atidėta:** Godcoder full self-rewrite (praleista), Journey Forge (atidėta), Codex reviewer (pristabdyta,
+mokamas), router LLM benchmark atvejai (5 deferred).
+
 **Atnaujinta:** 2026-06-16
 **Rollback SHA (saugus taškas prieš taisykles):** `2fdb3f8`
 
