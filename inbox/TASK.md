@@ -1,37 +1,31 @@
-UŽDUOTIS — LLM-WIKI #1: NUORODŲ GRAFAS + LINT PRAĖJIMAS (Karpathy stilius). <12 min.
-NEleisk viso pytest — tik taikinius. LLM kvietimams griežti timeout'ai (60s+1 retry). Telegram TRUMPAI.
-Fail-safe: lint klaida NIEKADA nelaužo HERA. €0 (Gemini free + deterministika).
+UŽDUOTIS — WIKI GRAFO SUJUNGIMAS (deterministinis auto-linkinimas, sumažinti orphan). <12 min.
+NEleisk viso pytest — tik taikinius. Telegram TRUMPAI. €0, BE LLM. Fail-safe: klaida nelaužo HERA.
 
-SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta HERA kodą — push į PRIVATŲ hera-core-backup.
+SAUGUMAS: raktų nespausdink/necommit'ink. Vault edit'ai eina per git (curator matys diff). Push į PRIVATŲ.
 
-KONTEKSTAS: paverčiam vault į tikrą „wiki" (Karpathy pattern). HERA jau turi concept index, eviction,
-OPEN_QUESTIONS. NAUJA: aiškus puslapių NUORODŲ grafas + „lint" sveikatos patikra. Skiriasi nuo embeddings:
-nuorodos = patvirtintas grafas, ne panašumo spėjimas.
+KONTEKSTAS: lint parodė 40 orphan iš 70 — vault dar nesujungtas. Dabar sujungiam DETERMINISTIŠKAI (be LLM),
+kad grafas taptų tikras ir orphan kristų.
 
-1) NUORODŲ KONVENCIJA: dokumentuok vault'e (pvz. sessions/ ar profile/ README) `[[wiki-nuoroda]]` konvenciją —
-   skills/growth kūne susieti giminingus puslapius. NEperrašinėk visų 27 esamų skills rankiniu būdu; tik
-   nustatyk konvenciją + (jei paprasta) LLM pasiūlo po 1-3 nuorodas kiekvienam esamam puslapiui (bounded, Gemini,
-   fail-safe) — bet tai nebūtina v1, jei brangu/lėta, praleisk ir palik konvenciją būsimiems.
+1) hera_wikilink.py (deterministinis): kiekvienam skills/growth puslapiui pridėk `[[nuorodas]]` į giminingus
+   puslapius pagal AIŠKIUS, ne spėjamus ryšius:
+   - skill <-> jo source_job growth (jei yra) — dvipusiai;
+   - puslapiai tame pačiame Loop B klasteryje (kind×domenas) — susiek top-artimiausius (pvz. iki 3);
+   - puslapiai, dalinantis >=2 concepts.md tokenais/konceptu — susiek;
+   - esamas `related_*` frontmatter -> paversk `[[]]` kūne (jei dar ne).
+   Ribos: max ~3-5 nuorodos vienam puslapiui (ne perkrauti); dvipusiškumas; dedup; NEliesk jau esamų `[[]]`.
+   Įterpk tvarkingai (pvz. sekcija „## Susiję" puslapio gale). Idempotent (antras paleidimas nedubliuoja).
 
-2) LINT MODULIS /opt/hera-processor/hera_lint.py — DETERMINISTINĖ dalis (be LLM, pigu):
-   - Sudaryk nuorodų/referencijų grafą iš esamo vault: parse `[[nuorodas]]`, frontmatter `related_growth`,
-     `source_job`, `related_*`, ir index/concepts.md įrašus.
-   - Aptik: (a) ORPHAN puslapiai (skills/growth be jokių įeinančių nuorodų/referencijų), (b) DANGLING nuorodos
-     (rodo į neegzistuojantį puslapį), (c) konceptai concepts.md be savo skill/growth puslapio,
-     (d) puslapiai be jokių IŠeinančių nuorodų.
-   - LLM dalis (NEBŪTINA, bounded): prieštaravimų patikra TIK tarp puslapių tame pačiame Loop B klasteryje
-     (ne visų porų — per brangu); max N porų, 60s timeout, fail-safe. Jei brangu — praleisk v1, pažymėk.
+2) NEDIRBK su LLM (šitas turi būti greitas ir pigus). Jei koks ryšys neaiškus — praleisk (geriau mažiau
+   nuorodų nei klaidingų).
 
-3) IŠVESTIS: /opt/hera-vault/analysis/lint-<YYYY-MM-DD>.md — žmogui skaitomas: orphan sąrašas, dangling,
-   trūkstami puslapiai, (prieštaravimai jei tikrinta). Tai curator/žmogaus gate medžiaga (NIEKO auto-netaiso).
-   Prijunk prie DAILY/Loop B: raporte pridėk eilutę „lint: orphan N · dangling M · trūksta K".
+3) PALEISK + PERLINT: po linkinimo paleisk hera_lint.py -> parodyk orphan/dangling/be-out skaičius PRIEŠ (40/1/40)
+   ir PO. Tikslas — orphan reikšmingai mažesnis.
 
-4) TESTAS: (a) hera_lint.py paleistas ant realaus vault -> lint-<data>.md sugeneruotas su skaičiais; parodyk
-   suvestinę (kiek orphan/dangling/trūksta); (b) fail-safe: dirbtinė klaida LLM dalyje -> deterministinė dalis vis
-   tiek duoda raportą, HERA nelūžta.
+4) TESTAS: (a) 1 skill puslapio pavyzdys su nauja „Susiję" sekcija (be raktų); (b) idempotencija — paleisk 2x,
+   nuorodos nedubliuojasi; (c) lint PO < lint PRIEŠ (orphan sumažėjo).
 
-5) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup (secret-scan).
-   Viešo repo NELIESK. lint md nusisync'ins per vault cron.
+5) DURABILUMAS: vault pakeitimai commit'inami ir sync'inami (privatus hera-vault per cron arba rankinis sync).
+   hera_wikilink.py kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
 
-TELEGRAM (trumpai, be raktų): (1) nuorodų grafas+lint veikia, (2) pirmo lint suvestinė (orphan/dangling/trūksta
-skaičiai), (3) prijungta prie DAILY/Loop B, (4) backup OK, (5) „LLM-WIKI LINT ĮDIEGTAS".
+TELEGRAM (trumpai, be raktų): (1) auto-linkinimas atliktas, kiek nuorodų pridėta, (2) lint PRIEŠ vs PO
+(orphan skaičius), (3) idempotencija OK, (4) „WIKI GRAFAS SUJUNGTAS".
