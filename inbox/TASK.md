@@ -1,40 +1,35 @@
-UŽDUOTIS — 5a FAZĖ: SANDBOX PAMATAS (bubblewrap no-net + git-worktree izoliacija; BE savęs-keitimo). <13 min, time-boxed.
-NEleisk pytest. Telegram TRUMPAI. Fail-safe. SĄŽININGAI: jei VPS branduolys neleidžia — pasakyk, NEfeikink.
+UŽDUOTIS — 5b FAZĖ: SKILL-KAUPIMO KILPA (SIŪLO naują skill; sandbox+benchmark+human-gate; NE auto-merge). <13 min.
+NEleisk pytest. Telegram TRUMPAI. €0. Fail-safe. LLM kvietimams timeout 60s, NO retry (anti-rc124).
+
+⚠️ GOVERNANCE (nepažeisti): kilpa TIK SIŪLO. NIEKO neauto-merge'ina į gyvą vault. Naujas skill = staged proposal,
+draft/human_gate. Bazinės kilpos/RIC guard/governance/sandbox/benchmark kodo NIEKADA neliesti (užtikrina sandbox
+ro-bind + rašymas tik į worktree skills/).
 
 SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta kodą — push į PRIVATŲ hera-core-backup.
 
-KONTEKSTAS: 5 fazės (savęs-tobulinimo) SAUGUMO pamatas. ŠITA užduotis — TIK izoliacijos infrastruktūra + įrodymas.
-JOKIO savęs-keitimo, jokio LLM. Šablonas iš tyrimo: git-worktree + bubblewrap --unshare-net + benchmark-vartai.
+KONTEKSTAS: turim sandbox (5a, hera_sandbox.py) + matuoklį (hera_bench). Dabar saugi savęs-tobulinimo forma —
+skill-akrecija (Voyager): sistema rašo NAUJUS skill failus, bazinis kodas nepaliestas.
 
-1) ĮDIEK bubblewrap: apt-get install -y bubblewrap; bwrap --version. Patikrink NEPRIVILEGIJUOTUS user namespaces
-   (ar veikia be root): `bwrap --unshare-net --ro-bind / / true` -> jei OK, izoliacija galima.
-   Jei NEPAVYKSTA (kernel draudžia unpriv userns, pvz. sysctl) — pabandyk įjungti
-   (sysctl kernel.unprivileged_userns_clone=1 jei egzistuoja) VIENĄ kartą; jei vis tiek ne — STOP, ataskaitoje
-   „bubblewrap unpriv NEVEIKIA ant šio VPS — reikia atsarginio (firejail/nsjail) — nurodyk kernel versiją".
-   NEfeikink veikimo.
+1) hera_accretion.py: funkcija propose_skill(gap_description) ->
+   {proposed, benchmark_ok, no_regression, proposal_path, diff_summary, decision}. Žingsniai:
+   a) DRAFT: 1 LLM kvietimas (Gemini flash, 60s, no retry) -> naujo skill juodraštis (skills/<slug>/SKILL.md su
+      tuple, turiniu, provenance, status:draft, human_gate:true). Fail-safe: klaida -> {proposed:false}.
+   b) IZOLIUOTAS RAŠYMAS: git-worktree kopija; įrašyk skill TIK į worktree skills/ (gyvas vault nepaliestas).
+   c) BENCHMARK-VARTAI (sandbox'e): paleisk hera_bench.run() worktree'je per hera_sandbox -> pass_rate turi būti
+      >= baseline (9/9), be regreso. Jei regresas -> decision=reject (nepriimam).
+   d) (jei taikoma) counterfactual replay validacija.
+   e) STAGE PROPOSAL: proposals/accretion/<slug>-<data>.md (arba .json) su skill juodraščiu + benchmark rezultatu +
+      diff santrauka; įrašyk į OPEN_QUESTIONS.md eilutę „skill-akrecija laukia patvirtinimo: <slug>". decision=propose.
+   f) NIEKO nemerge'ink į gyvą /opt/hera-vault/skills/ — tik staged proposal. Žmogus/kuratorius tvirtina vėliau.
+2) JUNGIKLIS HERA_ACCRETION=1 (default 1; =0 išjungia). Kilpa STANDALONE / rankinis trigeris — NEauto-paleisk ant
+   kiekvieno ingest (kad €0 ir kad žmogus valdytų). Įrašyk =1 /root/hera.env.
+3) TESTAS (MAŽAS): propose_skill("Trumpas skill: kaip saugiai izoliuoti agento vykdymą su bubblewrap no-net") ->
+   parodyk: sukurtas draft skill (kelias, be viso turinio), benchmark sandbox'e pass_rate (turi likti 9/9),
+   proposal staged (kelias), decision=propose, IR patvirtink kad gyvas /opt/hera-vault/skills/ NEPAKITĘS
+   (nieko nemerge'inta). Fail-safe: LLM/sandbox klaida -> decision=reject/error, nekabo, nieko nepakeičia.
+4) BENCHMARK REGRESIJA (gyvas): hera_bench.run() gyvai -> 9/9 nepakito (kilpa standalone, neturi liesti).
+5) DURABILUMAS: kopija į n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
 
-2) hera_sandbox.py: funkcija run_in_sandbox(cmd, writable_dir, timeout=120) — paleidžia cmd bubblewrap'e:
-   --unshare-net (JOKIO tinklo), --ro-bind /usr /usr, --ro-bind /bin /bin, --ro-bind /lib* ..., bazinis kodas
-   read-only, --bind TIK writable_dir rašymui, --die-with-parent, --new-session, no-new-privs, laiko/atminties
-   limitai (timeout + ulimit/systemd-run --scope MemoryMax jei paprasta). Grąžina {rc, stdout_tail, timed_out}.
-   Fail-safe: klaida -> {rc: -1, error}, nekabo.
-
-3) ĮRODYK IZOLIACIJĄ (3 testai, be LLM):
-   a) NO-NET: sandbox'e paleisk `curl -m 5 https://example.com` (ar python urllib) -> turi ŽLUGTI (tinklo nėra).
-      Parodyk, kad be sandbox tas pats curl VEIKTŲ (kontrolė) — įrodo, kad izoliacija reali.
-   b) WRITE-RESTRICT: sandbox'e bandymas rašyti UŽ writable_dir (pvz. /opt/hera-processor/x) -> BLOKUOTA;
-      rašymas Į writable_dir -> OK.
-   c) WORKTREE IZOLIACIJA: sukurk git worktree iš /opt/hera-vault (ar test repo), pakeisk failą worktree'je ->
-      gyvas /opt/hera-vault NEPAKITĘS (izoliuota kopija).
-
-4) BENCHMARK SANDBOX'E: paleisk hera_bench.run() sandbox'e (be tinklo — jis deterministinis, tinklo nereikia) ->
-   turi grąžinti pass_rate 1.0 (9/9). Įrodo, kad matuoklis veikia izoliuotoje aplinkoje (būsimiems vartams).
-   Jei bench reikalauja tinklo/LLM — paleisk be sandbox ir pažymėk (bet jis deterministinis, turėtų veikti).
-
-5) JOKIO SAVĘS-KEITIMO. Tik infrastruktūra + įrodymas. HERA_SANDBOX komentaras kode „5b/5c naudos".
-
-6) DURABILUMAS: hera_sandbox.py kopija į n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
-
-TELEGRAM (per HERA botą, trumpai, be raktų): (1) bubblewrap įdiegtas + unpriv userns VEIKIA/NEVEIKIA (+kernel),
-(2) izoliacijos testai a/b/c (no-net žlugo? write blokuota? worktree izoliuota?), (3) benchmark sandbox'e pass_rate,
-(4) backup OK, (5) „SANDBOX PAMATAS PARUOŠTAS (5a)" arba „SANDBOX NEGALIMAS — <priežastis>".
+TELEGRAM (per HERA botą, trumpai, be raktų): (1) hera_accretion.py veikia (draft->sandbox->benchmark->proposal),
+(2) testas: skill pasiūlytas, benchmark 9/9, staged proposal, gyvas vault NEPAKITĘS (nieko auto-merge),
+(3) fail-safe OK, (4) benchmark gyvai nepakito, (5) backup OK, (6) „SKILL-KAUPIMO KILPA PARUOŠTA (5b)".
