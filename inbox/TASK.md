@@ -1,30 +1,33 @@
-UŽDUOTIS — ĮDIEGTI ANTIGRAVITY `agy` CLI VPS'e (TIK diegimas; login interaktyvus, jį darys vartotojas). <12 min.
-NEleisk pytest. Telegram TRUMPAI. NEbandyk interaktyvaus login (užkibtų) — tik įdiek + duok komandą vartotojui.
+UŽDUOTIS — PATAISYTI BOTŲ MARŠRUTĄ: SANTRAUKA TIK Į PARSER, HERA BOTAS TIK ATASKAITOS. <12 min.
+NEleisk pytest. Telegram TRUMPAI. Fail-safe: klaida nelaužo ingest.
 
-SAUGUMAS: raktų nespausdink/necommit'ink.
+SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta kodą — push į PRIVATŲ hera-core-backup.
 
-KONTEKSTAS: vartotojas nori PATS ištestuoti Antigravity prieš išvadą (galutinis vartas — jis). Tyrimas rodo:
-`agy` = grynas Go CLI (github.com/google-antigravity/antigravity-cli), diegiasi į ~/.local/bin, login per
-device-code flow (parodo Google URL + kodą, vartotojas patvirtina browser'yje telefone), free tier ~20 užklausų/d.
+PROBLEMA: mano ankstesnė „grąžinti analizę" pataisa (hera_fullsend per dispatcher) siunčia PILNĄ LT santrauką į
+HERA botą (@tryspagaliai_hera_bot, matėsi „📖 HERA analizė (dalis 6/6)"). VARTOTOJO TAISYKLĖ:
+- PARSER botas = pilna LT santrauka (analizė) — TIK ČIA, vartotojas skaito.
+- HERA botas (@tryspagaliai_hera_bot) = TIK sistemos ataskaitos (ingest ACK „📥 Priimta: title | selektorius |
+  taryba", Loop B, lint, VPS agento ataskaitos). JOKIOS pilnos santraukos.
+- HERA sistema info gauna viduje (ingest/tyrimas/savęs tobulinimas) — nepakeista.
 
-1) ĮDIEK `agy` CLI VPS'e oficialiu būdu (curl install script iš antigravity.google/docs ARBA GitHub release
-   binaris Linux x86_64). Įsitikink kad PATH mato (~/.local/bin). Patikra: `agy version` arba `agy --help` -> veikia.
-   Jei diegimas nepavyksta (404/nėra release) — aiškiai pažymėk ataskaitoje kas nepavyko, NEspėliok.
+1) ŽEMĖLAPIS (pirma išsiaiškink, be spėjimų): kuris botas/tokenas = PARSER (kur vartotojas gauna LT santrauką),
+   kuris = HERA botas (ataskaitos). Kur ATEINA vartotojo turinys (į kurį botą/chat). Kur DABAR hera_fullsend
+   siunčia pilną analizę (į HERA botą — tai klaida). Aprašyk topologiją ataskaitoje TRUMPAI.
 
-2) NEDARYK login (interaktyvus — device code). Ataskaitoje duok TIKSLIĄ Termius komandą vartotojui, pvz.:
-   `agy login`  (arba tikslus login subkomandos pavadinimas iš `agy --help`).
-   Aiškiai parašyk seką: paleidi -> agy parodo Google URL + kodą -> atsidarai URL telefone -> įvedi kodą ->
-   prisijungi Google -> baigta. Sesija išsaugoma vietiškai.
+2) TAISYMAS:
+   a) Pilna LT santrauka (extracted/full.md) turi eiti TIK į PARSER botą/chat (kur vartotojas skaito turinį).
+      Jei PARSER yra atskiras pipeline, kuris JAU natūraliai siunčia santrauką — tada mano hera_fullsend per
+      HERA botą tiesiog IŠJUNK (HERA_FULL_ANALYSIS=0), kad nedubliuotų ir nemaišytų. Jei santrauka pasiekia
+      vartotoją TIK per hera_fullsend — perkonfigūruok, kad siųstų per PARSER boto tokeną/chat, NE HERA botą.
+      Pasirink pagal tai, kaip realiai sukonfigūruota; NEdubliuok santraukos.
+   b) HERA botas siunčia TIK ataskaitas — įsitikink, kad „📖 analizė" iš HERA boto DINGSTA.
+   c) PARSER santrauka = VISADA žinutėmis (dalimis, ≤3800 simb.), NE dokumentu — vartotojas nori keliomis
+      žinutėmis (panaikink „>8 dalys → dokumentas" logiką PARSER kelyje; visada dalimis).
+3) HERA vidinis apdorojimas (ingest, selektorius, taryba, vault, savęs tobulinimas) — NEKEISK. Info sistema
+   gauna kaip anksčiau.
+4) TESTAS: (a) perleisk 1 kandidatą -> patikrink KUR nueina santrauka (turi PARSER, NE HERA botas) ir kad HERA
+   bote lieka tik ACK; (b) santrauka dalimis (ne dokumentu); (c) fail-safe: klaida nelaužo ingest.
+5) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
 
-3) PARUOŠK SMOKE TEST (bet NEpaleisk be login): sukurk /root/agy_smoke.sh su paprasta komanda (pvz.
-   `agy` prompt'as „atsakyk vienu sakiniu: kas yra 2+2" ar analogiškas ne-interaktyvus iškvietimas pagal
-   `agy --help` sintaksę). Vartotojas jį paleis PO login.
-
-4) FAIL-SAFE laikui: jei diegimas užtrunka — atsiskaityk KĄ spėjai, NEUŽSTRIK iki 15 min.
-
-5) DURABILUMAS: agy_smoke.sh + diegimo pastabos į /opt/cad-site-agent/n8n/ lokaliai (be push į viešą).
-   HERA kodo neliesk.
-
-TELEGRAM (trumpai, be raktų): (1) agy įdiegtas? (`agy version` rezultatas), (2) TIKSLI Termius login komanda +
-seka vartotojui, (3) smoke test paruoštas (kaip paleisti po login), (4) „ANTIGRAVITY ĮDIEGTAS — LAUKIA LOGIN"
-arba „DIEGIMAS NEPAVYKO — <priežastis>".
+TELEGRAM (per HERA botą, trumpai, be raktų): (1) topologija (PARSER vs HERA botas), (2) santrauka dabar TIK PARSER
+(dalimis), HERA bote tik ataskaitos, (3) kaip išspręsta (fullsend išjungtas ar perkreiptas), (4) „MARŠRUTAS PATAISYTAS".
