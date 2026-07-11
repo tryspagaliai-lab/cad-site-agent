@@ -16,6 +16,14 @@
 - **Bendravimas:** konkrečiai, be atsiprašymų, be pamokymų kada ilsėtis, be jau žinomo kartojimo. Lietuviškai.
 - **Domenas HERA'oje NIEKADA nesiaurinamas** (vartotojo direktyva).
 
+## Būsimų darbų užrašai (neprarasti)
+- **Godcoder sandbox (2026-07-11):** iš dev-tools video idėja — leisti sistemai keisti PATS savo kodą
+  UŽDAROJE smėlio dėžėje ir testuoti prieš pritaikant. HERA turi outer-loop+replay, bet griežto sandbox NĖRA.
+  Vertas, bet RIMTAS (saugumas: sistema keičia savo kodą) — ne skubus, daryti atsargiai su human-gate.
+- **HERA naršyklė (2026-07-11, diegiama):** headless Chromium+Playwright VPS'e → HERA gali atsidaryti/naršyti/
+  ištraukti/screenshot. Geresnis ingest (JS puslapiai) + žingsnis link „sistema daro darbus". Journey Forge
+  (įrašyti vartotojo naršyklės veiksmus→skills) ATIDĖTA — reikia kompiuterio+plėtinio, telefonu neveiks.
+
 **Atnaujinta:** 2026-06-16
 **Rollback SHA (saugus taškas prieš taisykles):** `2fdb3f8`
 
