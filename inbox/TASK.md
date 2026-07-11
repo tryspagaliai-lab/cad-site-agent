@@ -1,30 +1,34 @@
-UŽDUOTIS — MATUOKLIS ATSTATYMAS PO TIMEOUT (DETERMINISTINIS, be gyvo LLM perleidimo). <10 min, GRIEŽTAI.
-Ankstesnė matuoklio užduotis NUTRŪKO po 15 min (rc=124) — kabantis LLM kvietimas. NEleisk pytest.
-NENAUDOK gyvo LLM pipeline perleidimo (tai ir kabo). Telegram TRUMPAI.
+UŽDUOTIS — 2 FAZĖ: SEARXNG €0 PAIEŠKA (Docker, localhost, JSON API). <13 min, time-boxed.
+NEleisk pytest. Telegram TRUMPAI. Jei diegimas užtrunka — atsiskaityk KĄ spėjai, NEUŽSTRIK iki 15 min.
 
-SAUGUMAS: raktų nespausdink/necommit'ink.
+SAUGUMAS: raktų nespausdink. SearXNG bind TIK į localhost (127.0.0.1) — NEatidaryk į internetą (ufw jei reikia).
 
-0) BŪKLĖ: systemctl is-active hera-processor hera-ingest; ar hera_bench.py pusiau parašytas? py_compile.
-   Jei kas pusiau — sutvarkyk į veikiančią būseną. Servisai turi likti active.
+KONTEKSTAS: HERA reikia €0 paieškos deep-research'ui. SearXNG = self-host metapaieška, be rakto.
+VPS mažas (CX23 ~4GB, jau sukasi n8n docker + hera servisai + chromium) — stebėk RAM.
 
-1) MATUOKLIS BE GYVO LLM — lygink EXPECTED su JAU ĮRAŠYTAIS rezultatais (jie vault'e, greita, €0, nekabo):
-   - Selektoriaus/tarybos atvejai: skaityk iš /opt/hera-vault/state/*.json ir sessions/index.jsonl JAU esamus
-     selector_score + council_action žinomiems job'ams. Sudaryk cases.jsonl su expected:
-     * šiukšlė (test-file-001 / tuščias tekstas job'ai) -> expected selector 0-1
-     * off-domain (zmescience 0xbypg) -> 2-3
-     * stiprios temos (atminties/agentų video, score 8-10) -> 8-10
-     Įvertink LYGINDAMAS įrašytą reikšmę su expected (tolerancija ±1.5). JOKIO naujo LLM kvietimo.
-   - Router atvejai: „labas"->chat, „kas yra ATDP?"->question, http->ingest — jei router turi GRYNAI
-     deterministinę greitfiltro funkciją (be LLM), naudok ją; jei ne — PRALEISK router atvejus v1
-     (nekviesk LLM), pažymėk ataskaitoje „router atvejai atidėti (reikalautų LLM)".
-2) BALO FUNKCIJA hera_bench.run(): pass/fail per atvejį (lyginant su įrašytu), grąžina
-   {passed,total,pass_rate,wall_time_s}. Turi baigti per KELIAS SEKUNDES (jokio LLM => nekabo).
-3) BASELINE: /opt/hera-vault/bench/baseline-<data>.md su skaičiais.
-4) JEI kuris atvejis reikalautų LLM — v1 jį PRALEISK, ne kviesk. Matuoklis v1 = deterministinis. Gyvą-perleidimo
-   variantą (su griežtais timeout'ais) pridėsim vėliau atskira užduotimi, ne dabar.
-5) TESTAS: hera_bench.run() grąžina baseline per <10s; idempotencija (2x nedubliuoja); fail-safe.
-6) DURABILUMAS: kopija į n8n/hera/ + push į PRIVATŲ hera-core-backup. cases.jsonl+baseline sync per vault cron.
+0) RAM PATIKRA prieš: free -m. Jei laisvos RAM < ~400MB — pažymėk ataskaitoje riziką, bet tęsk (SearXNG ~200MB).
 
-TELEGRAM (trumpai, be raktų): (1) ar rasta pusiau būklė ir kas sutvarkyta, (2) matuoklis deterministinis, kiek
-atvejų, baseline pass_rate + laikas (turi būti sekundės), (3) router atvejai atidėti ar įtraukti,
-(4) „MATUOKLIS PARUOŠTAS (DETERMINISTINIS)".
+1) ĮDIEK SearXNG per Docker (searxng/searxng образas arba searxng-docker compose). Bind: 127.0.0.1:8888
+   (ar laisvas portas; NE 0.0.0.0). settings.yml BŪTINA:
+   - server.secret_key: sugeneruok atsitiktinį (openssl rand -hex 32), NEspausdink jo;
+   - search.formats: [html, json]  (JSON BŪTINAS);
+   - server.limiter: false  (viena vidinė HERA instancija, kad nedroselintų savęs);
+   - varikliai: palik DuckDuckGo, Brave, Bing, Startpage, Wikipedia, Wikidata; Google NEbūtinas (blokuojamas).
+   Konteineris: restart=unless-stopped, atminties limitas (pvz. --memory=350m) kad nesuvalgytų VPS.
+
+2) PATIKRA: curl -s "http://127.0.0.1:8888/search?q=anthropic+claude&format=json" -> turi grąžinti JSON su
+   results[] (url,title,content). Parodyk kiek rezultatų grįžo (be viso turinio).
+
+3) HERA WRAPPER /opt/hera-processor/hera_search.py: funkcija search(query, n=8) -> [{url,title,content}]
+   per SearXNG JSON (httpx/urllib, 15s timeout, fail-safe: klaida/tuščia -> [] , NEkelia išimties).
+   (Backup ddgs — NEdiegti dabar, tik palik TODO komentarą.)
+
+4) TESTAS: hera_search.search("HERA memory agent") -> grąžina >0 rezultatų (parodyk kiek, 1-2 title pavyzdžius,
+   be raktų); fail-safe: blogas query/servisas down -> [] , ne crash.
+
+5) DURABILUMAS: compose/settings + hera_search.py kopija į /opt/cad-site-agent/n8n/ (be push į viešą);
+   hera_search.py push į PRIVATŲ hera-core-backup (secret-scan; secret_key NEcommit'ink). Viešo NELIESK.
+
+TELEGRAM (trumpai, be raktų): (1) RAM prieš/po, (2) SearXNG veikia localhost:8888, JSON grąžina N rezultatų,
+(3) hera_search.search testas — kiek rezultatų, (4) backup OK, (5) „SEARXNG PARUOŠTAS (2 FAZĖ)" arba
+„DALINAI — <kas liko>".
