@@ -1,48 +1,39 @@
-UŽDUOTIS — 4a FAZĖ: AUTO-RESEARCH SAUGIKLIO FUNKCIJA (STANDALONE + testas; DAR NEjungti į gyvą ingest). <13 min.
-NEleisk pytest. Telegram TRUMPAI. €0. Fail-safe.
+UŽDUOTIS — 4b FAZĖ: ĮPINTI AUTO-RESEARCH SAUGIKLĮ Į GYVĄ INGEST + ACK su verdiktu. <13 min.
+NEleisk pytest. Telegram TRUMPAI. €0.
 
-⚠️ ANTI rc=124: KIEKVIENAS LLM kvietimas timeout 45s, JOKIO retry. hera_research jau turi biudžetą. vault-check —
-1 LLM kvietimas max. Jei viršija/timeout — grąžink „escalate"/partial, NIEKADA nekabink. Testas MAŽAS.
+⚠️⚠️ KRITINIS FAIL-SAFE: saugiklis GYVAME ingest'e NIEKADA neturi kabinti ar sulaužyti pipeline.
+- gate() jau turi HARD 180s research cap + 45s LLM. Papildomai: visą gate() iškvietimą dispatcher'yje apgaub
+  try/except + bendru timeout'u. Jei gate krenta/timeout -> elgtis kaip PASS (council verdiktas galioja),
+  NIEKADA neblokuok ir nenutrauk ingest. Saugiklis tik PRIDEDA info, negali pakenkti.
+- should_verify TRIGERIS turi likti retas (promote_candidate / high-skill / nesutarimas) — dauguma ingest'ų
+  saugiklio NEpaleidžia (pigu, greita, be tyrimo).
 
-SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta kodą — push į PRIVATŲ hera-core-backup (askpass; jis yra).
+SAUGUMAS: raktų nespausdink/necommit'ink. Push į PRIVATŲ hera-core-backup (askpass).
 
-KONTEKSTAS: turim hera_research.py (3 fazė). Dabar saugiklis, kuris NUSPRENDŽIA, ar tirti, ir suformuoja verdiktą.
-Principas (iš tyrimo): NEkartok tarybos; saugiklis klausia „ar tiesa + ar dera su vault'u". Ir NE ant visko.
+1) ĮPYNIMAS dispatcher'yje (po tarybos, prieš galutinį įrašymą/ACK):
+   - if HERA_GATE=1: iškviesk should_verify(candidate, council_result).
+   - Jei False -> kelias nepakito (kaip dabar).
+   - Jei True -> gate(candidate, council_result) su bendru fail-safe. Rezultatą (decision/verdict/confidence/
+     dossier) įrašyk į kandidato įrašą (verifikacijos pėdsakas / provenance) IR panaudok:
+     * pass -> kaip council (stage/promote), + žyma „verified: supported (conf)".
+     * block -> NEpromote'ink; pažymėk „gate: contradicted"; lieka draft su įspėjimu (žmogus mato).
+     * escalate -> įrašyk į /opt/hera-vault/OPEN_QUESTIONS.md su dossier (šaltiniai/prieštaravimai) — tavo sprendimui.
+   - GOVERNANCE nekeisk: viskas lieka draft/human_gate; gate NEauto-promote'ina, tik prideda verdiktą.
 
-1) /opt/hera-processor/hera_gate.py, STANDALONE (dar nejungti į dispatcher/ingest):
+2) ACK PRATURTINIMAS (tai vartotojo „gera reakcija"): kai gate suveikė, ingest ACK papildyk verdiktu, pvz.:
+   „📥 Priimta: <title> | selektorius X | taryba Y | 🔎 patikrinta: supported 0.8" arba „| ⚠️ eskaluota: reikia tavo
+   sprendimo". Kai gate NEsuveikė (dauguma) — ACK kaip dabar. ACK eina per PARSER botą (kur vartotojas), sistemos
+   raportai — HERA botas (nekeisk maršruto).
 
-   a) should_verify(candidate, council_result) -> bool (TRIGERIS, deterministinis): True TIK jei bent viena:
-      - council_action = promote_candidate (aukšta rizika), ARBA
-      - selector high + taps skill (reuse'inama taisyklė), ARBA
-      - tarybos balsų sklaida didelė / žemas sutarimas (jei metrika prieinama), ARBA
-      - (vėliau) vault prieštaravimas.
-      Kitu atveju False -> saugiklis PRALEIDŽIA (pigus kelias, jokio tyrimo).
+3) SESIJŲ INDEKSAS: ingest įraše (index.jsonl) pridėk gate_decision lauką kai buvo.
 
-   b) vault_check(candidate) -> {relation: contradicts|supports|complements|unrelated, note}: 1 LLM kvietimas
-      (Gemini, 45s), lygina kandidatą su top-k susijusiais vault puslapiais (naudok esamą nav/RAG paiešką).
-      Pigu, be web.
+4) TESTAS (be gyvo laukimo, jei įmanoma): (a) sintetinis promote_candidate kandidatas per dispatcher su HERA_GATE=1
+   -> gate suveikia, ACK turi verdiktą, įrašas turi verifikacijos pėdsaką; (b) žemos rizikos -> gate praleistas,
+   ACK kaip anksčiau; (c) FAIL-SAFE: dirbtinė gate klaida/timeout -> ingest baigiasi normaliai (pass), ACK
+   išsiunčiamas, NIEKADA nekabo/nelaužo.
+5) BENCHMARK: hera_bench.run() -> pass_rate 1.0 (9/9) nepakito.
+6) DURABILUMAS: kopija į n8n/hera/ + push į PRIVATŲ hera-core-backup (secret-scan). Viešo NELIESK.
 
-   c) gate(candidate, council_result) -> {decision: pass|block|escalate, verdict, confidence, dossier}:
-      - if not should_verify -> decision=pass (skip, cheap).
-      - else -> vault_check; jei contradicts ARBA neaišku -> hera_research.research(kandidato teiginys) (išorinis).
-        Sujungk: supported + nėra vault konflikto -> pass (žyma low-risk); contradicted (išorė ar vault) -> block;
-        no-evidence/mixed -> escalate su dossier (šaltiniai, prieštaravimai, confidence).
-      - Rašyk verifikacijos pėdsaką (kas patvirtino, šaltiniai) į grąžinamą dossier.
-
-2) JUNGIKLIS HERA_GATE=1 (default 1; =0 -> gate visada pass). GATE dar NEjungtas į gyvą ingest — tik standalone
-   funkcija. Gyvą įpynimą darysim 4b atskirai (kad nerizikuotume ingest kabėjimo).
-
-3) TESTAS (MAŽAS): (a) kandidatas su council_action=stage_for_review, žema rizika -> should_verify=False ->
-   gate pass be tyrimo (greita); (b) kandidatas su promote_candidate -> should_verify=True -> vault_check +
-   (jei reikia) research -> parodyk decision/verdict/confidence, ar research suveikė, kiek užtruko; (c) fail-safe:
-   research timeout/klaida -> gate grąžina escalate, ne crash/hang.
-
-4) BENCHMARK REGRESIJA: paleisk hera_bench.run() -> pass_rate turi likti 1.0 (9/9) — gate neturi nieko sugadinti
-   (jis standalone, tad neturėtų liesti, bet patvirtink).
-
-5) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup (askpass, secret-scan).
-   Viešo NELIESK.
-
-TELEGRAM (trumpai, be raktų): (1) hera_gate.py veikia (trigeris+vault-check+decision), (2) testai a/b/c
-(pass be tyrimo; promote->tyrimas su verdiktu; fail-safe escalate), (3) benchmark pass_rate nepakito,
-(4) backup OK, (5) „AUTO-RESEARCH SAUGIKLIS PARUOŠTAS (4a, standalone)".
+TELEGRAM (per HERA botą, trumpai, be raktų): (1) saugiklis įpintas į gyvą ingest, fail-safe (gate klaida->pass),
+(2) ACK dabar rodo verdiktą kai suveikia (pavyzdys), (3) testai a/b/c OK, (4) benchmark nepakito, (5) backup OK,
+(6) „AUTO-RESEARCH SAUGIKLIS GYVAS (4b)".
