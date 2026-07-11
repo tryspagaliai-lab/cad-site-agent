@@ -1,34 +1,33 @@
-UŽDUOTIS — 2 FAZĖ: SEARXNG €0 PAIEŠKA (Docker, localhost, JSON API). <13 min, time-boxed.
-NEleisk pytest. Telegram TRUMPAI. Jei diegimas užtrunka — atsiskaityk KĄ spėjai, NEUŽSTRIK iki 15 min.
+UŽDUOTIS — 3 FAZĖ: PLONAS RESEARCH ORKESTRATORIUS (plan→search→fetch→CoVe→synthesize). <13 min, time-boxed.
+NEleisk pytest. Telegram TRUMPAI. €0. Fail-safe.
 
-SAUGUMAS: raktų nespausdink. SearXNG bind TIK į localhost (127.0.0.1) — NEatidaryk į internetą (ufw jei reikia).
+⚠️ KRITINIS SAUGIKLIS NUO rc=124 (jau 2x kabo): KIEKVIENAS LLM kvietimas timeout 45s, JOKIO retry (retry dvigubina).
+KIEKVIENAS fetch timeout 20s. VISO research kvietimo biudžetas HARD: max 3 užklausos × max 2 fetch = ≤6 šaltiniai,
+max 6 LLM kvietimai. Jei viršija biudžetą/timeout — grąžink DALINĮ rezultatą, NIEKADA nekabink. Testas — mažas.
 
-KONTEKSTAS: HERA reikia €0 paieškos deep-research'ui. SearXNG = self-host metapaieška, be rakto.
-VPS mažas (CX23 ~4GB, jau sukasi n8n docker + hera servisai + chromium) — stebėk RAM.
+SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta hera kodą — push į PRIVATŲ hera-core-backup.
 
-0) RAM PATIKRA prieš: free -m. Jei laisvos RAM < ~400MB — pažymėk ataskaitoje riziką, bet tęsk (SearXNG ~200MB).
+KONTEKSTAS: turim hera_search.py (SearXNG) + hera_browser.py (fetch) + nemokamus modelius. Dabar plonas ciklas,
+kuris juos sujungia į gilų tyrimą teiginio/temos verifikavimui.
 
-1) ĮDIEK SearXNG per Docker (searxng/searxng образas arba searxng-docker compose). Bind: 127.0.0.1:8888
-   (ar laisvas portas; NE 0.0.0.0). settings.yml BŪTINA:
-   - server.secret_key: sugeneruok atsitiktinį (openssl rand -hex 32), NEspausdink jo;
-   - search.formats: [html, json]  (JSON BŪTINAS);
-   - server.limiter: false  (viena vidinė HERA instancija, kad nedroselintų savęs);
-   - varikliai: palik DuckDuckGo, Brave, Bing, Startpage, Wikipedia, Wikidata; Google NEbūtinas (blokuojamas).
-   Konteineris: restart=unless-stopped, atminties limitas (pvz. --memory=350m) kad nesuvalgytų VPS.
+1) /opt/hera-processor/hera_research.py — funkcija research(topic_or_claim, max_queries=3, max_sources=6) ->
+   {verdict, confidence, evidence:[{quote,url}], sources:[url], synthesis, partial:bool}. Ciklas:
+   a) PLAN: 1 LLM kvietimas (Gemini flash, 45s, be retry) -> 2-3 paieškos užklausos. Jei krenta -> naudok patį topic kaip 1 užklausą.
+   b) SEARCH: hera_search kiekvienai užklausai -> surink URL'us (dedup, top ~6 viso).
+   c) FETCH: top ~4-6 URL per trafilatura->naršyklė (20s each, fail-safe -> praleisk); apkarpyk kiekvieną ~2000 tokenų.
+   d) VERIFY (CoVe): 1 LLM kvietimas (45s) -> griežtas JSON {verdict: supported|contradicted|no-evidence,
+      confidence 0-1, evidence:[{quote,url}], reasoning}. Modelis mato teiginį + ištraukas.
+   e) SYNTHESIZE: 1 LLM kvietimas (45s, gali būti Groq greičiui) -> trumpa sintezė su citatomis.
+   LLM paskirstymas: plan/synth Gemini flash; verify Groq arba GLM (rotacija). Centrinis timeout wrapper VISIEMS.
+2) JUNGIKLIS: HERA_RESEARCH=1 (default 1); =0 išjungia. Šitas modulis kol kas STANDALONE — dar NEjungiam į
+   ingest/gate (tai kita fazė). Tik pastatom ir ištestuojam.
+3) TESTAS (MAŽAS, kad neužtruktų): research("Shepherd is a Python framework that records agent actions as a
+   git-like reversible trace for sandboxed review") su max_queries=2, max_sources=3 -> grąžina JSON su verdict +
+   bent 1 šaltiniu. Parodyk verdict, confidence, kiek šaltinių, ar partial (be viso turinio, be raktų).
+   Jei per biudžetą negrįžta — grąžink partial, ataskaitoje pažymėk „biudžetas/timeout suveikė (gerai)".
+4) FAIL-SAFE PATIKRA: SearXNG down / tuščia paieška -> research grąžina {verdict:no-evidence, partial:true},
+   NEkabo, NEcrash.
+5) DURABILUMAS: kopija į /opt/cad-site-agent/n8n/hera/ + push į PRIVATŲ hera-core-backup. Viešo NELIESK.
 
-2) PATIKRA: curl -s "http://127.0.0.1:8888/search?q=anthropic+claude&format=json" -> turi grąžinti JSON su
-   results[] (url,title,content). Parodyk kiek rezultatų grįžo (be viso turinio).
-
-3) HERA WRAPPER /opt/hera-processor/hera_search.py: funkcija search(query, n=8) -> [{url,title,content}]
-   per SearXNG JSON (httpx/urllib, 15s timeout, fail-safe: klaida/tuščia -> [] , NEkelia išimties).
-   (Backup ddgs — NEdiegti dabar, tik palik TODO komentarą.)
-
-4) TESTAS: hera_search.search("HERA memory agent") -> grąžina >0 rezultatų (parodyk kiek, 1-2 title pavyzdžius,
-   be raktų); fail-safe: blogas query/servisas down -> [] , ne crash.
-
-5) DURABILUMAS: compose/settings + hera_search.py kopija į /opt/cad-site-agent/n8n/ (be push į viešą);
-   hera_search.py push į PRIVATŲ hera-core-backup (secret-scan; secret_key NEcommit'ink). Viešo NELIESK.
-
-TELEGRAM (trumpai, be raktų): (1) RAM prieš/po, (2) SearXNG veikia localhost:8888, JSON grąžina N rezultatų,
-(3) hera_search.search testas — kiek rezultatų, (4) backup OK, (5) „SEARXNG PARUOŠTAS (2 FAZĖ)" arba
-„DALINAI — <kas liko>".
+TELEGRAM (trumpai, be raktų): (1) hera_research.py veikia, biudžeto ribos (queries/sources/LLM), (2) testo
+rezultatas (verdict/confidence/šaltinių sk./partial), kiek užtruko, (3) fail-safe OK, (4) „RESEARCH ORKESTRATORIUS PARUOŠTAS (3 FAZĖ)".
