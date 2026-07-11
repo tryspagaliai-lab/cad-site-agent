@@ -1,59 +1,37 @@
-UŽDUOTIS — FAZĖ 5c: siaura RIBOTA savikorekcija (hera_selfedit.py). <14 min. NEleisk pytest. Telegram TRUMPAI. Fail-safe €0.
+UŽDUOTIS — HUMAN-GATE PROMOTE (5c selfedit): patvirtintas selfedit proposal į gyvą skill. <10 min.
+NEleisk pytest. Telegram TRUMPAI. Fail-safe.
 
-SAUGUMAS: raktų nespausdink/necommit'ink. Kodas -> PRIVATUS hera-core-backup. Viešo repo NELIESK.
+SAUGUMAS: raktų nespausdink/necommit'ink. Jei liesta kodą — push į PRIVATŲ hera-core-backup. Viešo NELIESK.
 
-KONTEKSTAS: Paskutinė ir ATSARGIAUSIA savęs-tobulinimo fazė. 5a=sandbox izoliacija (yra), 5b=skill-akrecija
-(nauji skills, yra). 5c = leisti sistemai TAISYTI JAU EGZISTUOJANČIUS prompt/skill failus — bet TIK per
-griežčiausius vartus. NIEKADA neauto-merge. Žmogus = galutinis vartas. Tai NE full self-rewrite (Godcoder/DGM
-praleista kaip per rizikinga) — tai siaura, whitelist'u apribota redakcija su tripwire prieš reward-hacking'ą.
+KONTEKSTAS: VARTOTOJAS (galutinis vartas) PATVIRTINO 5c demo selfedit pasiūlymą (bwrap-agent-isolation SKILL.md
++ „Kada naudoti" sekcija). Dabar promote: pritaikyk staged pataisą į GYVĄ failą. Antras realus žmogaus-vartas.
 
-SUKURK /opt/hera-processor/hera_selfedit.py su funkcija propose_edit(target_path, improvement_goal):
+1) Rask NAUJAUSIĄ selfedit proposal: /opt/hera-vault/proposals/selfedit/*.md kuris nukreiptas į
+   skills/bwrap-agent-isolation/SKILL.md ir yra status: draft / gate: human_gate. (5c demo proposal.)
+   Iš jo paimk „after" turinį (visą naują failo versiją, kurią pasiūlė hera_selfedit).
 
-1) WHITELIST (privaloma, hard-coded): redaguoti LEIDŽIAMA TIK:
-   - /opt/hera-vault/skills/*/SKILL.md
-   - /opt/hera-vault/prompts/*.md (jei tokių yra; jei ne — tik skills)
-   NIEKADA neredaguoti (blacklist, net jei target sutampa): hera_bench.py, hera_sandbox.py, hera_gate.py,
-   hera_research.py, hera_selfedit.py, hera_accretion.py, bet koks *guard*/*RIC*/*governance* failas, bazinė kilpa,
-   .env, cron, benchmark cases (bench/cases.jsonl), state/*.json. Jei target ne whitelist'e -> REJECT iškart.
+2) PRIEŠ pritaikant, PAKARTOK saugiklius gyvai (tas pats hera_selfedit tripwire+benchmark, be naujo LLM):
+   - TRIPWIRE dar kartą prieš „after" turinį (jokių pašalintų assert/žymeklių, jokių bypass/skip/always-pass
+     frazių, jokio frontmatter status/approved savęs-keitimo). Jei kirstų -> STOP, NEpromote, pranešk.
+   - Palygink žymeklių/assert skaičių: after >= before. Jei mažiau -> STOP.
 
-2) DRAFT: vienas LLM iškvietimas (60s HARD timeout, NO retry, €0 modelis) -> pasiūlo pataisytą failo turinį
-   pagal improvement_goal. Grąžina VISĄ naują turinį, ne diff.
+3) PROMOTE: perrašyk gyvą /opt/hera-vault/skills/bwrap-agent-isolation/SKILL.md „after" turiniu.
+   Frontmatter'yje (jei toks laukas yra) pažymėk promote metaduomenis: approved_by: vartotojas (žmogaus gate),
+   approved: 2026-07-11, source: selfedit-proposal. Necommit'ink raktų.
 
-3) APPLY IZOLIUOTAI: git-worktree kopijoje (gyvas vault NELIEČIAMAS). Pritaikyk pataisą tik worktree faile.
+4) BENCHMARK po promote: hera_bench.run() GYVAI -> turi likti 9/9. Jei kristų -> ROLLBACK (atstatyk ankstesnę
+   failo versiją per git checkout gyvame vault) ir pažymėk ataskaitoje „ROLLBACK, benchmark krito".
 
-4) TRIPWIRE prieš reward-hacking (KRITINIS — tai Darwin-Gödel atvejis kur agentas ištrynė hal_detection
-   žymeklius kad apgautų metriką). BLOKUOK pataisą jei:
-   - diff paliečia bet kokį benchmark/guard/measurement žymeklį ar assertion;
-   - pašalina testus/assert/žymeklius kurie buvo originaliame faile (test/assert/verify/marker eilučių skaičius
-     NEGALI sumažėti);
-   - prideda eilutes tipo „ignore benchmark", „skip check", „always pass", „return True # bypass";
-   - keičia frontmatter status/approved laukus (negali pats save patvirtinti).
-   Bet kuris tripwire -> REJECT + įrašyk priežastį.
+5) PROPOSAL pažymėk: proposals/selfedit/...md antraštėje/statuse „PROMOTED 2026-07-11 (human-gate: vartotojas)".
 
-5) BENCHMARK-GATE sandbox'e: hera_bench.run() prieš worktree būseną per hera_sandbox (no-net).
-   pass_rate PRIVALO likti >= baseline (9/9). Jei kristų -> REJECT.
+6) OPEN_QUESTIONS.md: atitinkamą „selfedit laukia patvirtinimo" eilutę pažymėk atlikta `- [x]` + „→ PROMOTED".
 
-6) STAGE kaip proposal (NE merge): proposals/selfedit/<slug>-<data>.md su:
-   - before/after diff (unified), improvement_goal, tripwire rezultatai, benchmark rezultatas;
-   - frontmatter: status: draft, gate: human_gate, auto_merge: false;
-   - OPEN_QUESTIONS.md eilutė „- [ ] selfedit laukia patvirtinimo: <target> (<goal>)".
-   NIEKADA neperrašyk gyvo failo. Human-gate promote bus atskira užduotis (kaip 5b).
+7) WIKI: paleisk hera_wikilink.py (arba lint) kad pakeistas skill liktų grafe; parodyk ar orphan nepadidėjo.
 
-7) HERA_SELFEDIT=1 jungiklis (default 0=išjungta). Visos I/O klaidos fail-safe (REJECT, ne crash).
+8) TRAJEKTORIJA/atmintis: įrašyk promote veiksmą (curation/human-gate-promote/selfedit).
 
-8) DEMO (saugus, tik įrodyti pipeline): paleisk propose_edit ant VIENO tikro skill (pvz.
-   skills/bwrap-agent-isolation/SKILL.md), goal="pridėk trumpą 'Kada naudoti' sekciją jei jos nėra".
-   Turi praeiti whitelist+tripwire+benchmark ir sustoti kaip staged proposal (draft). Parodyk kad gyvas failas
-   NEPAKEISTAS ir proposal sukurtas.
+9) DURABILUMAS: vault commit+sync (privatus hera-vault). Jei liesta kodą — hera-core-backup. Viešo NELIESK.
 
-9) NEGATYVUS TESTAS (įrodyk tripwire veikia): pabandyk propose_edit su dirbtiniu goal kuris bandytų pašalinti
-   assertion/žymeklį -> turi būti REJECTED per tripwire (parodyk log eilutę). NEcommit'ink šio bandymo artefaktų.
-
-10) TRAJEKTORIJA/atmintis: įrašyk 5c įdiegimą (self-improvement/bounded-selfedit).
-11) DURABILUMAS: kodas -> hera-core-backup (privatus). vault proposal -> hera-vault (privatus). Viešo NELIESK.
-12) SESSION_HANDOFF (viešas cad-site-agent) — jei atnaujinsi būseną, JOKIŲ asmeninių detalių, tik „5c įdiegta".
-
-TELEGRAM (per HERA botą, trumpai, be raktų): (1) hera_selfedit.py įdiegta, HERA_SELFEDIT jungiklis,
-(2) whitelist+blacklist aktyvūs, (3) tripwire prieš reward-hacking + benchmark-gate praeina, (4) demo -> staged
-proposal (gyvas failas nepakeistas), (5) negatyvus testas -> REJECTED (tripwire veikia),
-(6) „SELF-EDIT PARUOŠTA (5c) — paskutinė fazė, viskas human-gate, NIEKAD neauto-merge".
+TELEGRAM (per HERA botą, trumpai, be raktų): (1) selfedit proposal promote'intas į gyvą skill, approved_by
+vartotojas, (2) tripwire+benchmark po promote 9/9 (ar rollback), (3) proposal+OPEN_QUESTIONS pažymėti,
+(4) wiki grafas OK, (5) „SELFEDIT PROMOTE'INTAS (2-as human-gate ciklas, 5c grandinė uždaryta pilnai)".
