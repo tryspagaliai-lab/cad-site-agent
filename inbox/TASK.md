@@ -1,36 +1,27 @@
-UŽDUOTIS — SESIJŲ INDEKSATORIUS 24/7 (registruoja viską nuo dabar; be Telegram/2FA). <12 min.
-NEleisk pytest. Telegram TRUMPAI. Fail-safe: indeksavimas NIEKADA neturi sulaužyti runner'io ar HERA.
+UŽDUOTIS — INGEST ĮVYKIAI Į SESIJŲ DIENORAŠTĮ (balas + tarybos verdiktas). <10 min.
+NEleisk pytest. Telegram TRUMPAI. Fail-safe: logingas NIEKADA neturi sulaužyti ingest/HERA.
 
-SAUGUMAS: raktų nespausdink/necommit'ink. Indeksas PRIVATUS (vault, sync į privatų hera-vault), jokio viešo repo.
+SAUGUMAS: raktų nespausdink/necommit'ink. Privatu (vault + hera-core-backup), jokio viešo repo.
 
-TIKSLAS: atkurti seno @FlashCodeMon_bot esmę, bet be jo — nuolatinis registras „kas ir kada VPS'e buvo daroma",
-peržiūrimas vėliau. Naudok tai, kas JAU 24/7 sukasi (cron runner), ne naują atskirą demoną.
+KONTEKSTAS: sesijų indeksatorius jau veikia (sessions/index.jsonl + DAILY). v1'e praleisti INGEST įvykiai —
+dabar pridedam. Kai vartotojas siunčia turinį botui, HERA gamina ACK „📥 Priimta: <title> | selektorius <score> |
+taryba <action> (<n balsų>) | skill/growth: <path>". Tą patį reikia įrašyti į tą patį index.jsonl.
 
-1) INDEKSO VIETA: /opt/hera-vault/sessions/index.jsonl (append-only). Kiekvienas įrašas viena JSON eilutė:
-   {ts_start, ts_end, duration_s, rc, kind:"runner_session", task_title (TASK.md 1-a eilutė), telegram_sent (bool),
-   session_transcript (kelias į claude -p JSONL jei randamas, kitaip null)}. UTF-8.
+1) RASK kur processor'iuje formuojamas/siunčiamas ingest ACK (dispatcher/processor, ta vieta kur jau turim
+   title/selector_score/council_action/votes/skill_path). TEN po ACK suformavimo append eilutę į
+   /opt/hera-vault/sessions/index.jsonl (naudok esamą hera_index_append.py jei tinka, arba tiesioginį append):
+   {ts, kind:"ingest", title, selector_score, council_action, council_votes, skill_growth}.
+   GRIEŽTAI fail-safe: try/except, append klaida NIEKADA nenutraukia ingest'o (kaip runner hook).
 
-2) RUNNER HOOK: pataisyk /usr/local/bin/vps_agent_runner.sh — apie kiekvieną `claude -p` paleidimą:
-   prieš paleidžiant užfiksuok ts_start+task_title; po jo ts_end+rc+duration; append eilutę į index.jsonl.
-   GRIEŽTAI fail-safe: jei indeksavimo dalis krenta (append klaida ir pan.) — runner'is TĘSIA normaliai
-   (|| true, atskiras try). Backup: cp vps_agent_runner.sh vps_agent_runner.sh.bak-<data> prieš keitimą.
+2) DAILY santrauka: hera_daily_summary.py jau turi ingest lentelės schemą — patikrink, kad ji realiai
+   užsipildo iš kind:"ingest" įrašų (data, title, balas, verdiktas). Jei reikia mažo pataisymo — padaryk.
 
-3) HERA ĮVYKIAI (jei paprasta): kai ateina ingest ACK (selektorius/taryba) — tee'ink trumpą įrašą į tą patį
-   index.jsonl {kind:"ingest", ts, title, selector_score, council_action}. Jei sudėtinga įpinti — praleisk,
-   runner sesijų užtenka v1.
+3) TESTAS: (a) jei paprasta — perleisk vieną JAU apdorotą kandidatą per ACK kelią (arba sukurk 1 sintetinį
+   ingest įrašą per tą pačią funkciją) -> index.jsonl atsiranda kind:"ingest" eilutė; (b) hera_sessions.py
+   parodo mišrų sąrašą (runner + ingest); (c) DAILY md ingest lentelė užsipildo. Parodyk pavyzdį (be raktų).
 
-4) DIENOS SANTRAUKA: /opt/hera-vault/sessions/DAILY-<YYYY-MM-DD>.md — prijunk prie Loop B (valandinis) arba mažas
-   cron: iš index.jsonl per parą sugeneruok žmogui skaitomą suvestinę (kiek sesijų, kokios užduotys, rc, kiek
-   ingest'ų). Deterministinis, be LLM.
+4) DURABILUMAS: jei liesta HERA kodą (/opt/hera-processor) — kopija į /opt/cad-site-agent/n8n/hera/ + push į
+   PRIVATŲ hera-core-backup (secret-scan). Viešo repo NELIESK. index.jsonl/DAILY nusisync'ins per vault cron.
 
-5) PERŽIŪROS ĮRANKIS: /root/hera_sessions.py (arba bash) — parodo paskutines N sesijų iš index.jsonl (data, užduotis,
-   rc, trukmė). Kad vartotojas/kuratorius greitai matytų „kas buvo daroma".
-
-6) TESTAS: (a) rankiniu būdu pridėk 1 testinį įrašą per hook logiką ARBA palauk 1 runner ciklą -> index.jsonl turi
-   įrašą; (b) hera_sessions.py parodo jį; (c) DAILY md sugeneruotas. Parodyk paskutinio įrašo pavyzdį (be raktų).
-
-7) DURABILUMAS: skriptų kopija į /opt/cad-site-agent/n8n/ lokaliai (be push į viešą) + jei liesta hera kodą,
-   push į PRIVATŲ hera-core-backup. index.jsonl ir DAILY md nusisync'ins per esamą vault cron.
-
-TELEGRAM (trumpai, be raktų): (1) index.jsonl kuriamas, runner hook įdiegtas (fail-safe), (2) paskutinės sesijos
-per hera_sessions.py — pavyzdys, (3) DAILY santrauka veikia, (4) „SESIJŲ INDEKSATORIUS VEIKIA 24/7".
+TELEGRAM (trumpai, be raktų): (1) ingest įvykiai dabar loginami (fail-safe)?, (2) mišraus sąrašo pavyzdys
+(runner+ingest), (3) DAILY ingest lentelė veikia, (4) privatus backup jei liesta kodą, (5) „INGEST DIENORAŠTIS VEIKIA".
