@@ -1,44 +1,41 @@
-UŽDUOTIS — GPU auto-filer (hera_gpu_filter.py) + sutvarkyk GRASP. <16 min. NEleisk pytest. Telegram TRUMPAI.
-Fail-safe €0. Kodas -> PRIVATUS hera-core-backup. Vault -> PRIVATUS hera-vault. Viešo repo NELIESK.
+UŽDUOTIS — (A) promote Memora skill + (B) FAZĖ 9a: Memora indeksas (rašymo pusė). <16 min. NEleisk pytest.
+Telegram TRUMPAI. Fail-safe €0. Kodas -> PRIVATUS hera-core-backup. Vault -> PRIVATUS hera-vault. Viešo NELIESK.
 SAUGUMAS: raktų nespausdink/necommit'ink.
 
-KONTEKSTAS: GPU/research turinys eina srautu (vLLM, APR, GRASP). Standing rule „GPU→future-gpu" yra popierinė —
-tegul tampa AUTOMATINĖ. Deterministinis (BE LLM) filtras po ingesto rūšiuoja GPU turinį pats. NIEKO neatmeta/
-neslepia — tik tag'ina + indeksuoja, palieka staged sėklos peržiūrai. Selektoriaus/gate balų NEliečia.
+=== DALIS A — PROMOTE Memora skill (human-gate) ===
+Vartotojas patvirtino. Skill jau yra: skills/ai-agentu-atminties-strukturizavimas-memora/SKILL.md (status: draft,
+distiliuota per ingestą).
+- Frontmatter: status draft -> approved; pridėk approved_by: vartotojas (žmogaus gate), approved: 2026-07-12.
+- Turinį nekeisk.
+- BENCHMARK po promote: hera_bench.run() -> 9/9. Jei kristų -> rollback (grąžink draft) + pranešk.
+- Growth ukv5jl (Memora): pažymėk „STATUS: PROMOTED 2026-07-12 (human-gate: vartotojas)".
+- Episteminis flagas: prie „98%" pridėk „(ICML 2026 peer-reviewed, prieš full-context baseline; NE prieš mūsų
+  esamą NapMem — realus laimėjimas mums: multi-hop paieška + nulis detalių praradimo, ne 98% ant NapMem)".
+- Wiki-link + trajektorija (curation/human-gate-promote/skill).
 
-SUKURK /opt/hera-processor/hera_gpu_filter.py:
-1) GPU_KEYWORDS — SPECIFINIS, kuruotas rinkinys (kad NEbūtų false-positive ant tekstinių metodų). STRONG žymenys:
-   „GPU", „CUDA", „H100", „A100", „vLLM", „SGLang", „RadixAttention", „KV cache", „KV-cache", „tensor parallel",
-   „pipeline parallel", „expert parallel", „world model", „BPTT", „backprop through", „llama.cpp", „Ollama",
-   „RoPE", „FP8", „quantiz", „inference engine", „self-host", „8×H100", „diffusion model". VENK generinių („model",
-   „training", „RL", „SFT" vieni) — jie NElaikomi signalu.
-2) classify(text) -> {is_gpu: bool, matched: [...]}. Deterministinė taisyklė: is_gpu=True jei >=2 skirtingi STRONG
-   žymenys ARBA >=1 „labai stiprus" (CUDA/H100/A100/vLLM/SGLang/KV cache/world model/BPTT/tensor parallel/llama.cpp/
-   8×H100). Case-insensitive. Fail-safe: klaida -> is_gpu=False (ne crash).
-3) file_if_gpu(note_path) -> jei is_gpu: pridėk „hardware: future-gpu" tag'ą į failą (jei dar nėra — idempotentiška)
-   + append eilutę į /opt/hera-vault/FUTURE_GPU.md (jei dar ne). Grąžink sprendimą+matched. NIEKADA neatmeta/netrina/
-   neslepia. Jei ne-GPU -> no-op (lieka aktyvus track).
-4) HOOK: pridėk kvietimą dispatcher'yje/ingest'e PO to kai growth/skill įrašas parašytas -> file_if_gpu(new_note).
-   Fail-safe: jei filtras klysta -> ingestas tęsiasi normaliai (no-op, ne blokas). Jei tiesioginis pipeline
-   redagavimas rizikingas -> palik funkciją + batch-run režimą IR dokumentuok hook'ą (fail-safe pirmiau).
-5) HERA_GPUFILTER jungiklis. Po demo (jei precision OK) -> ĮJUNK =1 gyvai, kad veiktų būsimiems ingestams.
+=== DALIS B — FAZĖ 9a: Memora indeksas (rašymo pusė, ADITYVUS) ===
+KONTEKSTAS: pridedam Memora-stiliaus indeksą prie to KAIP HERA rašo atmintį — turtingesnis paieškos sluoksnis,
+NIEKO negriaunant. Skaitymo/retriever pusė = Fazė 9b (VĖLIAU, atskirai). €0, hand-prompted (NE RL-distilled=GPU).
 
-DEMO (KRITINIS — įrodyk PRECISION, ne tik recall):
-- GRASP (growth/2026-07-12-*8z2qmf*) -> turi būti is_gpu=True (world model/BPTT) -> tag + FUTURE_GPU.md. Parodyk matched.
-- vLLM (growth *wvmdi5*) -> is_gpu=True, idempotentiška (be dublio).
-- **SkillOpt (growth *lto8bb*) -> turi būti is_gpu=False** (tekstinis skill metodas, €0 — NEfile'inti! precision testas).
-- Buzz/Warp (*aobwnm*) -> is_gpu=False.
-Parodyk visų 4 sprendimus. Jei SkillOpt/Buzz gautų is_gpu=True -> SUGRIEŽTINK keywords ir pakartok (jokių false-
-positive ant aktyvaus track'o).
+SUKURK /opt/hera-processor/hera_memora.py. HERA_MEMORA jungiklis (default 0). Fail-safe (klaida -> praleisk, ne crash).
+1) index_memory(entry_text, entry_ref) -> 1 €0 LLM call (45s HARD timeout, NO retry) sugeneruoja:
+   - primary_abstraction: 6-8 žodžių kanoninė frazė (esmė).
+   - cue_anchors: 2-4 trumpos alt-paieškos žymos.
+   Append į /opt/hera-vault/memory_index.jsonl: {ts, entry_ref, primary_abstraction, cue_anchors}. Idempotentiška
+   (tas pats entry_ref nepridedamas 2x). Jei LLM krenta/timeout -> įrašyk entry_ref su tuščia abstraction (fail-safe),
+   įrašas NEprarandamas.
+2) ADITYVUS — NEliesk esamo growth/skill/journal turinio, NEliesk NapMem. Tik prideda index eilutę greta.
+3) HOOK: po growth/skill/journal įrašo -> index_memory (už HERA_MEMORA flago). Jei rizikinga tiesiogiai liesti
+   pipeline -> palik funkciją + batch-run IR dokumentuok hook'ą (fail-safe pirmiau). Neblokuok ingesto.
+4) DEMO (MINIMALUS, kad tilptų laike — TIK 2 įrašai): index_memory ant (a) Memora growth ukv5jl, (b) vieno journal
+   ar skill įrašo. Parodyk sugeneruotą primary_abstraction + cue_anchors + kad memory_index.jsonl užpildytas.
+   Įrodyk ADITYVUMĄ: originalūs failai NEPAKEISTI. NEindeksuok viso vault (per brangu/ilgai) — tik demo 2.
+5) Paieškos NELIESK (9b). Benchmark: hera_bench.run() -> 9/9 (naujas modulis neturi gadinti).
+6) ROADMAP: „Fazė 9a — Memora indeksas (rašymo pusė) ĮDIEGTA 2026-07-12 (primary_abstraction + cue_anchors,
+   adityvus, €0 hand-prompted, HERA_MEMORA). 9b (policy-guided retriever) — laukia, budget-gated."
+7) DURABILUMAS: kodas -> hera-core-backup; memory_index.jsonl + skill promote + ROADMAP -> hera-vault. Viešo NELIESK.
 
-GRASP: po demo jis jau future-gpu track'e (be sėklos — grynas world-model/GPU, nėra tekstinės-erdvės analogo).
-Įrašyk FUTURE_GPU.md pastaboje „be taikomos sėklos".
-
-BENCHMARK: hera_bench.run() -> turi likti 9/9 (naujas modulis + hook neturi gadinti). Jei kristų -> atšauk hook'ą.
-ROADMAP: docs/ROADMAP.md „GPU auto-filer ĮDIEGTA 2026-07-12 — standing rule dabar automatinė (deterministinė)."
-DURABILUMAS: kodas -> hera-core-backup; FUTURE_GPU.md+tag'ai+ROADMAP -> hera-vault. Viešo NELIESK.
-
-TELEGRAM (per HERA botą, trumpai): (1) hera_gpu_filter.py įdiegta (deterministinis, HERA_GPUFILTER), (2) DEMO
-precision: GRASP+vLLM→future-gpu, SkillOpt+Buzz→aktyvus (be false-positive), (3) filtras įjungtas gyvai —
-GPU turinys rūšiuosis pats, (4) GRASP įdėta į future-gpu (be sėklos), benchmark 9/9, (5) „GPU AUTO-FILER GYVAS —
-standing rule dabar automatinė".
+TELEGRAM (per HERA botą, trumpai): (1) Memora skill promote'inta (approved_by vartotojas; „98%" flaguota kaip vs
+full-context, ne vs NapMem), (2) Fazė 9a: hera_memora.py — primary_abstraction+cue_anchors indeksas (adityvus, €0,
+HERA_MEMORA), (3) demo 2 įrašai -> memory_index.jsonl užpildytas, originalai nepakeisti, (4) paieška=9b vėliau,
+benchmark 9/9, (5) „MEMORA PROMOTE + FAZĖ 9a ĮDIEGTA — turtingesnis atminties indeksas, retriever kitas".
