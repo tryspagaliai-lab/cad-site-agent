@@ -1,29 +1,44 @@
-UŽDUOTIS — APR į future-gpu track + planning-loop v2 cross-note. <8 min. NEleisk pytest. Telegram TRUMPAI.
-Fail-safe €0. TIK privatus hera-vault. Viešo repo NELIESK. Kodo NELIESK. Necommit'ink raktų.
+UŽDUOTIS — GPU auto-filer (hera_gpu_filter.py) + sutvarkyk GRASP. <16 min. NEleisk pytest. Telegram TRUMPAI.
+Fail-safe €0. Kodas -> PRIVATUS hera-core-backup. Vault -> PRIVATUS hera-vault. Viešo repo NELIESK.
+SAUGUMAS: raktų nespausdink/necommit'ink.
 
-KONTEKSTAS: Vartotojas patvirtino. „Adaptive Parallel Reasoning" (APR, Berkeley BAIR) — ~90% GPU/model-training
-(SFT+RL kad modelis emituotų <Parallel> žetonus + inference-engine KV-cache valdymas) → future-gpu track (pagal
-standing rule). BET vienas engine-agnostic grūdas (ThreadWeaver client-side fork-join) — galima ateities planning-
-loop refinement, ribota mūsų budget/rc124 disciplinos.
+KONTEKSTAS: GPU/research turinys eina srautu (vLLM, APR, GRASP). Standing rule „GPU→future-gpu" yra popierinė —
+tegul tampa AUTOMATINĖ. Deterministinis (BE LLM) filtras po ingesto rūšiuoja GPU turinį pats. NIEKO neatmeta/
+neslepia — tik tag'ina + indeksuoja, palieka staged sėklos peržiūrai. Selektoriaus/gate balų NEliečia.
 
-1) FUTURE-GPU: rask growth „Adaptive Parallel Reasoning" (growth/2026-07-12-*7u90ag*). Pažymėk
-   „hardware: future-gpu · STATUS: priimta į future-gpu track (human-gate 2026-07-12)". Įrašyk į FUTURE_GPU.md
-   (kodėl-GPU: APR reikalauja modelio treniravimo SFT+RL + inference-engine KV-cache; nauda su GPU: adaptyvus
-   lygiagretus mąstymas — mažesnė latencija/critical-path be tikslumo praradimo).
+SUKURK /opt/hera-processor/hera_gpu_filter.py:
+1) GPU_KEYWORDS — SPECIFINIS, kuruotas rinkinys (kad NEbūtų false-positive ant tekstinių metodų). STRONG žymenys:
+   „GPU", „CUDA", „H100", „A100", „vLLM", „SGLang", „RadixAttention", „KV cache", „KV-cache", „tensor parallel",
+   „pipeline parallel", „expert parallel", „world model", „BPTT", „backprop through", „llama.cpp", „Ollama",
+   „RoPE", „FP8", „quantiz", „inference engine", „self-host", „8×H100", „diffusion model". VENK generinių („model",
+   „training", „RL", „SFT" vieni) — jie NElaikomi signalu.
+2) classify(text) -> {is_gpu: bool, matched: [...]}. Deterministinė taisyklė: is_gpu=True jei >=2 skirtingi STRONG
+   žymenys ARBA >=1 „labai stiprus" (CUDA/H100/A100/vLLM/SGLang/KV cache/world model/BPTT/tensor parallel/llama.cpp/
+   8×H100). Case-insensitive. Fail-safe: klaida -> is_gpu=False (ne crash).
+3) file_if_gpu(note_path) -> jei is_gpu: pridėk „hardware: future-gpu" tag'ą į failą (jei dar nėra — idempotentiška)
+   + append eilutę į /opt/hera-vault/FUTURE_GPU.md (jei dar ne). Grąžink sprendimą+matched. NIEKADA neatmeta/netrina/
+   neslepia. Jei ne-GPU -> no-op (lieka aktyvus track).
+4) HOOK: pridėk kvietimą dispatcher'yje/ingest'e PO to kai growth/skill įrašas parašytas -> file_if_gpu(new_note).
+   Fail-safe: jei filtras klysta -> ingestas tęsiasi normaliai (no-op, ne blokas). Jei tiesioginis pipeline
+   redagavimas rizikingas -> palik funkciją + batch-run režimą IR dokumentuok hook'ą (fail-safe pirmiau).
+5) HERA_GPUFILTER jungiklis. Po demo (jei precision OK) -> ĮJUNK =1 gyvai, kad veiktų būsimiems ingestams.
 
-2) CROSS-NOTE (aktyvus track, planning-loop v2 kandidatas): docs/ROADMAP.md prie Fazės 7 pridėk:
-   „Fazė 7 v2 kandidatas (iš APR/ThreadWeaver): client-side fork-join (map-reduce ant LLM kvietimų, engine-agnostic,
-    BE GPU/treniravimo) — planuotojas adaptyviai nusprendžia kada skaidyti į lygiagrečias subgoal-gijas.
-    ⚠️ RIBOTA: lygiagretūs API kvietimai = lygiagretus budget = rc124 rizika → reikia HARD cap. NE DABAR.
-    Principas patvirtintas: 'structure-only rewards apgaunami' = ta pati reward-hacking pamoka (tripwire/SkillOpt)."
-   Ir APR growth faile pridėk vieną eilutę: „SĖKLA aktyviam track'ui: ThreadWeaver client-side fork-join → žr.
-   ROADMAP Fazė 7 v2 (budget-gated, ne dabar)."
+DEMO (KRITINIS — įrodyk PRECISION, ne tik recall):
+- GRASP (growth/2026-07-12-*8z2qmf*) -> turi būti is_gpu=True (world model/BPTT) -> tag + FUTURE_GPU.md. Parodyk matched.
+- vLLM (growth *wvmdi5*) -> is_gpu=True, idempotentiška (be dublio).
+- **SkillOpt (growth *lto8bb*) -> turi būti is_gpu=False** (tekstinis skill metodas, €0 — NEfile'inti! precision testas).
+- Buzz/Warp (*aobwnm*) -> is_gpu=False.
+Parodyk visų 4 sprendimus. Jei SkillOpt/Buzz gautų is_gpu=True -> SUGRIEŽTINK keywords ir pakartok (jokių false-
+positive ant aktyvaus track'o).
 
-3) WIKI: hera_wikilink.py (arba lint) — parodyk orphan/dangling.
-4) TRAJEKTORIJA: įrašyk (curation/future-gpu + planning-v2-seed).
-5) DURABILUMAS: vault commit („APR -> future-gpu + planning-loop v2 seed note") + push privatus hera-vault.
-   Viešo NELIESK.
+GRASP: po demo jis jau future-gpu track'e (be sėklos — grynas world-model/GPU, nėra tekstinės-erdvės analogo).
+Įrašyk FUTURE_GPU.md pastaboje „be taikomos sėklos".
 
-TELEGRAM (per HERA botą, trumpai): (1) APR įdėta į future-gpu track (GPU/training), (2) ištraukta sėkla:
-ThreadWeaver client-side fork-join → planning-loop v2 kandidatas (budget-gated, ne dabar), (3) wiki OK,
-(4) „APR SUTVARKYTA — GPU dalis kaupiama, taikoma sėkla pažymėta ateičiai".
+BENCHMARK: hera_bench.run() -> turi likti 9/9 (naujas modulis + hook neturi gadinti). Jei kristų -> atšauk hook'ą.
+ROADMAP: docs/ROADMAP.md „GPU auto-filer ĮDIEGTA 2026-07-12 — standing rule dabar automatinė (deterministinė)."
+DURABILUMAS: kodas -> hera-core-backup; FUTURE_GPU.md+tag'ai+ROADMAP -> hera-vault. Viešo NELIESK.
+
+TELEGRAM (per HERA botą, trumpai): (1) hera_gpu_filter.py įdiegta (deterministinis, HERA_GPUFILTER), (2) DEMO
+precision: GRASP+vLLM→future-gpu, SkillOpt+Buzz→aktyvus (be false-positive), (3) filtras įjungtas gyvai —
+GPU turinys rūšiuosis pats, (4) GRASP įdėta į future-gpu (be sėklos), benchmark 9/9, (5) „GPU AUTO-FILER GYVAS —
+standing rule dabar automatinė".
