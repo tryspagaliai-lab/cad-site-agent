@@ -24,29 +24,56 @@
   ištraukti/screenshot. Geresnis ingest (JS puslapiai) + žingsnis link „sistema daro darbus". Journey Forge
   (įrašyti vartotojo naršyklės veiksmus→skills) ATIDĖTA — reikia kompiuterio+plėtinio, telefonu neveiks.
 
-## BŪSENA 2026-07-11 (vėlus vakaras) — savęs-tobulinimo + auto-research statyba
-**Įdiegta ir GYVA (visi €0, fail-safe, HERA_*=1 jungikliai, rollback=0):**
-- PII valymas (hera_pii, Rampart) prieš išorinius modelius; Caveman glaustumas (hera_terse); HERA naršyklė
-  (hera_browser, url fallback JS puslapiams); LLM-wiki: nuorodų grafas+lint (hera_lint, orphan 40→1) +
-  sintezė→puslapis (hera_synth); botų maršrutas (santrauka→PARSER @tryspagliai_bot per PARSER_BOT_TOKEN;
-  HERA botas @tryspagaliai_hera_bot=ataskaitos+per-ingest 🧠 log); sesijų indeksatorius (sessions/index.jsonl).
-- **Savęs-tobulinimo/auto-research planas — fazės:**
-  1. ✅ Matuoklis (hera_bench, held-out, deterministinis, baseline pass_rate 1.0=9/9, NoLiveLLM saugiklis)
-  2. ✅ SearXNG €0 paieška (Docker localhost:8888, JSON, hera_search.py)
-  3. ✅ Research orkestratorius (hera_research: plan→search→fetch→CoVe→synthesize; HARD budget/timeout anti-rc124)
-  4. ✅ Auto-research saugiklis GYVAS (hera_gate: trigeris promote/high-skill/nesutarimas → vault-check + research;
-     decision pass/block/escalate; ACK praturtintas „🔎 patikrinta: supported 0.X"; escalate→OPEN_QUESTIONS)
-  5. 🔨 Sandbox (5a=bubblewrap no-net+git-worktree izoliacija BE savęs-keitimo; 5b=skill-kaupimo kilpa;
-     5c=siaura prompt/skill savikorekcija). PRIVALOMI saugikliai: no-net sandbox, rašymas tik skills/,
-     benchmark-be-regreso vartai, human-gate, git-atšaukiama, RIC guard, tripwires.
-**Tyrimų verdiktai (gilios paieškos):** Godcoder/DGM→per brangu/rizikinga, rink skill-akreciją+siaurą sandbox;
-Karpathy llm-council=deliberacija (ne verifikacija), LLM-wiki=contradiction-check; €0 stack=SearXNG+plonas
-orkestratorius (ne sunkūs karkasai); Shepherd=alfa, tik atšaukiamas pėdsakas (NE reali izoliacija)→statyti savo.
-**Antigravity:** `agy` v1.1.1 įdiegtas VPS, laukia vartotojo Google login (`agy` Termius'e) — testui, ne diegimui.
-**Nebaigta/atidėta:** Godcoder full self-rewrite (praleista), Journey Forge (atidėta), Codex reviewer (pristabdyta,
-mokamas), router LLM benchmark atvejai (5 deferred).
+## DARBO METODAS — chat-Claude + Claude Code (dual mode)
+- **Vartotojo metodas:** chat-Claude = strateginis sluoksnis (vizija, specs, review, kuravimas); Claude Code =
+  vykdytojas. Nauja sesija pratęsia BE aiškinimo iš naujo — šitas failas + privatus vault duoda visą kontekstą.
+- **Inbox valdymas (kaip užduotys pasiekia VPS):** užduotys rašomos į `inbox/TASK.md` šakoje
+  `claude/authorize-claude-code-vps-1dcvrv` → VPS cron runner (kas 2 min, flock, 15-min timeout) → `claude -p`
+  vykdo → ataskaita per HERA botą. Darbo eiga: git-worktree add tos šakos → Read TASK.md → Write nauja užduotis
+  → commit → push origin → worktree remove/prune. Užduotis: „NEleisk pytest, Telegram trumpai, fail-safe".
+- **VISŲ HERA pakeitimų principai (nekintantys):** €0 stack (Gemini free + Groq + GLM, jokio GPU, vienas 4GB VPS);
+  fail-safe (klaida → no-op, ne crash); HERA_*=1 jungikliai (default 0); HARD per-LLM timeout 45-60s, NO retry
+  (anti rc=124); human-gate VISKAM, NIEKAD auto-merge; git-atšaukiama; domenas NIEKADA nesiaurinamas.
+- **Durabilumas:** kodas → PRIVATUS hera-core-backup; vault (skills/growth/profile/proposals/projects) → PRIVATUS
+  hera-vault (*/30 sync cron). Viešas cad-site-agent — TIK sanitizuotas operacinis kontekstas.
 
-**Atnaujinta:** 2026-06-16
+## BŪSENA 2026-07-11 — savęs-tobulinimas UŽDARYTAS, prasideda pajėgumų plėtra (fazės 6-8)
+**GYVA ir įdiegta (visi €0, fail-safe, HERA_*=1, rollback=0):**
+- PII valymas (hera_pii); Caveman glaustumas (hera_terse); HERA naršyklė (hera_browser, url fallback JS); LLM-wiki
+  grafas+lint (hera_lint, orphan 40→1) + sintezė (hera_synth); botų maršrutas (santrauka→PARSER @tryspagliai_bot
+  per PARSER_BOT_TOKEN; HERA botas @tryspagaliai_hera_bot=ataskaitos+per-ingest 🧠 log); sesijų indeksatorius.
+- **Savęs-tobulinimo grandinė — VISOS FAZĖS UŽBAIGTOS:**
+  1. ✅ Matuoklis (hera_bench, deterministinis, baseline 9/9, NoLiveLLM saugiklis)
+  2. ✅ SearXNG €0 paieška (hera_search)
+  3. ✅ Research orkestratorius (hera_research: plan→search→fetch→CoVe→synthesize; HARD budget anti-rc124)
+  4. ✅ Auto-research vartai GYVI (hera_gate: trigeris→vault-check+research; pass/block/escalate; ACK „🔎 patikrinta")
+  5. ✅ Sandbox+savikorekcija: 5a=bubblewrap no-net+worktree izoliacija; 5b=skill-akrecija (hera_accretion);
+     5c=siaura bounded savikorekcija (hera_selfedit: whitelist+blacklist, tripwire prieš reward-hacking,
+     benchmark-vartai, human-gate, NIEKAD auto-merge). NEGATYVUS testas įrodė tripwire (bypass→REJECT).
+- **2 REALŪS human-gate promote ciklai atlikti:** (a) 5b naujas skill `bwrap-agent-isolation` → patvirtintas →
+  gyvas; (b) 5c selfedit pataisa tam skill → patvirtinta → gyva; abu benchmark po promote 9/9, jokio rollback.
+
+**KITAS ETAPAS — pajėgumų plėtra (roadmap `hera-vault:docs/ROADMAP.md`, status PROPOSED):**
+- **Fazė 6 — Gyvas projektų žurnalas (context retention):** hera_journal.py, `projects/<slug>/STATE.md`
+  (NOW/Active/Paused/Next/Decisions/Log/Links), deterministinis branduolys, append-only Log, LLM neprivalomas.
+  **⏳ IŠSIŲSTA į inbox 2026-07-11 (commit ce2ea18) — patikrink runner ataskaitą / ar STATE.md sukurtas.**
+- **Fazė 7 — Specialist agents + Planning Loop:** Ops/Social/Design agentai; kiekvienas subgoals→draft→
+  self-critique (Reflexion-tipo, HARD budget); perpanaudoja council+CoVe; išvestis=draft. Rizika žema-vidutinė.
+- **Fazė 8 — Tool Use (AUKŠTA rizika, paskutinė):** Ops=kalendorius+laiškai iš domeno; Social=Instagram publish.
+  RĖMAI: default DRAFT/READ-ONLY, human „tvirtinu" prieš siuntimą, recipient/domain allowlist, jokio masinio
+  siuntimo, audit log, kredencialai TIK .env. ATVIRI SPRENDIMAI (laukia vartotojo): email provideris
+  (SMTP/Zoho/Google), kalendorius (Google/CalDAV), Instagram (reikia IG Business+Meta Graph API+app review — NE
+  trivialiai €0), autonomijos lygis (rekomenduojama draft-only startas).
+
+**Produkto vizija (be prekės ženklo — vartotojas pašalino pavadinimą):** autonominis partneris kuris atperka
+dėmesį/focus; 3 principai — (1) nuolatinė atmintis+projektų žurnalas, (2) specializuoti agentai su planning loop,
+(3) tikri įrankiai/tikri veiksmai. Pilna vizija+profilis: `hera-vault:profile/USER_STRATEGIC_PROFILE.md` (PRIVATU).
+
+**Tyrimų verdiktai:** Godcoder/DGM→per brangu/rizikinga (rink skill-akreciją+siaurą sandbox); €0 stack=SearXNG+
+plonas orkestratorius; Shepherd=alfa (statyti savo izoliaciją). **Antigravity:** `agy` v1.1.1 VPS, laukia Google
+login. **Atidėta:** Godcoder full self-rewrite, Journey Forge, Codex reviewer (mokamas), router benchmark (5 deferred).
+
+**Atnaujinta:** 2026-07-11
 **Rollback SHA (saugus taškas prieš taisykles):** `2fdb3f8`
 
 ## Repo struktūros pastaba (svarbu)
@@ -83,10 +110,8 @@ Merge'inta į `main` (merge commit `7ee7c78`):
 
 ## Aplinkos FAKTAS (2026-07-02, iš vartotojo — įsiminti!)
 - Atskirų „desktop" kompiuterių NĖRA. Vienintelė fizinė mašina — **LAPTOPAS su LINUX**
-  (NE Windows! Ankstesnė Windows prielaida buvo klaidinga — ji kilo iš seno
-  užduoties failo su `C:\Users\zilva\...` keliu; tie Windows/E:/ keliai pasenę).
-  H7149 Osprey Heights raw data yra laptope — tikslus kelias nežinomas, ieškoti
-  per `find ~ -iname "*osprey*"`. Ateityje galimas **VPS**.
+  (NE Windows! Ankstesnė Windows prielaida buvo klaidinga — seni Windows/E:/ keliai pasenę).
+  Projektų raw data yra laptope — tikslūs keliai nežinomi, ieškoti per `find ~`. Naudojamas **VPS**.
 - Koordinacijos rolė `desktop` pervadinta į `local` (žr. docs/COORDINATION.md).
 - Laptopo paleidimas: `bash cad-site-agent/scripts/bootstrap_local.sh` (Linux).
 
