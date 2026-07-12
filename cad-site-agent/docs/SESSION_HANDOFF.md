@@ -54,9 +54,10 @@
   gyvas; (b) 5c selfedit pataisa tam skill → patvirtinta → gyva; abu benchmark po promote 9/9, jokio rollback.
 
 **KITAS ETAPAS — pajėgumų plėtra (roadmap `hera-vault:docs/ROADMAP.md`, status PROPOSED):**
-- **Fazė 6 — Gyvas projektų žurnalas (context retention):** hera_journal.py, `projects/<slug>/STATE.md`
-  (NOW/Active/Paused/Next/Decisions/Log/Links), deterministinis branduolys, append-only Log, LLM neprivalomas.
-  **⏳ IŠSIŲSTA į inbox 2026-07-11 (commit ce2ea18) — patikrink runner ataskaitą / ar STATE.md sukurtas.**
+- **Fazė 6 — Gyvas projektų žurnalas (context retention): ✅ ĮDIEGTA 2026-07-12** (hera-core-backup commit
+  97e915c). hera_journal.py, `projects/<slug>/STATE.md` (NOW/Active/Paused/Next/Decisions/Log/Links),
+  deterministinis branduolys (be LLM), append-only Log+Decisions, LLM distill_next neprivalomas (45s timeout).
+  HERA_JOURNAL=1 (def 0). Demo „hera-system" projektas gyvas; dispatcher hook_ingest→## Log po kiekvieno ingesto.
 - **Fazė 7 — Specialist agents + Planning Loop:** Ops/Social/Design agentai; kiekvienas subgoals→draft→
   self-critique (Reflexion-tipo, HARD budget); perpanaudoja council+CoVe; išvestis=draft. Rizika žema-vidutinė.
 - **Fazė 8 — Tool Use (AUKŠTA rizika, paskutinė):** Ops=kalendorius+laiškai iš domeno; Social=Instagram publish.
