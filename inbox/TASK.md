@@ -1,42 +1,39 @@
-UŽDUOTIS — AUTO-ATMINTIS + PREP: įrašyk „Apex" produkto viziją į PRIVATŲ vault + sukurk roadmap. <8 min.
-NEleisk pytest. Telegram TRUMPAI. Fail-safe. TIK privatus hera-vault. Viešo repo NELIESK. Kodo NELIESK.
+UŽDUOTIS — Produkto vizija (BE pavadinimo) + PURGE „Apex". <8 min. NEleisk pytest. Telegram TRUMPAI. Fail-safe.
+TIK privatus hera-vault. Viešo repo NELIESK. Kodo NELIESK. Idempotentiška — vienoda galutinė būsena nesvarbu ar
+ankstesnė užduotis spėjo įvykti.
 
-KONTEKSTAS: Vartotojas pateikė strateginę produkto viziją „Apex" (autonominis partneris kuris atperka jo
-dėmesį/focus). Tai reikšmingas faktas → auto-atmintis į privatų profilį + roadmap kad etapas išliktų tarp sesijų.
-NIEKO nediegti, nekurti kodo — tik dokumentacija privačiame vault.
+KONTEKSTAS: Vartotojas nusprendė — pavadinimas „Apex" NETURI egzistuoti niekur. Turinį (produkto viziją, roadmap
+fazes 6/7/8) IŠLAIKYK, tik BE jokio prekės ženklo. Neutralūs žodžiai: „sistema" / „produktas".
 
-1) PROFILIS (auto-atmintis): į /opt/hera-vault/profile/USER_STRATEGIC_PROFILE.md pridėk sekciją
-   „## Apex — produkto vizija (2026-07-11)" su:
-   - Pozicionavimas: standartinis AI = genialus praktikantas su amnezija (be verslo konteksto). Apex = iš pagrindų
-     kitaip — autonominis partneris, kuris atperka vertingiausią resursą: dėmesio sutelkimą (focus). NE fancy
-     wrapper aplink API — sistema veiksmui ir kontekstui.
-   - 3 principai:
-     1. Nuolatinė atmintis (Persistent Memory) + gyvas, redaguojamas projektų žurnalas (Projects Log): žino prie
-        ko dirbama, kas sustabdyta, kas toliau. Nereikia aiškinti iš naujo.
-     2. Specializuoti agentai (Specialist Agents): komanda vietoj vieno bendro modelio — Socialiniai tinklai,
-        Operacijos (Ops), Dizainas. Kiekvienas: savo tikslas + savo įrankiai + planning loop
-        (subgoals → draft → self-critique). Sudėtingi daugiažingsniai darbai, ne tik atsakymai.
-     3. Tikri įrankiai, tikri veiksmai (Real Tools, Real Action): Ops = skaito kalendorių + kuria įvykius, ruošia
-        juodraščius + siunčia laiškus iš vartotojo domeno. Social = publikuoja tiesiai į Instagram. Sujungta su
-        tais pačiais įrankiais kuriuos naudoja vartotojas.
-   Necommit'ink jokių raktų/asmens duomenų virš to kas jau vizijoje.
+1) PURGE (jei ankstesnė užduotis spėjo įrašyti „Apex"):
+   - jei yra /opt/hera-vault/docs/APEX_ROADMAP.md -> pervadink (git mv) į /opt/hera-vault/docs/ROADMAP.md.
+   - visuose privataus vault failuose pakeisk bet kokį „Apex" (visos variacijos) -> „sistema"/„produktas"/pašalink
+     pagal kontekstą; „APEX_ROADMAP" -> „ROADMAP".
 
-2) ROADMAP (prep durabilumas): sukurk /opt/hera-vault/docs/APEX_ROADMAP.md (status: PROPOSED, laukia vartotojo
-   patvirtinimo) su fazėmis (perpanaudoja esamą HERA infrastruktūrą, €0, fail-safe, human-gate):
-   - Fazė 6 — Gyvas projektų žurnalas (context retention): projects/<slug>/STATE.md, auto-skaitomas užduoties
-     pradžioje, auto-atnaujinamas pabaigoje; jungiasi prie NapMem L1-L4 + auto-atminties taisyklės. Rizika: žema.
-   - Fazė 7 — Specialist agents + Planning Loop: Ops/Social/Design agentai; kiekvienas subgoals→draft→self-critique
-     (Reflexion-tipo, HARD budget/timeout anti-rc124); perpanaudoja council+CoVe. Išvestis=draft, nulis išorinės
-     rizikos. Rizika: žema-vidutinė.
-   - Fazė 8 — Tool Use (Ops: kalendorius+laiškai iš domeno; Social: Instagram publish): PASKUTINĖ, labiausiai
-     apsaugota. RĖMAI: default DRAFT/READ-ONLY (nieko nesiunčia/nepublikuoja be human „tvirtinu"), recipient/domain
-     allowlist, jokio masinio siuntimo, audit log, kredencialai TIK .env (niekada necommit), reversibilumas kur
-     įmanoma. Rizika: AUKŠTA (veiksmai vartotojo vardu, negrįžtama).
-   - ATVIRI SPRENDIMAI (laukia vartotojo): laiškų provideris (SMTP/Zoho/Google Workspace?), kalendorius
-     (Google/CalDAV?), Instagram publikavimas (reikia IG Business/Creator + Meta Graph API + app review — NE
-     trivialiai €0, pažymėk sąžiningai), autonomijos lygis (draft-only startas rekomenduojamas).
+2) PROFILIS (auto-atmintis, BE pavadinimo): į /opt/hera-vault/profile/USER_STRATEGIC_PROFILE.md užtikrink sekciją
+   „## Produkto vizija (2026-07-11)" su (jei jos dar nėra — sukurk; jei yra su „Apex" — pataisyk):
+   - Pozicionavimas: standartinis AI = genialus praktikantas su amnezija (be verslo konteksto). Šis produktas = iš
+     pagrindų kitaip — autonominis partneris, kuris atperka vertingiausią resursą: dėmesio sutelkimą (focus).
+     NE fancy wrapper aplink API — sistema veiksmui ir kontekstui.
+   - 3 principai: (1) Nuolatinė atmintis + gyvas redaguojamas projektų žurnalas (žino prie ko dirbama, kas
+     sustabdyta, kas toliau). (2) Specializuoti agentai — komanda vietoj vieno modelio: Socialiniai tinklai,
+     Operacijos (Ops), Dizainas; kiekvienas savo tikslas+įrankiai+planning loop (subgoals→draft→self-critique).
+     (3) Tikri įrankiai, tikri veiksmai — Ops: kalendorius+laiškai iš domeno; Social: Instagram publish.
 
-3) DURABILUMAS: vault commit+push (privatus hera-vault). Viešo cad-site-agent NELIESK. Kodo NELIESK.
+3) ROADMAP (BE pavadinimo): užtikrink /opt/hera-vault/docs/ROADMAP.md (status: PROPOSED, laukia patvirtinimo):
+   - Fazė 6 — Gyvas projektų žurnalas (context retention): projects/<slug>/STATE.md, auto-skaitomas/atnaujinamas;
+     jungiasi prie NapMem L1-L4. Rizika: žema.
+   - Fazė 7 — Specialist agents + Planning Loop (Ops/Social/Design, subgoals→draft→self-critique, Reflexion-tipo,
+     HARD budget/timeout, perpanaudoja council+CoVe; išvestis=draft). Rizika: žema-vidutinė.
+   - Fazė 8 — Tool Use (Ops: kalendorius+laiškai; Social: Instagram): default DRAFT/READ-ONLY, human „tvirtinu"
+     prieš siuntimą/publikavimą, recipient/domain allowlist, jokio masinio siuntimo, audit log, kredencialai TIK
+     .env (niekada necommit), reversibilumas. Rizika: AUKŠTA. Instagram = reikia IG Business + Meta Graph API +
+     app review (NE trivialiai €0). Atviri sprendimai: email provideris, kalendorius, autonomijos lygis.
 
-TELEGRAM (per HERA botą, trumpai): (1) Apex vizija įrašyta į privatų profilį (auto-atmintis), (2) APEX_ROADMAP.md
-sukurtas (fazės 6/7/8, PROPOSED, laukia patvirtinimo), (3) „ETAPAS PARUOŠTAS — laukia platformų sprendimų (Fazė 8)".
+4) PATIKRA: `grep -ri "apex" /opt/hera-vault/` (darbinė būsena, ne git istorija) -> turi būti 0. Parodyk tuščią.
+
+5) DURABILUMAS: vault commit („product vision without brand name, roadmap phases 6/7/8, purge Apex") + push
+   privatus hera-vault. Viešo cad-site-agent NELIESK. Kodo NELIESK.
+
+TELEGRAM (per HERA botą, trumpai): (1) „Apex" pavadinimas pašalintas visur (grep 0), (2) vizija+roadmap išlaikyti
+BE prekės ženklo (ROADMAP.md, fazės 6/7/8 PROPOSED), (3) „PAVADINIMAS IŠVALYTAS, VIZIJA IŠLAIKYTA".
