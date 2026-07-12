@@ -1,51 +1,49 @@
-UŽDUOTIS — FAZĖ 7a: Planning Loop branduolys (hera_planner.py). <14 min. NEleisk pytest. Telegram TRUMPAI.
-Fail-safe €0. Kodas -> PRIVATUS hera-core-backup. Artefaktai -> PRIVATUS hera-vault. Viešo repo NELIESK.
+UŽDUOTIS — HUMAN-GATE: uždaryk 18 atvirų klausimų + pažymėk Managed Agents flagą. <9 min. NEleisk pytest.
+Telegram TRUMPAI. Fail-safe. TIK privatus hera-vault. Viešo repo NELIESK. Kodo NELIESK. Necommit'ink raktų.
 
-SAUGUMAS: raktų nespausdink/necommit'ink.
+KONTEKSTAS: VARTOTOJAS (galutinis vartas) peržiūrėjo ir nusprendė dėl visų atvirų klausimų. Pažymėk OPEN_QUESTIONS.md
+eilutes pagal raktą (`<!--k:KEY-->`) — pakeisk `- [ ]` į `- [x]` ir pridėk sufiksą „→ <SPRENDIMAS> (human-gate:
+vartotojas 2026-07-12)". NIEKO NETRINK (growth įrašai lieka; governance: niekas netrinama auto). Tik pažymėk.
 
-KONTEKSTAS: Fazė 7 = specialist agents + planning loop. Šis žingsnis (7a) = PLANNING LOOP branduolys, kurį vėliau
-naudos Ops/Social/Design agentai. Buzz/Warp video (ką tik promote'inta) tai validavo: principai>taisyklės +
-subgoals→draft→self-critique→revizija. IŠVESTIS = DRAFT (jokio išorinio efekto, nieko nesiunčia/nekeičia gyvo).
-€0, HARD budget anti-rc124, human-gate prieš bet kokį panaudojimą.
+SPRENDIMAI (raktas → sufiksas):
+PRIIMTA kaip žinojimas:
+- bd101e9efd34 → PRIIMTA kaip žinojimas (Haiku interpretability)
+- b2a6821c2cdb → PRIIMTA kaip žinojimas (Eve Bouffard / YC dizainas)
+- ee30bbaf5e97 → PRIIMTA kaip žinojimas (Neel Nanda / DeepMind interpretability)
+- d75400f27823 → PRIIMTA kaip žinojimas (Antigravity SDLC agentams)
+- 7c92d3b22693 → PRIIMTA kaip žinojimas (Claude platformos evoliucija)
+- 0e5dce681252 → PRIIMTA kaip žinojimas (DI agentų architektūra)
+- dc50089a7349 → PRIIMTA kaip žinojimas (Peter / Crabbox agentų inžinerija)
+UŽDARYTA — jau įgyvendinta:
+- a72d00871e0f → UŽDARYTA, įgyvendinta (LLM-Wiki → hera_lint/synth/wikilink)
+- aaa47f133103 → UŽDARYTA, įgyvendinta (trafilatura → naudojama ekstrakcijoje)
+ATMESTA:
+- a49ecddfdfe3 → ATMESTA (Upstage doc-processing, vendor niša)
+- ef0a4aeb9e5b → ATMESTA (GitHub savaitinė apžvalga, laikinos naujienos)
+- cf5d27ec6f75 → ATMESTA (GitHub savaitinė apžvalga, laikinos naujienos)
+- eee96a1c84c1 → ATMESTA (UNIT-TEST, test-kandidatas be turinio)
+UŽDARYTA — ekstrakcija žlugo:
+- 5ba82efe4c86 → UŽDARYTA, ekstrakcija žlugo (9CiOwbmOKdU, nėra turinio)
+UŽDARYTA — nav test-užklausos (ne tikri kuravimo klausimai):
+- 8962fdc95517 → UŽDARYTA, nav test-užklausa (tandemo SLA nereikalingas, žmogaus-tempu)
+- cafa99f2b773 → UŽDARYTA, nav test-užklausa (ATDP-lite)
+- fdb37b8787fb → UŽDARYTA, nav test-užklausa (gyvsidabrio virimo temp = 356,7°C)
+- 2957f52c9b09 → UŽDARYTA, nav test-užklausa (sienų storis; realaus vieno atsakymo nėra)
 
-SUKURK /opt/hera-processor/hera_planner.py. HERA_PLANNER=1 jungiklis (default 0). Visos klaidos fail-safe
-(grąžink dalinį rezultatą, NIEKADA necrash'ink).
+Jei kurio rakto OPEN_QUESTIONS.md neranda — praleisk tą (fail-safe), pažymėk ataskaitoje. Nesukurk naujų eilučių.
 
-FUNKCIJA plan(task, context=None, max_llm=6) grąžina struktūrą:
-  { subgoals: [...], draft: str, critique: str, final: str, confidence: float, budget_used: int, partial: bool }
+MANAGED AGENTS flagas: prie growth failo, kuris atitinka „Expanding Managed Agents in Gemini API" (ieškok
+growth/2026-07-12-*la7959* arba pagal pavadinimą), pridėk pastabą:
+„STATUS: PRIIMTA kaip žinojimas (human-gate 2026-07-12). ⚠️ REFERENCIJA, NE MIGRACIJA — Google debesis, tikėtina
+mokama; kertasi su €0/self-hosted vienas-VPS principu. Vertė: validuoja mūsų dizainą (background exec, remote MCP
+→ Fazė 8, sandbox, requires_action=human-gate). NEmigruoti." Turinio esmės nekeisk.
 
-1) SUBGOALS: 1 LLM iškvietimas (€0 modelis, 45s HARD timeout, NO retry) -> užduotį išskaido į 2-5 tarpinius tikslus.
-2) DRAFT: 1 LLM -> pirmas juodraštis pagal subgoals + context.
-3) SELF-CRITIQUE (Reflexion-tipo, KRITINIS): 1 LLM -> AKTYVIAI ieško trūkumų/spragų/prieštaravimų/nepagrįstų
-   teiginių juodraštyje. Promptas turi versti rasti realias problemas, NE „viskas gerai". Jei critique tuščias/
-   „looks good" be konkretikos -> pažymėk low-confidence (ne rubber-stamp).
-4) REVIZIJA: 1 LLM -> pataiso juodraštį pagal critique -> final.
-5) (Neprivalomas, jei budget leidžia) CoVe iš hera_research faktiniams teiginiams patikrinti; jei kertasi su vault
-   -> pažymėk final'e.
-   HARD BUDGET: iš viso <= max_llm (6) LLM iškvietimų, kiekvienas 45s timeout no-retry. Pasiekus budget -> STOP,
-   grąžink ką turi, partial=true. (Anti rc=124.)
+PO TO:
+1) WIKI: paleisk hera_wikilink.py (arba lint) — parodyk orphan/dangling skaičius (nesitikim blogėjimo).
+2) TRAJEKTORIJA/atmintis: įrašyk kuravimo veiksmą (curation/open-questions-triage: 18 uždaryta + 1 flaguota).
+3) DURABILUMAS: vault commit („close 18 open questions + Managed Agents reference flag, human-gate 2026-07-12")
+   + push privatus hera-vault. Viešo NELIESK.
 
-INTEGRACIJA (perpanaudok, nekurk iš naujo):
-- hera_journal (Fazė 6): jei context turi project slug -> load_project_state() kaip įvestį; pabaigoje record_event
-  („planner: <task> -> draft paruoštas"). Deterministiška.
-- hera_council: NEprivaloma — jei subgoal reikalauja deliberacijos, gali kviesti, bet budget'e.
-- confidence: paprastas deterministinis balas (pvz. ar critique rado problemų + ar revizija jas adresavo).
-
-SAUGIKLIAI: išvestis = TIK draft objektas; NIEKADA nerašo į gyvą skill/vault turinį, nieko nesiunčia, jokio
-auto-apply. Panaudojimas (pvz. paversti draft'ą skill'u) eis per esamą human-gate (kaip 5b/5c).
-
-DEMO (įrodyk kilpą + budget cap): plan("Parašyk trumpą 'Kada naudoti sandbox' gaires HERA skill'ui",
-context=None). Parodyk: subgoals (2-5), draft, critique (su realiais pastebėjimais), final (pagerintas),
-budget_used <= 6. Įrodyk kad self-critique NĖRA rubber-stamp (rado bent 1 konkrečią problemą).
-
-NEGATYVUS/BUDGET testas: paleisk su max_llm=2 -> turi korektiškai sustoti partial=true, be crash, be rc124.
-
-ROADMAP: docs/ROADMAP.md pažymėk „Fazė 7a — Planning loop branduolys ĮDIEGTA 2026-07-12 (output=draft, budget-capped,
-self-critique ne rubber-stamp). 7b (Ops/Social/Design agentai) — laukia + priklauso nuo Fazės 8 įrankių."
-
-DURABILUMAS: kodas -> hera-core-backup (privatus). ROADMAP/žurnalas -> hera-vault (privatus). Viešo NELIESK.
-
-TELEGRAM (per HERA botą, trumpai): (1) hera_planner.py įdiegta, HERA_PLANNER jungiklis, (2) kilpa subgoals→draft→
-self-critique→revizija, HARD budget <=6 LLM/45s no-retry, (3) demo: subgoals+draft+critique(ne rubber-stamp)+final,
-(4) budget testas partial=true be rc124, (5) išvestis=draft, jokio auto-apply/išorinio efekto,
-(6) „FAZĖ 7a ĮDIEGTA — planning loop gyvas (validuota Buzz/Warp); 7b agentai laukia Fazės 8".
+TELEGRAM (per HERA botą, trumpai): (1) 18 atvirų klausimų uždaryta (7 priimta, 2 įgyvendinta, 4 atmesta, 1 žlugo,
+4 nav-test), (2) Managed Agents pažymėta „referencija, ne migracija (ne €0)", (3) wiki orphan/dangling po valymo,
+(4) trajektorija+vault push OK, (5) „ATVIRŲ KLAUSIMŲ TRIAGE BAIGTA — liko 0 laukiančių sprendimo".
