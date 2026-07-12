@@ -1,38 +1,51 @@
-UŽDUOTIS — HUMAN-GATE PROMOTE (2 growth kandidatai iš 2026-07-12). <8 min. NEleisk pytest. Telegram TRUMPAI. Fail-safe.
-TIK privatus hera-vault. Viešo repo NELIESK. Kodo NELIESK.
+UŽDUOTIS — FAZĖ 7a: Planning Loop branduolys (hera_planner.py). <14 min. NEleisk pytest. Telegram TRUMPAI.
+Fail-safe €0. Kodas -> PRIVATUS hera-core-backup. Artefaktai -> PRIVATUS hera-vault. Viešo repo NELIESK.
 
-KONTEKSTAS: VARTOTOJAS (galutinis vartas) PATVIRTINO promote'inti šiandienos 2 `promote_candidate` growth įrašus.
-PROMOTE = priimti ištrauktas IDĖJAS į kuruotą growth + įjungti į wiki grafą. NE įsipareigojimas statyti kodą
-(statymas — atskira fazė su savo human-gate). Necommit'ink raktų.
+SAUGUMAS: raktų nespausdink/necommit'ink.
 
-Failai:
-  A) growth/2026-07-12-20260712T122400Z-aobwnm.md — „Buzz/Warp: self-improving agent feedback loop (Slack→Git PR)"
-  B) growth/2026-07-12-20260712T131930Z-gdx0fm.md — „Agent OS: lokalus dashboard + bendra atmintis + modelio abstrakcija + €0 CLI"
+KONTEKSTAS: Fazė 7 = specialist agents + planning loop. Šis žingsnis (7a) = PLANNING LOOP branduolys, kurį vėliau
+naudos Ops/Social/Design agentai. Buzz/Warp video (ką tik promote'inta) tai validavo: principai>taisyklės +
+subgoals→draft→self-critique→revizija. IŠVESTIS = DRAFT (jokio išorinio efekto, nieko nesiunčia/nekeičia gyvo).
+€0, HARD budget anti-rc124, human-gate prieš bet kokį panaudojimą.
 
-1) Kiekvienam faile pažymėk PROMOTE būseną: antraštėje/frontmatter'yje pridėk
-   „STATUS: PROMOTED 2026-07-12 (human-gate: vartotojas)". Turinio esmės nekeisk.
+SUKURK /opt/hera-processor/hera_planner.py. HERA_PLANNER=1 jungiklis (default 0). Visos klaidos fail-safe
+(grąžink dalinį rezultatą, NIEKADA necrash'ink).
 
-2) EPISTEMINIS FLAGAS (tik B faile, gdx0fm): prie „Žetonų optimizavimas ... iki 95%" eilutės pridėk pastabą
-   „(⚠️ nepatikrintas marketingo skaičius — šaltinis pardavimo piltuvas 'AI Profit Boardroom'; idėja gera, skaičius
-   necituoti kaip faktą)". Likusias 3 B idėjas palik kaip yra.
+FUNKCIJA plan(task, context=None, max_llm=6) grąžina struktūrą:
+  { subgoals: [...], draft: str, critique: str, final: str, confidence: float, budget_used: int, partial: bool }
 
-3) SĄSAJA SU MŪSŲ DARBU (pridėk trumpą pastabą A faile): „Buzz/Warp patvirtina esamą architektūrą —
-   principai>taisyklės + selfedit→PR→human-gate atitinka mūsų Fazę 5c/7." Vienas sakinys, ne daugiau.
+1) SUBGOALS: 1 LLM iškvietimas (€0 modelis, 45s HARD timeout, NO retry) -> užduotį išskaido į 2-5 tarpinius tikslus.
+2) DRAFT: 1 LLM -> pirmas juodraštis pagal subgoals + context.
+3) SELF-CRITIQUE (Reflexion-tipo, KRITINIS): 1 LLM -> AKTYVIAI ieško trūkumų/spragų/prieštaravimų/nepagrįstų
+   teiginių juodraštyje. Promptas turi versti rasti realias problemas, NE „viskas gerai". Jei critique tuščias/
+   „looks good" be konkretikos -> pažymėk low-confidence (ne rubber-stamp).
+4) REVIZIJA: 1 LLM -> pataiso juodraštį pagal critique -> final.
+5) (Neprivalomas, jei budget leidžia) CoVe iš hera_research faktiniams teiginiams patikrinti; jei kertasi su vault
+   -> pažymėk final'e.
+   HARD BUDGET: iš viso <= max_llm (6) LLM iškvietimų, kiekvienas 45s timeout no-retry. Pasiekus budget -> STOP,
+   grąžink ką turi, partial=true. (Anti rc=124.)
 
-4) WIKI: paleisk hera_wikilink.py (arba lint) kad abu įrašai įsijungtų į grafą; parodyk ar orphan nepadidėjo.
+INTEGRACIJA (perpanaudok, nekurk iš naujo):
+- hera_journal (Fazė 6): jei context turi project slug -> load_project_state() kaip įvestį; pabaigoje record_event
+  („planner: <task> -> draft paruoštas"). Deterministiška.
+- hera_council: NEprivaloma — jei subgoal reikalauja deliberacijos, gali kviesti, bet budget'e.
+- confidence: paprastas deterministinis balas (pvz. ar critique rado problemų + ar revizija jas adresavo).
 
-5) OPEN_QUESTIONS.md: pridėk 2 eilutes kaip PRIIMTAS idėjas būsimoms fazėms:
-   - `- [x] Buzz/Warp feedback-loop principas priimtas (validuoja Fazę 7 planning loop) — PROMOTED 2026-07-12`
-   - `- [x] Agent OS idėjos priimtos (dashboard/bendra atmintis/modelio abstrakcija; €0 CLI) — PROMOTED 2026-07-12`
+SAUGIKLIAI: išvestis = TIK draft objektas; NIEKADA nerašo į gyvą skill/vault turinį, nieko nesiunčia, jokio
+auto-apply. Panaudojimas (pvz. paversti draft'ą skill'u) eis per esamą human-gate (kaip 5b/5c).
 
-6) TRAJEKTORIJA/atmintis: įrašyk promote veiksmą (curation/human-gate-promote/growth, 2 įrašai).
+DEMO (įrodyk kilpą + budget cap): plan("Parašyk trumpą 'Kada naudoti sandbox' gaires HERA skill'ui",
+context=None). Parodyk: subgoals (2-5), draft, critique (su realiais pastebėjimais), final (pagerintas),
+budget_used <= 6. Įrodyk kad self-critique NĖRA rubber-stamp (rado bent 1 konkrečią problemą).
 
-7) BENCHMARK: growth įrašai nekeičia kodo/skills, tad matuoklis neturėtų kisti — paleisk hera_bench.run() TIK
-   patvirtinimui kad 9/9 (jei nepasileidžia greitai — praleisk, tai ne kritinis žingsnis).
+NEGATYVUS/BUDGET testas: paleisk su max_llm=2 -> turi korektiškai sustoti partial=true, be crash, be rc124.
 
-8) DURABILUMAS: vault commit („promote 2 growth candidates 2026-07-12, human-gate: vartotojas") + push privatus
-   hera-vault. Viešo NELIESK.
+ROADMAP: docs/ROADMAP.md pažymėk „Fazė 7a — Planning loop branduolys ĮDIEGTA 2026-07-12 (output=draft, budget-capped,
+self-critique ne rubber-stamp). 7b (Ops/Social/Design agentai) — laukia + priklauso nuo Fazės 8 įrankių."
 
-TELEGRAM (per HERA botą, trumpai): (1) 2 growth kandidatai promote'inti (Buzz/Warp + Agent OS), approved_by
-vartotojas, (2) Agent OS „95%" flaguotas kaip marketingas, (3) wiki grafas OK (orphan nepadidėjo),
-(4) OPEN_QUESTIONS + trajektorija pažymėti, (5) „GROWTH PROMOTE OK — idėjos priimtos, statymas atskirai".
+DURABILUMAS: kodas -> hera-core-backup (privatus). ROADMAP/žurnalas -> hera-vault (privatus). Viešo NELIESK.
+
+TELEGRAM (per HERA botą, trumpai): (1) hera_planner.py įdiegta, HERA_PLANNER jungiklis, (2) kilpa subgoals→draft→
+self-critique→revizija, HARD budget <=6 LLM/45s no-retry, (3) demo: subgoals+draft+critique(ne rubber-stamp)+final,
+(4) budget testas partial=true be rc124, (5) išvestis=draft, jokio auto-apply/išorinio efekto,
+(6) „FAZĖ 7a ĮDIEGTA — planning loop gyvas (validuota Buzz/Warp); 7b agentai laukia Fazės 8".
