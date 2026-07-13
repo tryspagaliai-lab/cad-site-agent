@@ -1,33 +1,35 @@
-UŽDUOTIS — Higiena + root-fix: uždaryk 5 trafilatura klausimus + STABDYK jų kartojimąsi + n=1 slopinimas +
-dangling valymas. <15 min. NEleisk pytest. Telegram TRUMPAI. Fail-safe €0. Kodas -> hera-core-backup.
-Vault -> hera-vault. Viešo NELIESK. Necommit'ink raktų. PRIORITETAS: 1 ir 2 privalo užbaigti; 3,4 jei lieka laiko.
+UŽDUOTIS — FAZĖ 9b: Memora policy-guided retriever (skaitymo pusė). <16 min. NEleisk pytest. Telegram TRUMPAI.
+Fail-safe €0. Kodas -> PRIVATUS hera-core-backup. Vault -> PRIVATUS hera-vault. Viešo NELIESK.
+SAUGUMAS: raktų nespausdink/necommit'ink.
 
-KONTEKSTAS: OPEN_QUESTIONS turi 5 dublikatus „ar vertas kandidatas trafilatura?" — trafilatura yra MŪSŲ pačių
-ekstrakcijos biblioteka (ne žinių kandidatas), kuri logInama kaip kandidatas per kiekvieną ingestą. Uždaryti
-neužtenka — reikia sustabdyti šaltinį.
+KONTEKSTAS: Fazė 9a pastatė memory_index.jsonl (primary_abstraction + cue_anchors). Dabar 9b = paieška virš jo.
+KRITINIS €0/rc124 apribojimas: iteratyvi paieška = keli LLM kvietimai → BŪTINAS HARD budget cap. Branduolys
+DETERMINISTINIS (multi-hop per cue_anchors BE LLM); LLM tik neprivalomas plonas query-refinement su griežtu cap.
+NE RL-distilled (=GPU). Hand-prompted tik jei reikia.
 
-1) UŽDARYK 5 klausimus OPEN_QUESTIONS.md (pagal raktą, `- [ ]`→`- [x]` + sufiksas
-   „→ UŽDARYTA (human-gate: vartotojas 2026-07-13): infra ekstrakcijos biblioteka, jau integruota, ne žinių
-   kandidatas"):
-   cd41f4614b76, 7625103523c9, 61f7ca4d78b7, ac8f6bf0c051, 9b728386687c. (Jei rakto neranda — praleisk, pažymėk.)
+SUKURK/PRAPLĖSK hera_memora.py: retrieve(query, max_hops=2, max_llm=2) -> ranked įrašai + kaip rasti (cue-path).
+1) DETERMINISTINIS branduolys (BE LLM):
+   - Match query terminus prieš primary_abstraction + cue_anchors (keyword/BM25-stiliaus, case-insensitive).
+   - MULTI-HOP: iš pradinio pataikymo EIK per cue_anchors (bounded gylis <=max_hops=2) — surask related-but-not-
+     similar įrašus (Memora esmė). Grąžink su nuoroda kuris cue-path atvedė.
+   - Deduplikuok, rank pagal match stiprumą + hop atstumą.
+2) NEPRIVALOMAS LLM query-refinement (fail-safe, griežtai bounded): jei HERA_MEMORA=1 IR budget leidžia -> <=max_llm
+   (2) LLM kvietimai (45s HARD timeout, NO retry) query patikslinti / nuspręsti kada st-oti. Jei LLM krenta/timeout
+   -> deterministinis rezultatas grąžinamas (branduolys veikia be jo). BUDGET pasiektas -> STOP, partial=true.
+   NIEKADA jokio auto-retry, jokio neriboto ciklo (anti rc124).
+3) ADITYVUS — retrieve tik SKAITO index/vault, NIEKO nekeičia/nerašo į gyvą turinį. Grąžina rezultatą, ne veiksmą.
+4) INDEX pakankamumui demo: jei memory_index.jsonl per mažas prasmingam demo (tik ~2 iš 9a) -> BACKFILL bounded
+   ~6-8 naujausius growth/skill įrašus per index_memory (kiekvienas 1 €0 LLM call, HARD timeout). LIMITAS 8 — NE visą
+   vault (per brangu/ilgai). Tada demo.
+5) DEMO (įrodyk multi-hop): 1-2 užklausos -> parodyk (a) tiesioginį match per primary_abstraction, (b) multi-hop
+   per cue_anchor surastą related įrašą kurio paprastas match nerastų. Parodyk budget_used <= cap. Įrodyk fail-safe
+   (jei LLM off -> deterministinis rezultatas vis tiek).
+6) Benchmark: hera_bench.run() -> 9/9 (retriever adityvus). ROADMAP: „Fazė 9b — Memora policy-guided retriever
+   ĮDIEGTA 2026-07-13 (deterministinis multi-hop branduolys + neprivalomas bounded LLM refinement, €0, HARD budget,
+   HERA_MEMORA). Memora grandinė (9a index + 9b retriever) pilna."
+7) DURABILUMAS: kodas -> hera-core-backup; index/ROADMAP -> hera-vault. Viešo NELIESK.
 
-2) ROOT-FIX (kodas, deterministinis): kandidatų/atvirų-klausimų generavime pridėk INFRA-EXCLUSION sąrašą — HERA
-   pačios pipeline įrankių/bibliotekų vardai NElaikomi žinių kandidatais ir NEgeneruoja council balsavimo/atviro
-   klausimo. Minimaliai įtrauk: „trafilatura" (patvirtintas kaltininkas). Pridėk kelis akivaizdžius mūsų pipeline
-   infra terminus jei aiškūs (pvz. „playwright", „gemini-titrai", „ddgs", „searxng") — TIK jei tikrai mūsų įrankiai,
-   ne turinys. Konservatyviai (tikslus vardų match). Fail-safe. Kur šis kodas gyvena (selector/council/open-question
-   hook) — ten ir prideda. Necommit'ink raktų.
-
-3) n=1 SLOPINIMAS: Loop B raporte „silpnų sričių" įspėjimus rodyk TIK jei n>=2 (n=1 per triukšmingas, statistiškai
-   bereikšmis). Maža pataisa reporting'e. Neliesk skaičiavimo logikos, tik rodymo slenkstį.
-
-4) DANGLING valymas: paleisk hera_wikilink.py/lint — dangling (7) sumažink konservatyviai (jei aišku — pataisyk
-   nuorodą ar pašalink negyvą; NEkurk klaidingų puslapių). Parodyk dangling prieš/po. Jei abejotina — palik +
-   raportuok.
-
-BENCHMARK: hera_bench.run() -> 9/9 (kodo pakeitimai neturi gadinti). TRAJEKTORIJA: įrašyk (curation/hygiene+rootfix).
-DURABILUMAS: kodas -> hera-core-backup; OPEN_QUESTIONS + wiki -> hera-vault. Viešo NELIESK.
-
-TELEGRAM (per HERA botą, trumpai): (1) 5 trafilatura klausimai uždaryti, (2) ROOT-FIX: infra-exclusion (trafilatura
-+ ...) — nebegeneruos atvirų klausimų, (3) n=1 slopinimas Loop B raporte, (4) dangling X→Y, benchmark 9/9,
-(5) „HIGIENA + ROOT-FIX ATLIKTA — trafilatura triukšmas sustabdytas prie šaknies".
+TELEGRAM (per HERA botą, trumpai): (1) hera_memora retrieve() — deterministinis multi-hop per cue_anchors + bounded
+LLM refinement (HARD budget, anti rc124), (2) backfill ~8 įrašų demo indeksui, (3) demo: direct match + multi-hop
+per cue anchor (rado related ko paprastas match nerastų), budget OK, (4) adityvus (tik skaito), benchmark 9/9,
+(5) „FAZĖ 9b ĮDIEGTA — Memora grandinė pilna (index+retriever), multi-hop paieška gyva".
