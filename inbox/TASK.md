@@ -1,32 +1,27 @@
-UŽDUOTIS — Pataisyk hera-core-backup git push auth + push laukiančius commit'us. <8 min. NEleisk pytest.
-Telegram TRUMPAI. Fail-safe. SAUGUMAS KRITINIS: raktų/tokenų NIEKADA nespausdink į logą/Telegram, necommit'ink,
-nerodyk. Viešo repo NELIESK.
+UŽDUOTIS — AUDIT: nustatyk botus + dabartinį ataskaitų routing'ą. TIK PERŽIŪRA, NIEKO NEKEISK. <8 min.
+NEleisk pytest. Telegram TRUMPAI. SAUGUMAS KRITINIS: tokenų/raktų reikšmių NIEKADA nespausdink (nei į logą, nei
+Telegram, nei failą). Viešo repo NELIESK. Kodo NEKEISK — tik skaityk ir raportuok.
 
-KONTEKSTAS: HERA_MEMORA įjungta gyvai, bet git push į PRIVATŲ hera-core-backup nepavyko („could not read Username
-for github.com"). Commit'ai (2328285, 891b1cd + galbūt 2328285) laukia lokaliai. Reikia sukonfigūruoti git auth ir
-push'inti. Ankstesni push'ai veikė — tikėtina token'as egzistuoja, tik nebeprijungtas prie git.
+KONTEKSTAS: Botų pavadinimai panašūs (@tryspagaliabot vs @tryspagaliai_hera_bot), painiava. Reikia TIKSLIAI
+nustatyti kuris token=kuris botas=ką dabar siunčia, kad galėčiau taisyti routing'ą be spėjimo. Vartotojo skundas:
+operacinės ataskaitos (VPS agentas rc=0 ir pan.) nutekа į PARSER botą, o turi eiti TIK į HERA botą; PARSER = tik
+tyrimų/naujienų rezultatai.
 
-1) PATIKRINK ar GitHub token'as JAU egzistuoja VPS'e (pvz. hera.env: GITHUB_TOKEN/GH_TOKEN/GITHUB_PAT, arba
-   ~/.git-credentials, arba git config). NEspausdink jo reikšmės — tik pasakyk RASTA/NERASTA (ir kuriame lauke).
+1) BOTŲ IDENTIFIKACIJA (be token reikšmių): rask hera.env bot-token kintamuosius (pvz. PARSER_BOT_TOKEN,
+   HERA_BOT_TOKEN / TELEGRAM_* — kokie bebūtų). Kiekvienam iškviesk Telegram API getMe (curl) ir gauk bot @username
+   + display name. Raportuok lentelę: ENV_VAR_PAVADINIMAS → @username → display name. TOKEN REIKŠMĖS NEspausdink
+   (nei pilnos, nei dalies). Tik env-var vardą ir gautą @username.
 
-2A) JEI TOKEN RASTAS: sukonfigūruok git credential SAUGIAI (nespausdinant token'o):
-    - git config credential.helper store ARBA askpass, kuris skaito token'ą iš aplinkos/failo (NE embed'inti į
-      remote URL komandoje kuri patenka į shell history/logą; jei naudoji token@github URL — necommit'ink .git/config
-      ir nespausdink).
-    - Push'ink hera-core-backup laukiančius commit'us į privatų GitHub. Patvirtink HEAD==origin po push.
-    - Patikrink kad token NEpateko į jokį commit'inamą failą (grep .git/config necommit'inamas; jei .git-credentials
-      naudojamas — jis .gitignore/už repo ribų).
+2) ROUTING AUDIT (kodas, tik skaitymas): rask KUR kode siunčiamos žinutės ir su KURIUO token/env-var:
+   - Ingest rezultatai (📥 Priimta / 📖 transkriptai) — su kuriuo botu?
+   - „VPS agentas baigė (rc=0)" cron-runner completion report — su kuriuo botu? (Įtariu čia problema.)
+   - Loop B ataskaita — su kuriuo?
+   - Fazių/operacinės (per-ingest 🧠 log, gate 🔎) — su kuriuo?
+   Raportuok: kiekvienas pranešimo TIPAS → kuris env-var/botas siunčia (pagal kodą). Nurodyk failą:eilutę.
 
-2B) JEI TOKEN NERASTAS: NEfabrikuok. Pranešk aiškiai „token nerastas — reikia vartotojo". NEprašyk token'o Telegram/
-    chat'e. Palik instrukciją kad vartotojas VPS'e (Termius) įrašytų GITHUB_TOKEN į hera.env arba
-    `git credential-store`, tada pakartosim.
+3) IŠVADA: aiškiai pasakyk kuris @username yra PARSER (tyrimų) ir kuris HERA (ataskaitų), IR kurie pranešimų tipai
+   dabar KLAIDINGAI eina į PARSER (turėtų į HERA). Jokių pakeitimų — tik planas ką taisyti.
 
-3) SANITY: jei push pavyko — patvirtink kad ankstesni „laukiantys" commit'ai (Memora wiring) dabar GitHub'e.
-   Sistema turi likti veikianti (HERA_MEMORA=1, servisas active). Benchmark neprivalomas (auth-only), praleisk jei
-   nereikia.
-
-4) DURABILUMAS: jokių raktų niekur. Jei kūrei credential-helper config — necommit'ink token'o.
-
-TELEGRAM (per HERA botą, trumpai, BE raktų): (1) token RASTA/NERASTA (be reikšmės), (2) jei rasta — git auth
-sukonfigūruota + hera-core-backup laukiantys commit'ai push'inti (HEAD==origin), (3) jei nerasta — „reikia vartotojo:
-įrašyk GITHUB_TOKEN VPS'e", (4) sistema veikia (MEMORA=1, active), (5) „BACKUP AUTH SUTVARKYTA" ARBA „LAUKIA TOKEN".
+TELEGRAM (per HERA botą — jei neaišku kuris, tai pats audit'as pasakys; siųsk trumpai, BE token reikšmių):
+(1) botų mapping: env-var → @username (be tokenų), (2) routing: kuris pranešimų tipas → kuris botas, (3) kurie tipai
+klaidingai PARSER'yje, (4) „AUDIT BAIGTA — routing planas paruoštas, pakeitimų NEdaryta".
