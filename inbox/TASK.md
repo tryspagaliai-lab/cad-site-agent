@@ -1,27 +1,34 @@
-UŽDUOTIS — FIX routing: rc=0 ataskaitos → HERA botas (ne @tryspagaliabot). <10 min. NEleisk pytest. Telegram TRUMPAI.
-SAUGUMAS KRITINIS: token reikšmių NIEKADA nespausdink/necommit'ink. Kodas -> PRIVATUS hera-core-backup. Viešo NELIESK.
+UŽDUOTIS — Praplėsk paiešką/naujienas: CN/JP/KR labs + modeliai + TLDR. <14 min. NEleisk pytest. Telegram TRUMPAI.
+Fail-safe €0. Kodas -> PRIVATUS hera-core-backup. Viešo NELIESK. SAUGUMAS: raktų/asmeninių linkų necommit'ink.
 
-KONTEKSTAS (iš audit'o): „✅/⚠️ VPS agentas baigė (rc=$RC)" ataskaitos siunčiamos per TELEGRAM_TOKEN →
-@tryspagaliabot (tas pats botas kaip AI news digest). Vartotojas nori: @tryspagaliabot = TIK naujienos/nauji
-išleidimai; VISOS operacinės ataskaitos (rc=0) → TIK HERA botas @tryspagaliai_hera_bot (HERA_BOT_TOKEN).
-Live processor routing (dispatcher/Loop B) JAU teisingas — NELIESK. PARSER (@tryspagliai_bot) NELIESK.
+KONTEKSTAS: Vartotojas nori praplėsti tyrimų/naujienų aprėptį — dabar praleidžia Azijos (CN/JP/KR) labs ir modelius.
+Praplėsti (a) news digest (ai_digest.py → @tryspagaliabot) IR (b) HERA paiešką (hera_search/hera_research SearXNG
+užklausas). DOMENAS NIEKADA NESIAURINAMAS — TIK PRIDEDAM (vartotojo direktyva). €0.
 
-1) RASK GYVĄ runner'į: audit'e repo turėjo tik `vps_agent_runner.sh.indexed`; faktinis deploy nerastas. Surask
-   VEIKIANTĮ skriptą kuris siunčia „VPS agentas baigė (rc=$RC)" (ieškok: cron, systemd, n8n /files, /root, /opt,
-   /home; grep „VPS agentas baigė" arba „rc=" siuntimo). Nustatyk TIKSLŲ failą kuris realiai vykdomas.
+STRATEGIJA: sekti pagal LABS/ORGANIZACIJAS + „naujas modelis/release" pattern (ne tik tikslūs vardai — kad
+pagautų naujus net nežinomais pavadinimais).
 
-2) PAKEISK: to runner'io `send_tg` (ar analogiška siuntimo vieta) rc-ataskaitai naudok `HERA_BOT_TOKEN` (iš
-   /root/hera.env) vietoj `TELEGRAM_TOKEN`. TIK rc/ops ataskaitos — news digest (ai_digest.py) LIEKA ant
-   TELEGRAM_TOKEN/@tryspagaliabot, jo NELIESK. Necommit'ink token reikšmių.
+1) PRIDĖK šaltinius/užklausas (labs → modeliai):
+   CN: DeepSeek · Alibaba/Qwen · Zhipu/GLM · Xiaomi/MiMo · Moonshot/Kimi · MiniMax · 01.AI/Yi · Tencent/Hunyuan ·
+       Baidu/Ernie · ByteDance/Doubao · StepFun · **Nex AGI / Nex-N2-Pro** · Tsinghua · Peking University (PKU)
+   JP: Sakana AI · RIKEN · Preferred Networks · rinna
+   KR: Naver · KAIST · LG AI (Exaone) · Kakao
+   Bendra: „new open-weight model release", „SOTA model", „technical report" pattern šioms lab'ams.
 
-3) TESTAS (privalomas — įrodyk): paleisk bandomąjį rc-pranešimą (arba runner'į dry/echo režimu) -> patvirtink kad
-   testinė žinutė atkeliauja į @tryspagaliai_hera_bot (HERA), o @tryspagaliabot rc NEBEGAUNA. Patvirtink per getMe/
-   chat_id kad taikinys teisingas (be token reikšmių). Jei runner'io vietos nerandi -> NEspėk/NEkeisk, pranešk
-   „gyvas runner nerastas — reikia vartotojo/kelio" ir sustok (fail-safe).
+2) TLDR viešas feed (NE vartotojo asmeninis linkas): pridėk tldr.tech VIEŠĄ turinį kaip naujienų šaltinį —
+   TLDR AI + TLDR DevOps archyvą/RSS (viešas, be jokio `em-tldr=` token'o). Necommit'ink jokio asmeninio linko.
+   Jei viešo RSS nėra — naudok viešą archyvo puslapį; jei neprieinamas per proxy — pažymėk ir praleisk (fail-safe).
 
-4) DURABILUMAS: pakeistas skriptas -> hera-core-backup (BE tokenų). Jei skriptas gyvena n8n/vietoj kur necommit'inama
-   — bent dokumentuok pakeitimą backup'e. ROADMAP/atmintis: „routing fix — rc=0 → HERA botas 2026-07-13".
+3) KUR taisyti: rask kur ai_digest.py laiko šaltinių/užklausų sąrašą IR kur hera_search/hera_research default
+   queries — ten pridėk (ne perrašyk; expand only). Deterministinis, fail-safe (blogas šaltinis → praleidžia, ne crash).
 
-TELEGRAM (per HERA botą, trumpai, BE token reikšmių): (1) gyvas runner rastas: <failas>, (2) rc=0 perjungtas
-TELEGRAM_TOKEN→HERA_BOT_TOKEN, (3) TESTAS: testinė rc atėjo į @tryspagaliai_hera_bot, @tryspagaliabot rc nebegauna,
-(4) news digest nepaliestas (@tryspagaliabot=tik naujienos), (5) „ROUTING SUTVARKYTA — ataskaitos tik į HERA botą".
+4) TESTAS: paleisk digest/paiešką vieną kartą (arba dry) -> patvirtink kad naujos užklausos vykdomos be klaidų ir
+   bent keli nauji šaltiniai grąžina rezultatų. Jei kuris šaltinis neveikia -> fail-safe skip + raportuok kuris.
+
+5) Benchmark (jei liečia core) 9/9. DURABILUMAS: kodas -> hera-core-backup (be raktų/asmeninių linkų).
+   ROADMAP/atmintis: „paieška praplėsta — CN/JP/KR labs + TLDR 2026-07-13".
+
+TELEGRAM (per HERA botą, trumpai): (1) pridėti CN/JP/KR labs+modeliai (DeepSeek/Qwen/GLM/MiMo/Kimi/MiniMax/Yi/
+Hunyuan/Ernie/Doubao/StepFun/Nex-N2-Pro + Sakana/RIKEN + Naver/KAIST/LG), (2) lab-based tracking (pagauna naujus
+nežinomais vardais), (3) TLDR viešas feed pridėtas (asmeninis linkas NEnaudotas), (4) testas: naujos užklausos OK,
+(5) „PAIEŠKA PRAPLĖSTA — Azija (CN/JP/KR) + TLDR aprėptyje, domenas nesiaurinamas".
