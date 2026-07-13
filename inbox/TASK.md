@@ -1,31 +1,32 @@
-UŽDUOTIS — TVARUS backup push fix: push laukiančius commit'us + PERSISTENTIŠKAS credential (kad nebekartotųsi).
-<8 min. NEleisk pytest. Telegram TRUMPAI. SAUGUMAS KRITINIS: token reikšmių NIEKADA nespausdink/necommit'ink/
-nerodyk. Viešo repo NELIESK.
+UŽDUOTIS — HUMAN-GATE kuravimas: promote Forget-Loop + priimti AI-Code-Gen + SearchEyes sėkla. <9 min.
+NEleisk pytest. Telegram TRUMPAI. Fail-safe. TIK privatus hera-vault. Viešo NELIESK. Kodo NELIESK. Raktų nespausdink.
 
-KONTEKSTAS: hera-core-backup push VĖL nepavyko („push laukia credential per politiką"). Laukiantys lokalūs commit'ai
-(pvz. fe0e394, 1f46f54, 24acacd + galbūt daugiau) NĖRA GitHub'e — durabilumo rizika. Ankstesnis askpass fix (11:45)
-NEpersistavo (tikėtina servisas/aplinka jį pamiršo). Reikia TVARAUS sprendimo.
+KONTEKSTAS: vartotojas peržiūrėjo 4 naujus ingestus ir nusprendė. Pažymėk vault'e (jei kurio failo neranda — praleisk,
+pažymėk; NEsukurk naujų).
 
-1) PATIKRINK laukiančius: hera-core-backup darbo kopijoje `git log origin/main..HEAD --oneline` — kiek commit'ų
-   laukia push (be raktų reikšmių).
+A) PROMOTE — „Forget Loop Engineering / AI developer workflows" (growth/2026-07-13-*f0bs8d*):
+   - Antraštėje/frontmatter: „STATUS: PROMOTED 2026-07-13 (human-gate: vartotojas)".
+   - Pridėk pastabą: „4-as išorinis architektūros validavimas (po Buzz/Warp, SkillOpt, Managed Agents). BRĖŽINYS
+     Fazei 7b: trys vertės kūrėjai (inžinierius+agentai+KODAS deterministinis/patikimiausias), human-gate pradžioj+
+     pabaigoj, sandbox-per-agentui (= mūsų bwrap 5a), specialist agentai scout→plan→build→test→hot-fix + factory
+     router, 'sistema kuri kuria sistemą' (= 5b/5c/5d). Separate code from agent skills."
+   - Wiki-link + trajektorija (curation/human-gate-promote/growth).
 
-2) TVARUS CREDENTIAL (persistentiškas, saugus): naudok token'ą JAU esantį hera.env (GITHUB_TOKEN vpr.) — NEspausdink.
-   Sukonfigūruok PERSISTENTIŠKAI (kad išliktų per restart'us ir per-invocation):
-   - Variantas A: `git config credential.helper 'store --file=/root/.git-credentials-hera'` + įrašyk credential į tą
-     failą PROGRAMIŠKAI iš env token'o (necommit'ink; failas už repo ribų, chmod 600).
-   - ARBA askpass helper skriptą, kuris skaito token'ą iš hera.env kiekvieną kartą (persistentiškas per git config
-     --global core.askpass). Necommit'ink token'o niekur.
-   Necommit'ink .git-credentials/askpass su token'u; įsitikink kad jie .gitignore/už repo ribų.
+B) PRIIMTI kaip žinojimas — „AI Code Generators" (growth/2026-07-13-*i8suoz*):
+   - „STATUS: PRIIMTA kaip žinojimas 2026-07-13 (human-gate: vartotojas)".
+   - Pastaba: „'Teisingumo iliuzija' + enterprise-grade (provenance/governance/on-prem/curated data) dera su mūsų
+     human-gate + verifikacija. 55% AI kodo turi spragų — atsargumas."
 
-3) PUSH: push'ink laukiančius hera-core-backup commit'us į privatų GitHub. Patvirtink HEAD==origin po push.
+C) SEARCHEYES sėkla — (growth/2026-07-13-*fidnk7*), palikti AKTYVŲ (ne future-gpu):
+   - Pridėk pastabą: „SĖKLA aktyvui: deep-research agent architektūra (plan→search→browse→verify→answer, multi-hop,
+     multi-tool: BM25+dense/crop/python/wiki) → kandidatas hera_research v2 ateičiai. BET metodas (VLM RL treniravimas
+     ant 64 H20 GPU + HaPO) = NE mums (GPU/training). Imam ARCHITEKTŪROS idėją, ne treniravimą."
 
-4) VERIFIKACIJA kad TVARU: padaryk tuščią test-commit (arba touch+commit nekenksmingą marker failą) IR push'ink dar
-   kartą TA PAČIA credential konfigūracija -> jei praeina be rankinio įsikišimo, credential persistentiškas. (Test
-   commit gali likti arba revert'ink — necommit'ink raktų.)
+D) QUANTIZATION (96hcmw) — JOKIO veiksmo, jau auto-filed į future-gpu (patikrinta). Tik patvirtink kad ten.
 
-5) SVARBU dokumentuok atmintyje: „backup push credential PERSISTENTIŠKAS (helper=..., token iš hera.env, be raktų
-   repo)" — kad kita sesija žinotų kur konfigūracija.
+WIKI: hera_wikilink/lint — parodyk orphan/dangling. TRAJEKTORIJA: curation įrašas.
+DURABILUMAS: vault commit + push privatus hera-vault (persistentiškas credential jau sutvarkytas). Viešo NELIESK.
 
-TELEGRAM (per HERA botą, trumpai, BE token reikšmių): (1) laukė N commit'ų, (2) persistentiškas credential helper
-sukonfigūruotas (be raktų repo/config), (3) push OK — HEAD==origin (visi Fazės 10 commit'ai GitHub'e), (4) test-push
-praėjo be rankinio įsikišimo (tvaru), (5) „BACKUP PUSH TVARIAI SUTVARKYTA — nebekartosis".
+TELEGRAM (per HERA botą, trumpai): (1) Forget-Loop PROMOTE'inta (4-as validavimas + brėžinys Fazei 7b),
+(2) AI-Code-Gen priimta kaip žinojimas, (3) SearchEyes sėkla pažymėta (deep-research arch → hera_research v2;
+GPU-treniravimas ne mums), (4) Quantization patvirtinta future-gpu, (5) wiki OK, „KURAVIMAS ATLIKTAS".
