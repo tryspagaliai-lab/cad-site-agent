@@ -1,52 +1,55 @@
-UŽDUOTIS — SKUBU: naujienų digest KARTOJASI (ta pati ataskaita 3–4 dienas). Rask priežastį + pataisyk. <12 min.
-NEleisk pytest. Telegram TRUMPAI. Fail-safe. Raktų nespausdink. €0.
-DIAGNOZĖ+FIX ataskaita eina TIK į HERA botą (HERA_BOT_TOKEN). Naujienų srauto botas (@tryspagaliabot / TELEGRAM_TOKEN)
-LIEKA naujienoms — routing NEKEISK, tik turinys turi būti NAUJAS.
+UŽDUOTIS — FAZĖ 12: (A) parse↔šaltinis faithfulness-vartas (gebėjimas) + (B) Copycat nata su moksline korekcija. <14 min.
+NEleisk pytest pilnai (tik naujo modulio smoke/benchmark). Telegram TRUMPAI į HERA botą. Fail-safe. €0. Raktų nespausdink.
+Ataskaita TIK į HERA botą (HERA_BOT_TOKEN). Privatūs repo (hera-core-backup + hera-vault). Viešo cad-site-agent NELIESK.
 
-PROBLEMA: vartotojas kelias dienas iš eilės gauna TĄ PATĮ naujienų digestą į @tryspagaliabot — jokių naujų įrašų,
-nors praplėtėm šaltinius (CN/JP/KR labs + TLDR). Beveik tikrai lūžusi dedup/„seen"-būsena: digest siunčia tuos pačius
-top-N kiekvieną kartą, o ne TIK naujus nuo praeito karto.
+KONTEKSTAS (kodėl): vartotojas nori dviejų dalykų. (A) DAUGKARTINIS gebėjimas — kai HERA parsina turinį, patikrinti ar
+parse'as ištikimas ŠALTINIUI (nepridėjo išgalvotų faktų). Deterministinis, be LLM, nemokamas. (B) VIENKARTINIS —
+įrašyti konkrečią Copycat/Hofstadter/Mitchell natą su moksline korekcija (sena knyga 1984, mokslas pajudėjo).
 
-ANTI-RC124 (privaloma, nes praeitas diagnostinis pakibo): JOKIO tinklo fetch diagnozės metu. Jei darai gyvą patikrą —
-TIK 1 kartą, HARD ≤40s timeout visai, JOKIO retry; jei nefetch'ina — PRALEISK, naudok logikos patikrą su fake įrašais.
-Nekursi nieko sunkaus. Baik per <12 min bet kokiu atveju.
+=== DALIS A: hera_faithfulness.py (deterministinis grounding-vartas) ===
 
-ŽINGSNIAI:
+1) `/opt/hera-processor/hera_faithfulness.py`:
+   - `check(parsed, source_text) -> {grounded:[...], ungrounded:[...], score:float(0-1), verdict:'ok'|'suspect'}`.
+   - Iš parsed ištrauk PATIKRINAMUS atomus (NE parafrazę): tikriniai vardai/terminai (proper nouns), citatos
+     (kabutėse), skaičiai/datos. Parafrazė teisėta — netikrink sakinių, tik faktinius atomus.
+   - Matchink prieš NORMALIZUOTĄ source_text (case-insensitive, whitespace-normalized; leidžiama nedidelė fuzzy
+     variacija). Atomas kurio NĖRA šaltinyje → 'ungrounded' (galima haliucinacija). score = grounded/(grounded+ungrounded).
+   - ADVISORY (ne hard blokas — parse legitimiai perfrazuoja): ungrounded virš slenksčio → pažymėk žmogui prie gate.
+   - HERA_FAITHFULNESS flag (default 0). Kai 0 — modulis tik importuojasi, pipeline nepaliestas. Integruok į ingest
+     PRIEŠ vault rašymą kaip advisory pakopą (kai flag=1).
+   - Fail-safe: klaida/timeout → verdict='inconclusive', NEblokuok, NIEKADA rc≠0. Be LLM, be tinklo, be lokalių modelių.
 
-1) DIAGNOZĖ (deterministinė, be tinklo): perskaityk `/opt/.../ai_digest.py` (ar kur jis yra; rask `ai_digest`
-   per systemctl/cron/find) IR jo „seen/sent"-būsenos failą. Nustatyk KODĖL kartojasi. Įtariami:
-   (a) nėra persistent „seen"-set → kas kartą siunčia tą patį top-N;
-   (b) „seen"-set yra, bet neįsirašo (permission/crash/kelias) → resend;
-   (c) rikiuoja pagal relevance, ne pagal šviežumą/datą → tie patys evergreen viršuje;
-   (d) laiko langas blogas.
-   Ataskaitoje parašyk tikslią priežastį (1–2 sakiniai) + failo/eilutės nuoroda.
+2) BENCHMARK (deterministinis, be tinklo, 100%): hera_faithfulness_bench su fixtures — mažas source tekstas + 2 parse:
+   (i) „švarus" (visi atomai iš šaltinio) → verdict ok, score≈1; (ii) su ĮTERPTU išgalvotu faktu (vardas/skaičius kurio
+   nėra) → tas atomas 'ungrounded', verdict suspect. Patikrink ir tuščią/be-atomų atvejį. Įrašyk X/Y. <100% → NEjunk flag.
 
-2) FIX (minimalus, tikslinis — NEperrašinėk viso failo):
-   - PERSISTENT „seen"-set: kiekvienas įrašas identifikuojamas stabiliu raktu (URL arba guid/title hash).
-     Įrašų raktai saugomi patvariame faile (pvz. /var/lib/ai_digest/seen.jsonl ar šalia esamo state; sukurk katalogą
-     jei reikia, atominis write: temp→rename). Po sėkmingo siuntimo — raktai įrašomi.
-   - Kiekvienas run siunčia TIK įrašus, kurių rakto NĖRA „seen". Rikiuok pagal ŠVIEŽUMĄ (published desc).
-   - Jei 0 naujų → NEsiųsk seno; siųsk trumpą „🗞️ nieko naujo" (arba tylėk, jei taip sukonfigūruota) — NIEKADA
-     nekartok senų įrašų.
-   - Apsauga nuo begalinio augimo: „seen" apkarpyk iki paskutinių ~1000 raktų (arba 30 d.).
-   - Fail-safe: jei „seen" failo nepavyksta perskaityti/įrašyti → logink, elkis atsargiai (geriau praleisti nei
-     spam'inti), NIEKADA rc≠0.
+=== DALIS B: Copycat nata į vault (deterministiškai, be LLM, be tinklo) ===
 
-3) PATIKRINK ŠALTINIUS: patvirtink kad CN/JP/KR labs + TLDR feeds TIKRAI įjungti į ai_digest.py (ne tik
-   hera_research watch-queries). Jei kurio nėra — pridėk (deterministiškai). Parodyk feeds sąrašo ilgį.
+3) Įrašyk į hera-vault `growth/` naują natą (STATUS: staged, human-gate; kind: idea/technique; specialist: n/a):
+   „Copycat / analogijų kūrimas — Hofstadter & Mitchell (su 2026 moksliniu patikslinimu)". Turinys:
+   - ESMĖ (iš vartotojo parse'o): analogija=intelekto šerdis; konceptualus slydimas (rightmost→leftmost, raidė→grupė);
+     parallel terraced scan; Copycat letter-string mikropasaulis (abc→abd: ijk→ijl, xyz→wyz); FARG decentralizuoti
+     mechanizmai; Minsky/Moravec „easy things are hard".
+   - MOKSLINIS PATIKSLINIMAS 2026 (žymėk aiškiai — šaltinis senas, mokslas pajudėjo):
+     • DAR GALIOJA: analogija mašinoms vis dar sunki (Gendron et al. 2023, arXiv 2305.19555 „LLMs Are Not Strong
+       Abstract Reasoners"); „easy things are hard" laikosi; parallel terraced scan = modernus test-time compute /
+       inference-time search (Franzen et al. 2025, arXiv 2505.07859).
+     • PASENĘ: grynas symbolic FARG (Copycat/Metacat/Letter Spirit) daugiausia istorija → deep learning + neuro-symbolic;
+       embedding-analogijos (king−man+woman≈queen) trapios, siauros.
+     • MODERNUS PRIDEDA (GINČAS, NĖRA konsensuso): Webb/Holyoak/Lu 2022 (arXiv 2212.09196) PRO „emergent analogical
+       reasoning"; Hodel & West 2023 (arXiv 2308.16118) CONTRA — GPT-3 lūžta ant letter-string analogijų (Copycat
+       domenas!), įtaria įsiminimą; Wu et al. 2023 (arXiv 2307.02477) counterfactual užduotys → smukimas. Mitchell'io
+       skepticizmas iš esmės laikosi. ARC-AGI (Chollet) = modernus Copycat-tipo benchmarkas; ARC-AGI-2 2025 (arXiv
+       2505.11831); survey 2026 (arXiv 2603.13372): kompozicinis generalizavimas neišspręstas, program-synthesis+
+       test-time lenkia gryną LLM.
+   - provenance: „parse iš vartotojo + mokslinis patikslinimas (paper-search, ne pilnas adversarinis ratas)".
+     source_refs: user-parse (Copycat chapter). Wiki-link auto (hera_wikilink). NEsiųsk į išorę.
 
-4) VERIFIKACIJA (be pakibimo):
-   - LOGIKOS testas (VISADA, be tinklo): paduok 5 fake įrašus, „pažymėk" 3 kaip seen → digest turi siųsti TIK 2
-     naujus; antras run su tais pačiais → 0 naujų → „nieko naujo". Parodyk rezultatą.
-   - GYVA patikra (NEBŪTINA, tik jei saugu): 1 fetch, HARD ≤40s, dry-run (NEsiųsk į botą) — parodyk kiek NAUJŲ
-     rastų. Jei timeout/klaida → praleisk, logikos testo pakanka.
+=== BENDROS RIBOS ===
+€0. Jokių lokalių/GPU modelių. Jokio tinklo B daliai (citatos jau duotos — NEfetch'ink arXiv). Jokio pytest-all.
+NEperrašinėk hera_eval/hera_council/hera_selfedit — tik importuok/integruok. Anti-rc124: viskas deterministiška, be
+model-call. Backup: commit hera-core-backup (kodas) + hera-vault (nata). Push nepavyko → NEkartok begalos, pranešk.
 
-5) BACKUP: commit pataisą į privatų repo (ten kur ai_digest.py versijuojamas; jei niekur — pradėk versijuoti ar bent
-   įrašyk kopiją į hera-core-backup). Persistent askpass jau yra. Push nepavyko → NEkartok begalos, pranešk.
-
-RIBOS: €0. Routing NEKEISK (naujienos→@tryspagaliabot, ataskaita→HERA botas). Viešo cad-site-agent NELIESK.
-Jokio pytest-all. Jei ai_digest.py nerandi — pranešk kur ieškojai, NEkurk naujo.
-
-ATASKAITA (HERA botas, trumpai): (a) tiksli priežastis kodėl kartojosi; (b) kas pataisyta (seen-set + recency + „0 naujų"
-elgesys); (c) feeds sąrašo ilgis + ar CN/JP/KR+TLDR yra; (d) logikos testas: 5→2→0 rezultatas; (e) gyva patikra (kiek
-naujų / arba „praleista"); (f) backup push OK/ne. Baik greitai.
+ATASKAITA (HERA botas, trumpai): (a) hera_faithfulness.py sukurtas + integruotas (advisory)? (b) benchmark X/Y;
+(c) HERA_FAITHFULNESS į/išjungtas? (d) Copycat nata įrašyta į vault (kelias)? (e) wiki OK? (f) backup push OK/ne;
+(g) 1 eil. kas toliau.
