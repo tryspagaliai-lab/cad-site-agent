@@ -1,36 +1,39 @@
-UŽDUOTIS — FAZĖ 12c: pravalyti faithfulness balą (išmesti md-karkaso false-ungrounded triukšmą). <10 min.
-NEleisk pytest pilnai (tik hera_faithfulness --bench + 1 live dry-run). Telegram TRUMPAI į HERA botą. Fail-safe. €0.
-Raktų nespausdink. Ataskaita TIK į HERA botą. Privatūs repo. Viešo cad-site-agent NELIESK.
+UŽDUOTIS — 2D→3D ingesto atsakinga ekstrakcija (faithfulness-filtruota, cad/3D domenui). <12 min.
+NEleisk pytest. Telegram TRUMPAI į HERA botą. Fail-safe. €0. Raktų nespausdink. Privatus hera-vault.
+Viešo cad-site-agent NELIESK (tik nuoroda tekste — jokio kodo keitimo).
 
-KONTEKSTAS (kodėl): Fazė 12b įjungė faithfulness gyvai, veikia (yt score 0.847 ir kt., realūs balai). BET pats VPS
-pažymėjo: `parsed=full_md` įtraukia md-karkasą (URL, „Metodas:", „Skambučių:", „Transkripto sim.", skyrių antraštes
-tipo „# YouTube ištrauka", „## Pilna transkripcija") — tie atomai kelia MELAGINGĄ ungrounded triukšmą (dalis 24/157
-buvo ne haliucinacijos, o URL/antraštės). Triukšmingas balas → `suspect` vėliavėlės nepatikimos → įrankis praranda
-vertę. Reikia: tikrinti TIK semantinius teiginius, ne md-karkasą.
+KONTEKSTAS (kodėl): vartotojui labai aktualu — ingestas „A better way to turn 2D designs into 3D models for rapid
+prototyping" (sel 8.0), TIESIOGIAI liečia jo cad-site-agent (2D DXF sklypų apdorojimas → natūrali 2D→3D plėtra) ir
+jo 3D/ArchViz foną. BET faithfulness pažymėjo `suspect 0.7045` → ~30% atomų neatremti į transkriptą. Todėl „paimti
+viską" ATSAKINGAI = imti TIK patvirtintą, įtartinus atskirti, kad į cad-domeną nepakliūtų haliucinacijos.
 
-ŽINGSNIAI (minimalūs, tiksliniai):
+ŽINGSNIAI:
 
-1) SIAURINTI `parsed` faithfulness pakopoje:
-   - Vietoj viso `full_md`, paduok į check() TIK „## Struktūrizuota ištrauka (Gemini)" bloką (PAVADINIMAS/ESMĖ/
-     PAGRINDINIAI TAŠKAI/FAKTAI IR DUOMENYS/ĮRANKIAI/CITATOS) — tikrus semantinius teiginius.
-   - IŠMESK md-karkasą: „# ... ištrauka" antraštes, metaduomenų eilutes (URL:/Metodas:/Skambučių:/Transkripto sim.),
-     „## Pilna transkripcija (verbatim)" antraštę ir patį verbatim bloką (verbatim = ŠALTINIS, ne parse — jo netikrink
-     kaip parsed atomų).
-   - source_text lieka = verbatim transkriptas (+titrai/ASR/url tekstas) — kaip 12b.
-   - Jei „Struktūrizuota ištrauka" bloko nerandi konkrečiam ingestui → fallback į dabartinį elgesį (nesugadink), pažymėk.
-   - Papildomai (jei lengva, deterministiška): atomų ekstrakcijoje ignoruok URL/domenus ir grynus metaduomenų raktažodžius.
+1) RASK šitą ingestą (growth kandidatą „2D...3D...rapid prototyping"; per grep title/slug). Jei dar neįrašytas kaip
+   growth — paimk iš paskutinio ingest rezultato (full_md). Nurodyk failą/slug ataskaitoje.
 
-2) VERIFIKACIJA (be pakibimo, deterministiška):
-   - `hera_faithfulness --bench` turi likti 100% (14/14). Jei nukrito — grąžink, NEjunk pakeitimo, pranešk.
-   - LIVE dry-run (be LLM/tinklo) ant TO PATIES YouTube v=6V3RiljfY7A: parodyk NAUJĄ score + ungrounded N.
-     Tikslas — ungrounded turi SUMAŽĖTI (buvo 24/157), balas švaresnis. Palygink prieš/po.
-   - Paleisk ant dar 1-2 jau ingestintų yt, kad įsitikintum, jog `suspect` dabar reiškia tikrą neatitikimą, ne triukšmą.
+2) FAITHFULNESS ATOM-LYGIU (deterministiška, be LLM/tinklo): paleisk hera_faithfulness ant jo parse↔verbatim ir
+   parodyk KONKREČIAI:
+   - score + verdict (turėtų būti ~0.7045 suspect),
+   - SĄRAŠĄ ungrounded atomų (kurie teiginiai/vardai/skaičiai NEatremti į transkriptą) — kad matytume kas įtartina.
+   - Atskirk: realūs angl. terminai/linksniai (triukšmas) vs tikri neatremti faktai (galima haliucinacija).
 
-3) BACKUP: commit į hera-core-backup. Persistent askpass jau yra. Push nepavyko → NEkartok begalos, pranešk.
+3) EKSTRAKCIJA (tik PATVIRTINTA): iš „Struktūrizuota ištrauka" bloko paimk kandidatus (idėjos/įrankiai/technikos/
+   faktai), kurie ATREMTI į transkriptą. Ungrounded/įtartinus — NEIŠMESK, bet pažymėk „⚠️ nepatvirtinta parse'e —
+   netraukti kaip fakto". Jokių naujų tinklo kvietimų (necituok, netikrink išorėje).
 
-RIBOS: €0. Jokių lokalių/GPU modelių. Jokių naujų tinklo kvietimų. Jokio pytest-all. HERA_FAITHFULNESS lieka=1 (gyvai).
-NEperrašinėk extraktorių/council — TIK siaurink kas paduodama į check(). Anti-rc124: viskas deterministiška, be model-call.
+3) VAULT (staged, human-gate): įrašyk/atnaujink growth natą su:
+   - frontmatter: status: staged, gate: human, domain: cad-3d, faithfulness: „suspect 0.7045 (atom-filtruota)".
+   - PATVIRTINTI kandidatai (2D→3D metodas, įrankiai, rapid-prototyping technikos) — su „Kodėl sistemai".
+   - Aiškus skyrius „⚠️ Nepatvirtinta parse'e" su ungrounded atomais (kad ateity žinotume necituoti).
+   - Skyrius „Sąsaja su cad-site-agent": 1-2 sakiniai kaip 2D→3D plečia esamą 2D-DXF→semantika pipeline (idėjos
+     lygiu; JOKIO viešo kodo keitimo — tik žinia vault'e). Wiki-link auto.
 
-ATASKAITA (HERA botas, trumpai): (a) parsed susiaurintas iki Struktūrizuota-ištrauka bloko? (b) bench X/Y;
-(c) v=6V3RiljfY7A: prieš 24/157 (0.847) → PO: ungrounded N / score; (d) 1-2 kitų yt verdict po pravalymo;
-(e) backup push OK/ne; (f) 1 eil. kas toliau.
+4) BACKUP: commit hera-vault. Persistent askpass yra. Push nepavyko → NEkartok begalos, pranešk.
+
+RIBOS: €0. Jokių lokalių/GPU modelių. Jokio pytest-all. Viešo cad-site-agent NELIESK. Anti-rc124: viskas
+deterministiška, faithfulness be LLM/tinklo. Ekstrakcijai NEnaudok naujų model-call (imk jau turimą parse'ą).
+
+ATASKAITA (HERA botas, trumpai): (a) failas/slug; (b) faithfulness score + 3-6 ungrounded atomų pavyzdžiai
+(realu vs įtartina); (c) kiek PATVIRTINTŲ kandidatų ištraukta (idėjos/įrankiai); (d) cad-site-agent sąsaja 1 eil.;
+(e) vault push OK/ne; (f) 1 eil. kas toliau.
