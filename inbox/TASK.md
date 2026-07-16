@@ -1,39 +1,41 @@
-UŽDUOTIS — 2D→3D ingesto atsakinga ekstrakcija (faithfulness-filtruota, cad/3D domenui). <12 min.
+UŽDUOTIS — įtraukti GIFT į FUTURE_GPU.md kaip cad-3d kryptį + susieti su self-improvement linija. <10 min.
 NEleisk pytest. Telegram TRUMPAI į HERA botą. Fail-safe. €0. Raktų nespausdink. Privatus hera-vault.
-Viešo cad-site-agent NELIESK (tik nuoroda tekste — jokio kodo keitimo).
+Viešo cad-site-agent NELIESK. Deterministiška — turinys duotas žemiau, JOKIŲ model-call/tinklo (anti-rc124).
 
-KONTEKSTAS (kodėl): vartotojui labai aktualu — ingestas „A better way to turn 2D designs into 3D models for rapid
-prototyping" (sel 8.0), TIESIOGIAI liečia jo cad-site-agent (2D DXF sklypų apdorojimas → natūrali 2D→3D plėtra) ir
-jo 3D/ArchViz foną. BET faithfulness pažymėjo `suspect 0.7045` → ~30% atomų neatremti į transkriptą. Todėl „paimti
-viską" ATSAKINGAI = imti TIK patvirtintą, įtartinus atskirti, kad į cad-domeną nepakliūtų haliucinacijos.
+KONTEKSTAS (kodėl): 2D→3D GIFT ingestas (growth/2026-07-16-...gpgxzx.md, domain: cad-3d, faithfulness suspect 0.7045
+= triukšmas, 0 haliucinacijų) — patvirtintas vertingu. Metodas reikalauja VLM treniravimo/GPU → €0/be-GPU nepastatom
+DABAR → future-gpu track (kaip SearchEyes). BET principas jau yra HERA sistemoje. Vartotojas patvirtino „Būtinai".
 
 ŽINGSNIAI:
 
-1) RASK šitą ingestą (growth kandidatą „2D...3D...rapid prototyping"; per grep title/slug). Jei dar neįrašytas kaip
-   growth — paimk iš paskutinio ingest rezultato (full_md). Nurodyk failą/slug ataskaitoje.
+1) Į hera-vault `FUTURE_GPU.md` PRIDĖK naują įrašą (nekeisk esamų; pridėk skiltį; jei jau yra GIFT — praleisk):
 
-2) FAITHFULNESS ATOM-LYGIU (deterministiška, be LLM/tinklo): paleisk hera_faithfulness ant jo parse↔verbatim ir
-   parodyk KONKREČIAI:
-   - score + verdict (turėtų būti ~0.7045 suspect),
-   - SĄRAŠĄ ungrounded atomų (kurie teiginiai/vardai/skaičiai NEatremti į transkriptą) — kad matytume kas įtartina.
-   - Atskirk: realūs angl. terminai/linksniai (triukšmas) vs tikri neatremti faktai (galima haliucinacija).
+   ### GIFT — 2D→3D CAD kodo generavimas (cad-3d)
+   - **Kas:** GIFT (Geometric Inference Feedback Tuning), MIT/IBM/Red Hat, ICML 2026. Moko vision-language modelį
+     (VLM) versti 2D vaizdą + tekstą → CAD Python kodą → 3D modelį. Trikas: model-aware duomenų papildymas iš paties
+     modelio near-misses (lygiagretus generavimas, ~50% sprendžiamumas → pataiso → įtraukia į mokymą) + inference-time
+     scaling su vartotojo biudžetu. ~20% skaičiavimo vs konkurentai. 0 haliucinacijų parse'e (faithfulness patikrinta).
+   - **Kodėl future-gpu (ne dabar):** reikia VLM treniravimo/GPU — €0/be-GPU stack'as to nepastato. Imam KRYPTĮ ir
+     PRINCIPĄ, ne treniravimą (kaip SearchEyes 64×H20).
+   - **Kryptis cad-3d:** natūralus plėtros vektorius cad-site-agent'ui (dabar deterministinis 2D DXF → semantiniai
+     sluoksniai; GIFT rodo 2D→3D per generuojamą CAD kodą) ir vartotojo 3D/ArchViz nišai. Ateities kryptis, ne
+     dabar-diegiama funkcija.
+   - **Šaltinis:** MIT News 2026-07-16 (turning-2d-designs-into-3d-models); growth `...gpgxzx`.
 
-3) EKSTRAKCIJA (tik PATVIRTINTA): iš „Struktūrizuota ištrauka" bloko paimk kandidatus (idėjos/įrankiai/technikos/
-   faktai), kurie ATREMTI į transkriptą. Ungrounded/įtartinus — NEIŠMESK, bet pažymėk „⚠️ nepatvirtinta parse'e —
-   netraukti kaip fakto". Jokių naujų tinklo kvietimų (necituok, netikrink išorėje).
+2) SUSIEK su self-improvement linija (svarbiausia dalis) — pridėk poskyrį prie to paties GIFT įrašo:
+   - **Sąsaja su HERA (principas JAU mūsų):** GIFT esmė = mokymasis iš savo near-misses + biudžetu-ribotas
+     inference-time compute. Tai atitinka: **self-edit 5c + rejected-edit buferis 5d** (mokymasis iš atmestų/klaidų),
+     **planner 7a** (self-critique→revise), **HARD biudžeto flag'ai** (inference-time scaling su biudžetu), ir jungiasi
+     su Copycat „parallel terraced scan" (lygiagretus generavimas + resursų paskirstymas). N-tas išorinis architektūros
+     validavimas (po Forget-Loop, SkillOpt, Buzz/Warp): frontier lab'as daro tą patį principą, ką HERA.
 
-3) VAULT (staged, human-gate): įrašyk/atnaujink growth natą su:
-   - frontmatter: status: staged, gate: human, domain: cad-3d, faithfulness: „suspect 0.7045 (atom-filtruota)".
-   - PATVIRTINTI kandidatai (2D→3D metodas, įrankiai, rapid-prototyping technikos) — su „Kodėl sistemai".
-   - Aiškus skyrius „⚠️ Nepatvirtinta parse'e" su ungrounded atomais (kad ateity žinotume necituoti).
-   - Skyrius „Sąsaja su cad-site-agent": 1-2 sakiniai kaip 2D→3D plečia esamą 2D-DXF→semantika pipeline (idėjos
-     lygiu; JOKIO viešo kodo keitimo — tik žinia vault'e). Wiki-link auto.
+3) WIKI-LINK: susiek gpgxzx growth natą ↔ FUTURE_GPU (paleisk hera_wikilink deterministinį pass). Jei FUTURE_GPU nėra
+   wiki-grafe — bent pridėk nuorodą tekste abipus.
 
 4) BACKUP: commit hera-vault. Persistent askpass yra. Push nepavyko → NEkartok begalos, pranešk.
 
-RIBOS: €0. Jokių lokalių/GPU modelių. Jokio pytest-all. Viešo cad-site-agent NELIESK. Anti-rc124: viskas
-deterministiška, faithfulness be LLM/tinklo. Ekstrakcijai NEnaudok naujų model-call (imk jau turimą parse'ą).
+RIBOS: €0. Deterministiška (turinys duotas — JOKIŲ model-call). Jokio pytest-all. Viešo NELIESK. NEkeisk esamų
+FUTURE_GPU įrašų — tik pridėk. Raktų nespausdink.
 
-ATASKAITA (HERA botas, trumpai): (a) failas/slug; (b) faithfulness score + 3-6 ungrounded atomų pavyzdžiai
-(realu vs įtartina); (c) kiek PATVIRTINTŲ kandidatų ištraukta (idėjos/įrankiai); (d) cad-site-agent sąsaja 1 eil.;
-(e) vault push OK/ne; (f) 1 eil. kas toliau.
+ATASKAITA (HERA botas, trumpai): (a) GIFT įrašas pridėtas į FUTURE_GPU.md? (b) self-improvement sąsaja įrašyta?
+(c) wiki-link gpgxzx↔FUTURE_GPU OK? (d) vault push OK/ne; (e) 1 eil. kas toliau.
