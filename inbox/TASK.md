@@ -1,55 +1,42 @@
-UŽDUOTIS — FAZĖ 12: (A) parse↔šaltinis faithfulness-vartas (gebėjimas) + (B) Copycat nata su moksline korekcija. <14 min.
-NEleisk pytest pilnai (tik naujo modulio smoke/benchmark). Telegram TRUMPAI į HERA botą. Fail-safe. €0. Raktų nespausdink.
-Ataskaita TIK į HERA botą (HERA_BOT_TOKEN). Privatūs repo (hera-core-backup + hera-vault). Viešo cad-site-agent NELIESK.
+UŽDUOTIS — FAZĖ 12b: prijungti source_text prie faithfulness-vartų (YouTube/url), TADA įjungti HERA_FAITHFULNESS=1 live. <14 min.
+NEleisk pytest pilnai (tik hera_faithfulness --bench + 1 live dry-run). Telegram TRUMPAI į HERA botą. Fail-safe. €0.
+Raktų nespausdink. Ataskaita TIK į HERA botą. Privatūs repo. Viešo cad-site-agent NELIESK.
 
-KONTEKSTAS (kodėl): vartotojas nori dviejų dalykų. (A) DAUGKARTINIS gebėjimas — kai HERA parsina turinį, patikrinti ar
-parse'as ištikimas ŠALTINIUI (nepridėjo išgalvotų faktų). Deterministinis, be LLM, nemokamas. (B) VIENKARTINIS —
-įrašyti konkrečią Copycat/Hofstadter/Mitchell natą su moksline korekcija (sena knyga 1984, mokslas pajudėjo).
+KONTEKSTAS (kodėl): Fazė 12 sukūrė hera_faithfulness.py (benchmark 14/14), bet HERA_FAITHFULNESS=0 ir YouTube/url →
+`inconclusive`, nes extraktoriai neteikia source_text. Vartotojo ingests dažniausiai YouTube. Vien flag'o įjungimas
+beveik nieko neduotų. Todėl: prijungti šaltinį, kad yt/url irgi būtų tikrinami, TADA įjungti. YouTube atveju šaltinis
+JAU egzistuoja — verbatim transkripcija, kurią PARSER'is gamina. faithfulness = ar Gemini struktūrizuota santrauka
+atitinka verbatim transkriptą (haliucinacijų gaudymas). Tai grynai deterministiška (be LLM/tinklo) → negali pakibti.
 
-=== DALIS A: hera_faithfulness.py (deterministinis grounding-vartas) ===
+ŽINGSNIAI:
 
-1) `/opt/hera-processor/hera_faithfulness.py`:
-   - `check(parsed, source_text) -> {grounded:[...], ungrounded:[...], score:float(0-1), verdict:'ok'|'suspect'}`.
-   - Iš parsed ištrauk PATIKRINAMUS atomus (NE parafrazę): tikriniai vardai/terminai (proper nouns), citatos
-     (kabutėse), skaičiai/datos. Parafrazė teisėta — netikrink sakinių, tik faktinius atomus.
-   - Matchink prieš NORMALIZUOTĄ source_text (case-insensitive, whitespace-normalized; leidžiama nedidelė fuzzy
-     variacija). Atomas kurio NĖRA šaltinyje → 'ungrounded' (galima haliucinacija). score = grounded/(grounded+ungrounded).
-   - ADVISORY (ne hard blokas — parse legitimiai perfrazuoja): ungrounded virš slenksčio → pažymėk žmogui prie gate.
-   - HERA_FAITHFULNESS flag (default 0). Kai 0 — modulis tik importuojasi, pipeline nepaliestas. Integruok į ingest
-     PRIEŠ vault rašymą kaip advisory pakopą (kai flag=1).
-   - Fail-safe: klaida/timeout → verdict='inconclusive', NEblokuok, NIEKADA rc≠0. Be LLM, be tinklo, be lokalių modelių.
+1) SOURCE_TEXT PRIJUNGIMAS (minimalus, tikslinis — NEperrašinėk extraktorių logikos):
+   - Dispatcher `_maybe_faithfulness` pakopoje: kur imamas `parsed`, PRIDĖK `source_text` iš jau turimų duomenų:
+     • YouTube (gemini-titrai): source_text = VERBATIM transkriptas (pilnas „Pilna transkripcija (verbatim)" blokas),
+       kurį jau turi ingest rezultate. Jei yra ir titrai, ir verbatim — sujunk.
+     • url (trafilatura/playwright): source_text = ištrauktas puslapio tekstas (jau turimas prieš struktūrizavimą).
+     • tekstas/failai: kaip dabar (verbatim-block fallback).
+   - Jei source_text tuščias/nerastas KONKREČIAM ingestui → verdict `inconclusive` (kaip dabar), NIEKADA neblokuok.
+   - NEkeisk pačių extraktorių — TIK paduok jų jau turimą tekstą į check(). Jei kur source_text nepasiekiamas be
+     papildomo darbo — praleisk tą kelią, pažymėk ataskaitoje (NEdaryk naujų tinklo kvietimų — anti-rc124).
 
-2) BENCHMARK (deterministinis, be tinklo, 100%): hera_faithfulness_bench su fixtures — mažas source tekstas + 2 parse:
-   (i) „švarus" (visi atomai iš šaltinio) → verdict ok, score≈1; (ii) su ĮTERPTU išgalvotu faktu (vardas/skaičius kurio
-   nėra) → tas atomas 'ungrounded', verdict suspect. Patikrink ir tuščią/be-atomų atvejį. Įrašyk X/Y. <100% → NEjunk flag.
+2) ĮJUNGTI HERA_FAITHFULNESS=1 LIVE:
+   - Nustatyk flag'ą į 1 nuolatinėje konfigūracijoje (ten kur kiti HERA_* flag'ai). Pakopa lieka ADVISORY —
+     NIEKADA neblokuoja ingest'o; `suspect` → ⚠️ tik į HERA botą; klaida/timeout → `inconclusive`, rc=0.
+   - Patvirtink, kad kai flag=1, esamas pipeline elgesys nesikeičia IŠSKYRUS naują advisory pastabą.
 
-=== DALIS B: Copycat nata į vault (deterministiškai, be LLM, be tinklo) ===
+3) VERIFIKACIJA (privaloma, be pakibimo, deterministiška):
+   - `hera_faithfulness --bench` turi likti 100% (buvo 14/14). Jei nukrito — NEjunk, grąžink flag=0, pranešk.
+   - LIVE DRY-RUN (be LLM, be tinklo): paleisk faithfulness ant ≥1 JAU ingestinto YouTube įrašo parse↔verbatim
+     (pvz. Artifacts/yarabu arba GeoWorld/H-JEPA). Parodyk REALŲ score + kiek ungrounded atomų + verdict. Tikslas —
+     ĮRODYTI, kad yt dabar gauna `ok/suspect` su tikru balu, NE `inconclusive`. Jei vis tiek inconclusive — pranešk
+     kodėl (kur source_text nepasiekiamas), palik flag=1 tik jei bench 100% ir tekstui veikia.
 
-3) Įrašyk į hera-vault `growth/` naują natą (STATUS: staged, human-gate; kind: idea/technique; specialist: n/a):
-   „Copycat / analogijų kūrimas — Hofstadter & Mitchell (su 2026 moksliniu patikslinimu)". Turinys:
-   - ESMĖ (iš vartotojo parse'o): analogija=intelekto šerdis; konceptualus slydimas (rightmost→leftmost, raidė→grupė);
-     parallel terraced scan; Copycat letter-string mikropasaulis (abc→abd: ijk→ijl, xyz→wyz); FARG decentralizuoti
-     mechanizmai; Minsky/Moravec „easy things are hard".
-   - MOKSLINIS PATIKSLINIMAS 2026 (žymėk aiškiai — šaltinis senas, mokslas pajudėjo):
-     • DAR GALIOJA: analogija mašinoms vis dar sunki (Gendron et al. 2023, arXiv 2305.19555 „LLMs Are Not Strong
-       Abstract Reasoners"); „easy things are hard" laikosi; parallel terraced scan = modernus test-time compute /
-       inference-time search (Franzen et al. 2025, arXiv 2505.07859).
-     • PASENĘ: grynas symbolic FARG (Copycat/Metacat/Letter Spirit) daugiausia istorija → deep learning + neuro-symbolic;
-       embedding-analogijos (king−man+woman≈queen) trapios, siauros.
-     • MODERNUS PRIDEDA (GINČAS, NĖRA konsensuso): Webb/Holyoak/Lu 2022 (arXiv 2212.09196) PRO „emergent analogical
-       reasoning"; Hodel & West 2023 (arXiv 2308.16118) CONTRA — GPT-3 lūžta ant letter-string analogijų (Copycat
-       domenas!), įtaria įsiminimą; Wu et al. 2023 (arXiv 2307.02477) counterfactual užduotys → smukimas. Mitchell'io
-       skepticizmas iš esmės laikosi. ARC-AGI (Chollet) = modernus Copycat-tipo benchmarkas; ARC-AGI-2 2025 (arXiv
-       2505.11831); survey 2026 (arXiv 2603.13372): kompozicinis generalizavimas neišspręstas, program-synthesis+
-       test-time lenkia gryną LLM.
-   - provenance: „parse iš vartotojo + mokslinis patikslinimas (paper-search, ne pilnas adversarinis ratas)".
-     source_refs: user-parse (Copycat chapter). Wiki-link auto (hera_wikilink). NEsiųsk į išorę.
+4) BACKUP: commit į hera-core-backup. Persistent askpass jau yra. Push nepavyko → NEkartok begalos, pranešk.
 
-=== BENDROS RIBOS ===
-€0. Jokių lokalių/GPU modelių. Jokio tinklo B daliai (citatos jau duotos — NEfetch'ink arXiv). Jokio pytest-all.
-NEperrašinėk hera_eval/hera_council/hera_selfedit — tik importuok/integruok. Anti-rc124: viskas deterministiška, be
-model-call. Backup: commit hera-core-backup (kodas) + hera-vault (nata). Push nepavyko → NEkartok begalos, pranešk.
+RIBOS: €0. Jokių lokalių/GPU modelių. Jokių NAUJŲ tinklo kvietimų (naudok jau turimą tekstą). Jokio pytest-all.
+NEperrašinėk hera_council/hera_selfedit/extraktorių — tik paduok source_text. Anti-rc124: viskas deterministiška.
 
-ATASKAITA (HERA botas, trumpai): (a) hera_faithfulness.py sukurtas + integruotas (advisory)? (b) benchmark X/Y;
-(c) HERA_FAITHFULNESS į/išjungtas? (d) Copycat nata įrašyta į vault (kelias)? (e) wiki OK? (f) backup push OK/ne;
-(g) 1 eil. kas toliau.
+ATASKAITA (HERA botas, trumpai): (a) source_text prijungtas yt/url? (kuriems keliams veikia); (b) HERA_FAITHFULNESS
+įjungtas=1? (c) bench X/Y; (d) LIVE dry-run: kuris įrašas, score, ungrounded N, verdict (ok/suspect, NE inconclusive?);
+(e) backup push OK/ne; (f) 1 eil. kas toliau.
