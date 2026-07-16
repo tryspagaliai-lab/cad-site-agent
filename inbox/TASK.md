@@ -1,42 +1,36 @@
-UŽDUOTIS — FAZĖ 12b: prijungti source_text prie faithfulness-vartų (YouTube/url), TADA įjungti HERA_FAITHFULNESS=1 live. <14 min.
+UŽDUOTIS — FAZĖ 12c: pravalyti faithfulness balą (išmesti md-karkaso false-ungrounded triukšmą). <10 min.
 NEleisk pytest pilnai (tik hera_faithfulness --bench + 1 live dry-run). Telegram TRUMPAI į HERA botą. Fail-safe. €0.
 Raktų nespausdink. Ataskaita TIK į HERA botą. Privatūs repo. Viešo cad-site-agent NELIESK.
 
-KONTEKSTAS (kodėl): Fazė 12 sukūrė hera_faithfulness.py (benchmark 14/14), bet HERA_FAITHFULNESS=0 ir YouTube/url →
-`inconclusive`, nes extraktoriai neteikia source_text. Vartotojo ingests dažniausiai YouTube. Vien flag'o įjungimas
-beveik nieko neduotų. Todėl: prijungti šaltinį, kad yt/url irgi būtų tikrinami, TADA įjungti. YouTube atveju šaltinis
-JAU egzistuoja — verbatim transkripcija, kurią PARSER'is gamina. faithfulness = ar Gemini struktūrizuota santrauka
-atitinka verbatim transkriptą (haliucinacijų gaudymas). Tai grynai deterministiška (be LLM/tinklo) → negali pakibti.
+KONTEKSTAS (kodėl): Fazė 12b įjungė faithfulness gyvai, veikia (yt score 0.847 ir kt., realūs balai). BET pats VPS
+pažymėjo: `parsed=full_md` įtraukia md-karkasą (URL, „Metodas:", „Skambučių:", „Transkripto sim.", skyrių antraštes
+tipo „# YouTube ištrauka", „## Pilna transkripcija") — tie atomai kelia MELAGINGĄ ungrounded triukšmą (dalis 24/157
+buvo ne haliucinacijos, o URL/antraštės). Triukšmingas balas → `suspect` vėliavėlės nepatikimos → įrankis praranda
+vertę. Reikia: tikrinti TIK semantinius teiginius, ne md-karkasą.
 
-ŽINGSNIAI:
+ŽINGSNIAI (minimalūs, tiksliniai):
 
-1) SOURCE_TEXT PRIJUNGIMAS (minimalus, tikslinis — NEperrašinėk extraktorių logikos):
-   - Dispatcher `_maybe_faithfulness` pakopoje: kur imamas `parsed`, PRIDĖK `source_text` iš jau turimų duomenų:
-     • YouTube (gemini-titrai): source_text = VERBATIM transkriptas (pilnas „Pilna transkripcija (verbatim)" blokas),
-       kurį jau turi ingest rezultate. Jei yra ir titrai, ir verbatim — sujunk.
-     • url (trafilatura/playwright): source_text = ištrauktas puslapio tekstas (jau turimas prieš struktūrizavimą).
-     • tekstas/failai: kaip dabar (verbatim-block fallback).
-   - Jei source_text tuščias/nerastas KONKREČIAM ingestui → verdict `inconclusive` (kaip dabar), NIEKADA neblokuok.
-   - NEkeisk pačių extraktorių — TIK paduok jų jau turimą tekstą į check(). Jei kur source_text nepasiekiamas be
-     papildomo darbo — praleisk tą kelią, pažymėk ataskaitoje (NEdaryk naujų tinklo kvietimų — anti-rc124).
+1) SIAURINTI `parsed` faithfulness pakopoje:
+   - Vietoj viso `full_md`, paduok į check() TIK „## Struktūrizuota ištrauka (Gemini)" bloką (PAVADINIMAS/ESMĖ/
+     PAGRINDINIAI TAŠKAI/FAKTAI IR DUOMENYS/ĮRANKIAI/CITATOS) — tikrus semantinius teiginius.
+   - IŠMESK md-karkasą: „# ... ištrauka" antraštes, metaduomenų eilutes (URL:/Metodas:/Skambučių:/Transkripto sim.),
+     „## Pilna transkripcija (verbatim)" antraštę ir patį verbatim bloką (verbatim = ŠALTINIS, ne parse — jo netikrink
+     kaip parsed atomų).
+   - source_text lieka = verbatim transkriptas (+titrai/ASR/url tekstas) — kaip 12b.
+   - Jei „Struktūrizuota ištrauka" bloko nerandi konkrečiam ingestui → fallback į dabartinį elgesį (nesugadink), pažymėk.
+   - Papildomai (jei lengva, deterministiška): atomų ekstrakcijoje ignoruok URL/domenus ir grynus metaduomenų raktažodžius.
 
-2) ĮJUNGTI HERA_FAITHFULNESS=1 LIVE:
-   - Nustatyk flag'ą į 1 nuolatinėje konfigūracijoje (ten kur kiti HERA_* flag'ai). Pakopa lieka ADVISORY —
-     NIEKADA neblokuoja ingest'o; `suspect` → ⚠️ tik į HERA botą; klaida/timeout → `inconclusive`, rc=0.
-   - Patvirtink, kad kai flag=1, esamas pipeline elgesys nesikeičia IŠSKYRUS naują advisory pastabą.
+2) VERIFIKACIJA (be pakibimo, deterministiška):
+   - `hera_faithfulness --bench` turi likti 100% (14/14). Jei nukrito — grąžink, NEjunk pakeitimo, pranešk.
+   - LIVE dry-run (be LLM/tinklo) ant TO PATIES YouTube v=6V3RiljfY7A: parodyk NAUJĄ score + ungrounded N.
+     Tikslas — ungrounded turi SUMAŽĖTI (buvo 24/157), balas švaresnis. Palygink prieš/po.
+   - Paleisk ant dar 1-2 jau ingestintų yt, kad įsitikintum, jog `suspect` dabar reiškia tikrą neatitikimą, ne triukšmą.
 
-3) VERIFIKACIJA (privaloma, be pakibimo, deterministiška):
-   - `hera_faithfulness --bench` turi likti 100% (buvo 14/14). Jei nukrito — NEjunk, grąžink flag=0, pranešk.
-   - LIVE DRY-RUN (be LLM, be tinklo): paleisk faithfulness ant ≥1 JAU ingestinto YouTube įrašo parse↔verbatim
-     (pvz. Artifacts/yarabu arba GeoWorld/H-JEPA). Parodyk REALŲ score + kiek ungrounded atomų + verdict. Tikslas —
-     ĮRODYTI, kad yt dabar gauna `ok/suspect` su tikru balu, NE `inconclusive`. Jei vis tiek inconclusive — pranešk
-     kodėl (kur source_text nepasiekiamas), palik flag=1 tik jei bench 100% ir tekstui veikia.
+3) BACKUP: commit į hera-core-backup. Persistent askpass jau yra. Push nepavyko → NEkartok begalos, pranešk.
 
-4) BACKUP: commit į hera-core-backup. Persistent askpass jau yra. Push nepavyko → NEkartok begalos, pranešk.
+RIBOS: €0. Jokių lokalių/GPU modelių. Jokių naujų tinklo kvietimų. Jokio pytest-all. HERA_FAITHFULNESS lieka=1 (gyvai).
+NEperrašinėk extraktorių/council — TIK siaurink kas paduodama į check(). Anti-rc124: viskas deterministiška, be model-call.
 
-RIBOS: €0. Jokių lokalių/GPU modelių. Jokių NAUJŲ tinklo kvietimų (naudok jau turimą tekstą). Jokio pytest-all.
-NEperrašinėk hera_council/hera_selfedit/extraktorių — tik paduok source_text. Anti-rc124: viskas deterministiška.
-
-ATASKAITA (HERA botas, trumpai): (a) source_text prijungtas yt/url? (kuriems keliams veikia); (b) HERA_FAITHFULNESS
-įjungtas=1? (c) bench X/Y; (d) LIVE dry-run: kuris įrašas, score, ungrounded N, verdict (ok/suspect, NE inconclusive?);
+ATASKAITA (HERA botas, trumpai): (a) parsed susiaurintas iki Struktūrizuota-ištrauka bloko? (b) bench X/Y;
+(c) v=6V3RiljfY7A: prieš 24/157 (0.847) → PO: ungrounded N / score; (d) 1-2 kitų yt verdict po pravalymo;
 (e) backup push OK/ne; (f) 1 eil. kas toliau.
