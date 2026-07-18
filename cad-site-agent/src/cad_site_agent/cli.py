@@ -232,6 +232,29 @@ if _HAS_CLICK:
                      min_confidence=min_confidence,
                      exclude_noise=not keep_noise)
 
+    @main.command("pdf-ingest")
+    @click.argument("pdf_file", type=click.Path(exists=True))
+    @click.option("--output", "-o", default=None,
+                  help="Output DXF path (default: <stem>.pdfvec.dxf next to PDF)")
+    @click.option("--flatten-tol", default=None, type=float,
+                  help="Bezier flatten tolerance in pt (default: config/tolerances.yaml pdf.flatten_tolerance, else 0.5)")
+    @click.option("--pages", default=None,
+                  help="Comma-separated 1-based page numbers (default: all)")
+    def pdf_ingest(pdf_file, output, flatten_tol, pages):
+        """Extract vector primitives from PDF_FILE into a pseudo-layer DXF."""
+        _run_pdf_ingest(pdf_file, output, flatten_tol=flatten_tol, pages=pages)
+
+    @main.command("wiki-build")
+    @click.argument("analysis_jsons", nargs=-1, required=True,
+                    type=click.Path(exists=True))
+    @click.option("--db", default="data/wiki/cad3d.sqlite", show_default=True,
+                  help="SQLite fact-store path")
+    @click.option("--wiki-dir", default="data/wiki", show_default=True,
+                  help="Directory for generated Markdown nodes")
+    def wiki_build(analysis_jsons, db, wiki_dir):
+        """Ingest <stem>.analysis.json reports into SQLite and render wiki nodes."""
+        _run_wiki_build(list(analysis_jsons), db, wiki_dir)
+
     def cli_entry():
         main()
 
@@ -349,6 +372,19 @@ else:
         p_process.add_argument("--min-confidence", type=float, default=None, dest="min_confidence")
         p_process.add_argument("--keep-noise", action="store_true", dest="keep_noise")
 
+        # pdf-ingest
+        p_pdf = sub.add_parser("pdf-ingest", help="PDF vectors -> pseudo-layer DXF")
+        p_pdf.add_argument("pdf_file")
+        p_pdf.add_argument("--output", "-o", default=None)
+        p_pdf.add_argument("--flatten-tol", type=float, default=None, dest="flatten_tol")
+        p_pdf.add_argument("--pages", default=None)
+
+        # wiki-build
+        p_wiki = sub.add_parser("wiki-build", help="Report JSONs -> SQLite + wiki MD")
+        p_wiki.add_argument("analysis_jsons", nargs="+")
+        p_wiki.add_argument("--db", default="data/wiki/cad3d.sqlite")
+        p_wiki.add_argument("--wiki-dir", default="data/wiki", dest="wiki_dir")
+
         args = parser.parse_args()
         legacy_cls = getattr(args, "legacy_cls", False)
 
@@ -405,6 +441,11 @@ else:
                          status_filter=args.status,
                          min_confidence=args.min_confidence,
                          exclude_noise=not args.keep_noise)
+        elif args.cmd == "pdf-ingest":
+            _run_pdf_ingest(args.pdf_file, args.output,
+                            flatten_tol=args.flatten_tol, pages=args.pages)
+        elif args.cmd == "wiki-build":
+            _run_wiki_build(args.analysis_jsons, args.db, args.wiki_dir)
         else:
             parser.print_help()
 
@@ -922,6 +963,73 @@ def _run_process(
           f"features={report.features_written}  "
           f"removed={report.features_removed}")
     print(f"Output: {output_dxf}")
+
+
+def _pdf_flatten_tolerance_from_config() -> float:
+    """Read pdf.flatten_tolerance from config/tolerances.yaml; fallback 0.5."""
+    try:
+        import yaml
+        with open(Path("config") / "tolerances.yaml", encoding="utf-8") as fh:
+            data = yaml.safe_load(fh) or {}
+        return float(data.get("pdf", {}).get("flatten_tolerance", 0.5))
+    except Exception:
+        return 0.5
+
+
+def _run_pdf_ingest(pdf_file: str, output: str | None, *,
+                    flatten_tol=None, pages=None) -> None:
+    try:
+        from .ingest.pdf_to_dxf import convert_pdf_to_dxf
+    except ImportError as exc:
+        print(f"Error: pdf-ingest requires pdfplumber ({exc}). "
+              f"Install with: pip install 'cad-site-agent[pdf]'", file=sys.stderr)
+        raise SystemExit(1)
+
+    if flatten_tol is None:
+        flatten_tol = _pdf_flatten_tolerance_from_config()
+    page_list = None
+    if pages:
+        try:
+            page_list = [int(p) for p in str(pages).split(",") if p.strip()]
+        except ValueError:
+            print(f"Error: invalid --pages value: {pages}", file=sys.stderr)
+            raise SystemExit(1)
+
+    pdf_path = Path(pdf_file)
+    out_dxf = output or str(pdf_path.with_suffix("")) + ".pdfvec.dxf"
+    report = convert_pdf_to_dxf(str(pdf_path), out_dxf,
+                                flatten_tolerance=flatten_tol, pages=page_list)
+    json_path = report.write_json(
+        Path(out_dxf).parent / f"{pdf_path.stem}.pdf_ingest.json")
+
+    if report.status == "ok":
+        print(f"OK  pages={report.pages_with_vectors}/{report.pages_total}  "
+              f"polylines={report.polylines_written}  texts={report.texts_written}  "
+              f"layers={len(report.layers_created)}")
+        print(f"Output: {out_dxf}")
+    elif report.status == "empty":
+        print(f"No vector primitives found — nothing written "
+              f"(reasons: {report.skipped_pages or 'n/a'})")
+    else:
+        print(f"Error: {report.error}", file=sys.stderr)
+    print(f"Report: {json_path}")
+    if report.status == "error":
+        raise SystemExit(1)
+
+
+def _run_wiki_build(analysis_jsons: list[str], db: str, wiki_dir: str) -> None:
+    from .wiki.sqlite_writer import ingest_reports
+    from .wiki.wiki_writer import build_wiki
+
+    db_report = ingest_reports(analysis_jsons, db)
+    for path, reason in db_report.skipped.items():
+        print(f"Skipped {path}: {reason}", file=sys.stderr)
+    wiki_report = build_wiki(db, wiki_dir)
+    print(f"Ingested {len(db_report.drawings_ingested)} drawing(s) -> {db}")
+    print(f"Wiki nodes: {len(wiki_report.nodes_written)}  "
+          f"cross-links: {wiki_report.links_created}  ({wiki_dir})")
+    if db_report.skipped and not db_report.drawings_ingested:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

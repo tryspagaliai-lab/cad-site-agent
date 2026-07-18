@@ -1,6 +1,19 @@
 # SPEC — cad-3d P0: PDF brėžinys → vektorinis sluoksnis → SQLite + Wiki
 
-> Statusas: **PROPOSED — laukia human-gate patvirtinimo. Jokio kodo, kol nepatvirtinta.**
+> Statusas: **IMPLEMENTED (M1+M2+M3), 2026-07-18** — patvirtinta human-gate, įgyvendinta
+> šakoje `claude/hera-faithfulness-curation-6v85a0`. Testai: 221 passed (baseline 208 + 13
+> naujų), 8 skipped, 0 regresijų.
+>
+> Nukrypimai nuo pradinės schemos (užfiksuoti įgyvendinant):
+> - `routing` lentelė: `(drawing_id, dimension, key, count)` vietoj
+>   `(feature_type, semantic_class, dest_layer, count)` — ataskaitos agregatai yra
+>   trys atskiri žodynai, viena eilutė per (dimensija, raktas) yra tikslesnė forma.
+> - `texts` lentelė: `(layer, content, x, y)` vietoj `bbox` — analysis ataskaita
+>   teikia įterpimo tašką, ne bbox.
+> - pdfplumber įdėtas kaip OPTIONAL priklausomybė (`pip install 'cad-site-agent[pdf]'`);
+>   be jo `pdf-ingest` aiškiai praneša, visa kita veikia kaip anksčiau.
+> - pdfplumber daugiasegmentę polilinę grąžina kaip vieną „curve" objektą; `path`
+>   koordinatės yra top-down — adapteris daro vienkartinę y-inversiją (testuota).
 > Metodo šaltinis: kuruotas žinių mazgas `kq6reu` (PDF → vektorius → SQLite + LLM-wiki,
 > Karpathy-tipo „LLM skaitomas žinių sluoksnis"). Čia — jo adaptacija cad-site-agent'ui.
 > Data: 2026-07-18

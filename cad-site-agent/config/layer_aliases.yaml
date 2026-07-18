@@ -122,3 +122,12 @@ rules:
   # ── UNKNOWN (catch-all — leave at bottom) ─────────────────
   # Anything not matched above → unknown
   # (no rule needed — normalizer assigns 'unknown' automatically)
+
+  # ── PDF PSEUDO-LAYERS (cad-3d P0, manual mapping only) ────
+  # pdf-ingest writes deterministic pseudo-layers PDF_C<RRGGBB>_W<class>
+  # (stroke colour + line-width class) and PDF_TEXT. Mapping them to
+  # semantic classes is a HUMAN decision per source drawing convention —
+  # uncomment and adapt per project, never auto-generate:
+  #   - { type: exact, pattern: "PDF_C000000_W1", class: boundary }
+  #   - { type: exact, pattern: "PDF_CFF0000_W1", class: building }
+  #   - { type: exact, pattern: "PDF_TEXT",       class: text }

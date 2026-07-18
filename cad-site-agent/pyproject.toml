@@ -48,3 +48,5 @@ testpaths = ["tests"]
 [project.optional-dependencies]
 rtree = ["rtree>=1.0.0"]
 dev = ["pytest>=7.0"]
+# cad-3d P0: PDF vector ingest (pdf-ingest CLI command); MIT-licensed, pure-python
+pdf = ["pdfplumber>=0.11.0"]

@@ -38,6 +38,11 @@ hatch:
   # Default hatch pattern for solid fills
   pattern: SOLID
 
+pdf:
+  # cad-3d P0: bezier flatten tolerance for pdf-ingest, in PDF points.
+  # Smaller = more vertices per curve (capped at 64 segments per bezier).
+  flatten_tolerance: 0.5
+
   # Scale for non-SOLID hatch patterns
   pattern_scale: 500.0
 
