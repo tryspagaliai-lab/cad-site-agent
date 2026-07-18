@@ -63,10 +63,13 @@ def _write_dxf(pages: list[PdfPageVectors], output_dxf: str) -> tuple[int, int, 
             layers.add(name)
         return name
 
+    # Multi-page PDFs are laid side by side; the offset accumulates each
+    # preceding page's own width (plus a same-width gap) so pages of
+    # different sizes never overlap in model space.
+    x_cursor = 0.0
     for page in pages:
-        # Multi-page PDFs are laid side by side with a page-width gap so pages
-        # never overlap in model space.
-        x_off = (page.page_number - 1) * page.width * 2
+        x_off = x_cursor
+        x_cursor += page.width * 2
 
         for pl in page.polylines:
             pts = [(x + x_off, y) for x, y in pl.points]
@@ -116,15 +119,15 @@ def convert_pdf_to_dxf(
         for pv in page_vectors:
             if pv.skipped_reason:
                 report.skipped_pages[str(pv.page_number)] = pv.skipped_reason
-        with_vectors = [pv for pv in page_vectors if pv.polylines]
-        report.pages_with_vectors = len(with_vectors)
+        with_content = [pv for pv in page_vectors if pv.polylines or pv.texts]
+        report.pages_with_vectors = len(with_content)
 
-        if not with_vectors:
+        if not with_content:
             report.status = "empty"
             return report
 
         report.polylines_written, report.texts_written, report.layers_created = \
-            _write_dxf(with_vectors, output_dxf)
+            _write_dxf(with_content, output_dxf)
         return report
     except Exception as exc:
         report.status = "error"

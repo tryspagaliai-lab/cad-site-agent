@@ -153,6 +153,64 @@ def test_wiki_output_is_deterministic(tmp_path):
     assert first == second
 
 
+def test_missing_siblings_produce_warnings(tmp_path):
+    """Analysis json without candidates/routing siblings (e.g. `process`
+    output naming) must warn, not silently ingest zero regions."""
+    reports = tmp_path / "reports"
+    a = _write_reports(reports, "siteA", class_guess="parking")
+    (reports / "siteA.hatch_candidates.json").unlink()
+    (reports / "siteA.routing.json").unlink()
+
+    report = ingest_reports([str(a)], str(tmp_path / "wiki.sqlite"))
+    assert report.drawings_ingested == ["siteA"]
+    notes = report.warnings.get("siteA", [])
+    assert any("hatch_candidates" in n for n in notes)
+    assert any("routing" in n for n in notes)
+
+
+def test_duplicate_stem_in_batch_is_skipped(tmp_path):
+    a = _write_reports(tmp_path / "one", "site", class_guess="parking")
+    b = _write_reports(tmp_path / "two", "site", class_guess="building")
+
+    report = ingest_reports([str(a), str(b)], str(tmp_path / "wiki.sqlite"))
+    assert report.drawings_ingested == ["site"]
+    assert report.skipped.get(str(b)) == "duplicate stem in batch"
+
+    con = sqlite3.connect(tmp_path / "wiki.sqlite")
+    try:
+        # First occurrence wins; the second must not silently replace it.
+        assert con.execute("SELECT class_guess FROM regions").fetchone() == ("parking",)
+    finally:
+        con.close()
+
+
+def test_wiki_link_hrefs_are_url_encoded(tmp_path):
+    reports = tmp_path / "reports"
+    a = _write_reports(reports, "plan A (v2)", class_guess="parking")
+    b = _write_reports(reports, "siteB", class_guess="parking")
+    db = tmp_path / "wiki.sqlite"
+    ingest_reports([str(a), str(b)], str(db))
+    build_wiki(str(db), str(tmp_path / "wiki"))
+
+    md_b = (tmp_path / "wiki" / "siteB.md").read_text(encoding="utf-8")
+    assert "(plan%20A%20%28v2%29.md)" in md_b
+
+
+def test_true_text_count_rendered(tmp_path):
+    """Wiki must show the analyzer's full text_count, not the capped sample."""
+    reports = tmp_path / "reports"
+    a = _write_reports(reports, "siteA", class_guess="parking")
+    data = json.loads(a.read_text(encoding="utf-8"))
+    data["analysis"]["text_count"] = 57       # sample stays at 1 entry
+    a.write_text(json.dumps(data), encoding="utf-8")
+
+    db = tmp_path / "wiki.sqlite"
+    ingest_reports([str(a)], str(db))
+    build_wiki(str(db), str(tmp_path / "wiki"))
+    md = (tmp_path / "wiki" / "siteA.md").read_text(encoding="utf-8")
+    assert "**Text entries:** 57 (sample stored: 1)" in md
+
+
 def test_no_link_for_unrelated_drawings(tmp_path):
     reports = tmp_path / "reports"
     a = _write_reports(reports, "siteA", class_guess="parking")

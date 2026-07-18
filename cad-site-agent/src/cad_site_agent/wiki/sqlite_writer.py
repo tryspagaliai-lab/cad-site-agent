@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS drawings (
     confidence    REAL,
     units         TEXT,
     scale_status  TEXT,
+    text_count    INTEGER,
     ingested_at   TEXT
 );
 CREATE TABLE IF NOT EXISTS layers (
@@ -95,11 +96,13 @@ class WikiDbReport:
     db_path: str
     drawings_ingested: list[str] = field(default_factory=list)
     skipped: dict[str, str] = field(default_factory=dict)     # stem/path -> reason
+    warnings: dict[str, list[str]] = field(default_factory=dict)  # stem -> notes
 
     def to_dict(self) -> dict:
         return {"db_path": self.db_path,
                 "drawings_ingested": self.drawings_ingested,
-                "skipped": self.skipped}
+                "skipped": self.skipped,
+                "warnings": self.warnings}
 
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
@@ -128,12 +131,20 @@ def _taxonomy() -> TaxonomyLoader | None:
         return None
 
 
+def _migrate_schema(con: sqlite3.Connection) -> None:
+    """Add columns introduced after the first release to pre-existing DBs."""
+    cols = {row[1] for row in con.execute("PRAGMA table_info(drawings)")}
+    if "text_count" not in cols:
+        con.execute("ALTER TABLE drawings ADD COLUMN text_count INTEGER")
+
+
 # ─── per-drawing ingest ──────────────────────────────────────────────────────
 
 
 def _ingest_one(cur: sqlite3.Cursor, analysis_json: Path,
-                taxonomy: TaxonomyLoader | None) -> str:
+                taxonomy: TaxonomyLoader | None) -> tuple[str, list[str]]:
     stem = analysis_json.name.removesuffix(ANALYSIS_SUFFIX)
+    warnings: list[str] = []
     data = _load_json(analysis_json)
     if data is None:
         raise ValueError("unreadable analysis json")
@@ -141,17 +152,20 @@ def _ingest_one(cur: sqlite3.Cursor, analysis_json: Path,
     analysis = data.get("analysis", data)
     classification = data.get("classification", {})
     source_path = str(analysis.get("source_file", ""))
+    # Legacy classifier reports use "drawing_type" instead of "label".
+    drawing_type = (classification.get("label")
+                    or classification.get("drawing_type") or "unknown")
 
     cur.execute("DELETE FROM drawings WHERE stem = ?", (stem,))
     cur.execute(
         "INSERT INTO drawings (stem, source_path, source_format, drawing_type,"
-        " confidence, units, scale_status, ingested_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (stem, source_path, _source_format(source_path),
-         classification.get("label", "unknown"),
+        " confidence, units, scale_status, text_count, ingested_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (stem, source_path, _source_format(source_path), drawing_type,
          float(classification.get("confidence", 0.0) or 0.0),
          analysis.get("likely_unit", "unknown"),
          "unknown",
+         int(analysis.get("text_count", 0) or 0),
          datetime.now().isoformat(timespec="seconds")))
     drawing_id = cur.lastrowid
 
@@ -166,7 +180,13 @@ def _ingest_one(cur: sqlite3.Cursor, analysis_json: Path,
             "INSERT INTO layers VALUES (?, ?, ?, ?, ?, ?)",
             (drawing_id, name, int(info.get("entity_count", 0) or 0), *sem))
 
-    candidates = _load_json(analysis_json.with_name(f"{stem}.hatch_candidates.json"))
+    candidates_path = analysis_json.with_name(f"{stem}.hatch_candidates.json")
+    candidates = _load_json(candidates_path)
+    if candidates is None:
+        # NOTE: `process` names its candidates file after the OUTPUT stem, so
+        # this sibling lookup misses it — surface that instead of silently
+        # ingesting zero regions.
+        warnings.append(f"no sibling {candidates_path.name} — 0 regions ingested")
     for cand in (candidates or {}).get("candidates", []):
         region = cand.get("region", {})
         cur.execute(
@@ -183,14 +203,17 @@ def _ingest_one(cur: sqlite3.Cursor, analysis_json: Path,
             (drawing_id, entry.get("layer"), entry.get("content"),
              entry.get("x"), entry.get("y")))
 
-    routing = _load_json(analysis_json.with_name(f"{stem}.routing.json"))
-    if routing:
+    routing_path = analysis_json.with_name(f"{stem}.routing.json")
+    routing = _load_json(routing_path)
+    if routing is None:
+        warnings.append(f"no sibling {routing_path.name} — 0 routing rows ingested")
+    else:
         for dimension in ("by_feature_type", "by_semantic_class", "by_dest_layer"):
             table = routing.get(dimension, {})
             for key in sorted(table):
                 cur.execute("INSERT INTO routing VALUES (?, ?, ?, ?)",
                             (drawing_id, dimension, key, int(table[key] or 0)))
-    return stem
+    return stem, warnings
 
 
 # ─── public API ──────────────────────────────────────────────────────────────
@@ -212,14 +235,23 @@ def ingest_reports(analysis_jsons: list[str], db_path: str) -> WikiDbReport:
     try:
         con.execute("PRAGMA foreign_keys = ON")
         con.executescript(_SCHEMA)
+        _migrate_schema(con)
+        seen_stems: set[str] = set()
         for raw in analysis_jsons:
             path = Path(raw)
+            stem = path.name.removesuffix(ANALYSIS_SUFFIX)
+            if stem in seen_stems:
+                report.skipped[str(path)] = "duplicate stem in batch"
+                continue
             cur = con.cursor()
             try:
                 cur.execute("SAVEPOINT drawing")
-                stem = _ingest_one(cur, path, taxonomy)
+                stem, warnings = _ingest_one(cur, path, taxonomy)
                 cur.execute("RELEASE SAVEPOINT drawing")
+                seen_stems.add(stem)
                 report.drawings_ingested.append(stem)
+                if warnings:
+                    report.warnings[stem] = warnings
             except Exception as exc:
                 cur.execute("ROLLBACK TO SAVEPOINT drawing")
                 report.skipped[str(path)] = str(exc)

@@ -115,21 +115,68 @@ def test_pseudo_layers_deterministic(fixture_pdf):
     assert len(layers) >= 3
 
 
-def test_raster_only_pdf_is_failsafe(tmp_path):
-    """A PDF with no vector ops must produce an 'empty' report, not a crash."""
-    global CONTENT_STREAM
-    empty = tmp_path / "raster_like.pdf"
-    saved = CONTENT_STREAM
+def _fixture_with_stream(tmp_path: Path, name: str, stream: bytes) -> Path:
+    saved = globals()["CONTENT_STREAM"]
     try:
-        # Rebuild the fixture with a content stream containing no path ops.
-        globals()["CONTENT_STREAM"] = b"BT /F1 8 Tf 5 5 Td (scan) Tj ET\n"
-        empty.write_bytes(_build_fixture_pdf())
+        globals()["CONTENT_STREAM"] = stream
+        path = tmp_path / name
+        path.write_bytes(_build_fixture_pdf())
+        return path
     finally:
         globals()["CONTENT_STREAM"] = saved
+
+
+def test_raster_only_pdf_is_failsafe(tmp_path):
+    """A PDF with no vectors AND no text must produce an 'empty' report."""
+    empty = _fixture_with_stream(tmp_path, "raster_like.pdf", b"\n")
     report = convert_pdf_to_dxf(str(empty), str(tmp_path / "out.dxf"))
     assert report.status == "empty"
     assert not (tmp_path / "out.dxf").exists()
-    assert report.skipped_pages.get("1") == "no_vector_primitives"
+    assert report.skipped_pages.get("1") == "no_vector_primitives_or_text"
+
+
+def test_text_only_page_is_kept(tmp_path):
+    """A notes-only page (text, no vectors) must reach the DXF, not be dropped."""
+    notes = _fixture_with_stream(
+        tmp_path, "notes.pdf", b"BT /F1 8 Tf 5 5 Td (IMPORTANT NOTE) Tj ET\n")
+    report = convert_pdf_to_dxf(str(notes), str(tmp_path / "out.dxf"))
+    assert report.status == "ok"
+    assert report.texts_written == 2          # extract_words splits per word
+    import ezdxf
+    msp = ezdxf.readfile(str(tmp_path / "out.dxf")).modelspace()
+    assert {e.dxf.text for e in msp.query("TEXT")} == {"IMPORTANT", "NOTE"}
+
+
+def test_y_operator_uses_endpoint_as_second_control(tmp_path):
+    """PDF `y` op: cp2 == endpoint. A quarter-bow from (0,0) to (100,100) with
+    cp1=(0,100) must pass near x≈50 at mid-curve, not hug x≈12."""
+    pdf = _fixture_with_stream(
+        tmp_path, "yop.pdf", b"1 w 0 0 0 RG\n0 0 m 0 100 100 100 y S\n")
+    page = extract_pdf_vectors(str(pdf), flatten_tolerance=0.5)[0]
+    assert len(page.polylines) == 1
+    pts = page.polylines[0].points
+    mid = min(pts, key=lambda p: abs(p[1] - 88))   # sample near upper bow
+    assert mid[0] > 35, f"cp2 bug: midpoint {mid} hugs the start edge"
+
+
+def test_multipage_offsets_never_overlap(tmp_path):
+    """Pages of different widths must not overlap in model space."""
+    from cad_site_agent.ingest.pdf_to_dxf import _write_dxf
+    from cad_site_agent.ingest.pdf_vector import PdfPageVectors, PdfPolyline
+
+    wide = PdfPageVectors(page_number=1, width=1000, height=100, polylines=[
+        PdfPolyline(points=[(10, 10), (900, 10)], closed=False, layer="PDF_A")])
+    narrow = PdfPageVectors(page_number=2, width=100, height=100, polylines=[
+        PdfPolyline(points=[(10, 20), (90, 20)], closed=False, layer="PDF_B")])
+    out = tmp_path / "multi.dxf"
+    _write_dxf([wide, narrow], str(out))
+
+    import ezdxf
+    msp = ezdxf.readfile(str(out)).modelspace()
+    xs = {e.dxf.layer: [p[0] for p in e.get_points("xy")]
+          for e in msp.query("LWPOLYLINE")}
+    # Page 2 must start beyond page 1's full width, not inside it.
+    assert min(xs["PDF_B"]) >= 1000
 
 
 # ─── DXF adapter ─────────────────────────────────────────────────────────────

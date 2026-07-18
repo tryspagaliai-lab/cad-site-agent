@@ -978,12 +978,12 @@ def _pdf_flatten_tolerance_from_config() -> float:
 
 def _run_pdf_ingest(pdf_file: str, output: str | None, *,
                     flatten_tol=None, pages=None) -> None:
-    try:
-        from .ingest.pdf_to_dxf import convert_pdf_to_dxf
-    except ImportError as exc:
-        print(f"Error: pdf-ingest requires pdfplumber ({exc}). "
-              f"Install with: pip install 'cad-site-agent[pdf]'", file=sys.stderr)
+    import importlib.util
+    if importlib.util.find_spec("pdfplumber") is None:
+        print("Error: pdf-ingest requires pdfplumber. "
+              "Install with: pip install 'cad-site-agent[pdf]'", file=sys.stderr)
         raise SystemExit(1)
+    from .ingest.pdf_to_dxf import convert_pdf_to_dxf
 
     if flatten_tol is None:
         flatten_tol = _pdf_flatten_tolerance_from_config()
@@ -1024,6 +1024,9 @@ def _run_wiki_build(analysis_jsons: list[str], db: str, wiki_dir: str) -> None:
     db_report = ingest_reports(analysis_jsons, db)
     for path, reason in db_report.skipped.items():
         print(f"Skipped {path}: {reason}", file=sys.stderr)
+    for stem, notes in db_report.warnings.items():
+        for note in notes:
+            print(f"Warning [{stem}]: {note}", file=sys.stderr)
     wiki_report = build_wiki(db, wiki_dir)
     print(f"Ingested {len(db_report.drawings_ingested)} drawing(s) -> {db}")
     print(f"Wiki nodes: {len(wiki_report.nodes_written)}  "

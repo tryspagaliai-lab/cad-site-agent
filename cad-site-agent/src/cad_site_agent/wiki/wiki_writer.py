@@ -17,6 +17,7 @@ import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 #: Semantic classes that say nothing about drawing content.
 _NON_LINKING_CLASSES = {"", "unknown", "none", None}
@@ -65,8 +66,9 @@ def _rebuild_links(con: sqlite3.Connection, drawings: list[tuple[int, str]]) -> 
 def _render_node(con: sqlite3.Connection, drawing_id: int, stem: str) -> str:
     d = con.execute(
         "SELECT source_path, source_format, drawing_type, confidence, units,"
-        " scale_status FROM drawings WHERE id = ?", (drawing_id,)).fetchone()
-    source_path, source_format, dtype, confidence, units, scale_status = d
+        " scale_status, text_count FROM drawings WHERE id = ?",
+        (drawing_id,)).fetchone()
+    source_path, source_format, dtype, confidence, units, scale_status, text_count = d
 
     lines = [
         f"# Drawing: {stem}",
@@ -107,10 +109,13 @@ def _render_node(con: sqlite3.Connection, drawing_id: int, stem: str) -> str:
         lines += [f"- {dim}/{key}: {n}" for dim, key, n in routing]
         lines.append("")
 
-    n_texts = con.execute("SELECT COUNT(*) FROM texts WHERE drawing_id = ?",
-                          (drawing_id,)).fetchone()[0]
-    if n_texts:
-        lines += [f"**Text entries:** {n_texts}", ""]
+    n_samples = con.execute("SELECT COUNT(*) FROM texts WHERE drawing_id = ?",
+                            (drawing_id,)).fetchone()[0]
+    # text_count is the analyzer's true total; the texts table holds only its
+    # capped sample (20 entries / 80 chars).
+    total_texts = text_count if text_count else n_samples
+    if total_texts:
+        lines += [f"**Text entries:** {total_texts} (sample stored: {n_samples})", ""]
 
     links = con.execute(
         "SELECT d.stem, l.shared_class FROM wiki_links l"
@@ -119,7 +124,7 @@ def _render_node(con: sqlite3.Connection, drawing_id: int, stem: str) -> str:
         (drawing_id,)).fetchall()
     if links:
         lines += ["## Related drawings", ""]
-        lines += [f"- [{other}]({other}.md) — shared class `{cls}`"
+        lines += [f"- [{other}]({quote(other)}.md) — shared class `{cls}`"
                   for other, cls in links]
         lines.append("")
 

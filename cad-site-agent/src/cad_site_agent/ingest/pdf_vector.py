@@ -162,8 +162,10 @@ def _flatten_path(path, tolerance: float) -> list[tuple[list[tuple[float, float]
             p0 = current[-1]
             current.extend(_bezier_points(p0, p0, tuple(seg[1]), tuple(seg[2]), tolerance))
         elif op == "y" and current:
-            p1 = tuple(seg[1])
-            current.extend(_bezier_points(current[-1], p1, p1, tuple(seg[2]), tolerance))
+            # PDF spec: `y x1 y1 x3 y3` — second control point coincides with
+            # the endpoint (x3,y3), not with (x1,y1).
+            p3 = tuple(seg[2])
+            current.extend(_bezier_points(current[-1], tuple(seg[1]), p3, p3, tolerance))
         elif op == "h":
             _finish(closed=True)
         else:
@@ -208,8 +210,8 @@ def _extract_page(page, page_number: int, tolerance: float) -> PdfPageVectors:
             bbox=(float(obj["x0"]), height - float(obj["bottom"]),
                   float(obj["x1"]), height - float(obj["top"]))))
 
-    if not result.polylines:
-        result.skipped_reason = "no_vector_primitives"
+    if not result.polylines and not result.texts:
+        result.skipped_reason = "no_vector_primitives_or_text"
     return result
 
 
