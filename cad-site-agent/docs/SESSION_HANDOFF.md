@@ -77,6 +77,45 @@ login. **Atidėta:** Godcoder full self-rewrite, Journey Forge, Codex reviewer (
 **Atnaujinta:** 2026-07-11
 **Rollback SHA (saugus taškas prieš taisykles):** `2fdb3f8`
 
+## BŪSENA 2026-07-18 — faithfulness + eval GYVI; laukia curation backlog
+> Ši skiltis PAKEIČIA 07-11 būseną. Nauja sesija: pratęsk nuo čia. Visi €0, fail-safe, anti-rc124, human-gate.
+
+**Naujos GYVOS fazės (po 07-11):**
+- **Memora atmintis GYVA** (HERA_MEMORA=1): index (primary_abstraction+cue_anchors) + policy-guided multi-hop retriever.
+- **GPU auto-filer GYVAS** (HERA_GPUFILTER=1): GPU/self-hosting turinys auto→future-gpu (FUTURE_GPU.md, `hardware: future-gpu`).
+- **Fazė 5d** rejected-edit buferis; **7a planner** (hera_planner, def 0); **7b specialist agents** (hera_agents:
+  deterministinis factory router + SocialSpecialist=juodraščiai→proposals/social/, JOKIO postinimo; Ops/Design=stubai
+  laukia Fazės 8; def 0, bench 22/22).
+- **Fazė 11+11d eval-vartai** (hera_eval: Tier A determ. + Tier B LLM-judge advisory PRIEŠ self-edit promociją;
+  **held-out golden split** ref/holdout + **overfitting-flag** ref↑holdout-flat→žmogui; def 0, bench 25/25).
+- **Fazė 12/12b/12c faithfulness vartas GYVAS** (HERA_FAITHFULNESS=1): parse↔šaltinis grounding (atomai vs verbatim;
+  yt/url source_text 68/68); advisory, `suspect`→HERA botas, NIEKAD neblokuoja; pravalytas md-triukšmas (0.847→0.971;
+  bench 14/14). Šakninė pataisa: _PROPER_RE LT-didžiųjų bug'as.
+- Naujienų digest dedup PATAISYTAS (seen.jsonl). Search praplėsta: CN/JP/KR labs + TLDR.
+
+**KURAVIMO PRINCIPAS (vartotojas 2026-07-18):** „imam TIK tai, kas stiprina sistemą Į PRIEKĮ — stiprinam sistemą."
+Kiekvieną ingestą vertinti pro šį filtrą. Marketingą/dublius/nepatvirtintus žymėti, necituoti. Faithfulness suspect →
+atskirti realius neatitikimus nuo vertimo/terminų triukšmo (dažnai suspect = triukšmas, ne haliucinacija).
+
+**cad-3d KRYPTIS (vartotojo ArchViz/3D niša — NE statybos):** FUTURE_GPU.md turi GIFT (MIT/IBM: VLM 2D→CAD-kodas→3D,
+near-misses+inference-time budget; GPU→future) + 2D→3D. Plėtros vektorius cad-site-agent'ui (dabar 2D DXF→semantika).
+Self-improvement principas (near-misses+biudžetas) IŠORIŠKAI validuotas (GIFT, Forget-Loop, SkillOpt); BET AI2/UW
+tyrimas (guardrail 6xlz70) įspėja: harness self-optimizacija overfitting'a → held-out eval + test-time scaling.
+
+**Artifacts KOKYBEI:** naudojami sistemos kokybei kai gerina (NE darbo paieškai). Yra PRIVATUS curation-review
+dashboard (staged+prune+faithfulness balai). Vault duomenys PRIVATŪS — nesidalinama.
+
+**⏳ LAUKIA HUMAN-GATE (backlog — naujos sesijos prioritetas):**
+- **42 staged prune** (superseded→distiliuoti į skills; C01-C32 saugūs; `gdx0fm`+`lto8bb`=HOLD epistminės vėliavos).
+- **~8 staged ingestai:** promote rekom.: Hermes lygiagretūs įrankiai (9.0), H-JEPA/GeoWorld, kognityvinis organiz.,
+  Copycat (science-checked); priimti: Claude platforma; MERGE dublį: sistemų-dinamika `zo9qtf`↔MIT; Artifacts=priimti
+  +šaltinio vėliava (marketingas). `93ell3` jau=bazinė ref (dublis).
+- **🔴 NAUJAS sel 9.0 promote_candidate (07-18): „Statybinių brėžinių apdorojimo efektyvumas su AI"** — TIESIOGIAI
+  cad-site-agent drawing-processing domenas; AUKŠČIAUSIAS peržiūros prioritetas (dar neįvertinta).
+- Loop B stabilus: 54 skills·68 growth·74 RB; wiki dangling 12 (kyla — verta pravalyti); atviri klausimai 11.
+
+**Atnaujinta:** 2026-07-18
+
 ## Repo struktūros pastaba (svarbu)
 - GitHub repo `tryspagaliai-lab/cad-site-agent` turi VISĄ turinį po vienu
   poaplankiu `cad-site-agent/`. Git šaknis yra lygiu aukščiau.
