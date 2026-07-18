@@ -1,40 +1,40 @@
-UŽDUOTIS — FAZĖ 11d: (A) promote Harness-tyrimo natą kaip forward-guardrail + (B) held-out eval sustiprinimas. <14 min.
-NEleisk pytest pilnai (tik hera_eval --bench). Telegram TRUMPAI į HERA botą. Fail-safe. €0. Raktų nespausdink.
-Ataskaita TIK į HERA botą. Privatūs repo. Viešo cad-site-agent NELIESK.
+UŽDUOTIS — CURATION BATCH (human-gate): promote 6 + priimti 2 + merge dublį + prune 42 (hold 2). <14 min.
+NEleisk pytest. Telegram TRUMPAI į HERA botą. Fail-safe. €0. Raktų nespausdink. Deterministiška (be model-call/tinklo).
+Ataskaita TIK į HERA botą. Privatus hera-vault. Viešo cad-site-agent NELIESK.
 
-KONTEKSTAS (kodėl): AI2/UW tyrimas (growth 6xlz70) parodė: automatinė Harness self-optimizacija overfitting'a benchmark'ui,
-neguneralizuoja; test-time scaling (parallel sampling 72.3%) lenkia Harness evoliuciją (67.4% < bazinis 68.2%). Pamoka
-NE „mesti self-edit", o STIPRINTI: (1) held-out vertinimas (nevertink self-edit ant to, ką jis optimizuoja), (2) test-time
-scaling > agresyvus self-mod, (3) human-gate validuotas, (4) finalization-gate + debugger/progresyvus-atskleidimas
-pattern'ai. Vartotojo principas: imam TIK tai, kas stiprina sistemą Į PRIEKĮ. Šitas praeina — kaip guardrail + eval pataisa.
+KONTEKSTAS: vartotojas peržiūrėjo curation dashboard ir patvirtino PILNĄ batch. Užbaigiam backlog prieš naują sesiją.
+Jei kurio failo nerandi — praleisk, pažymėk ataskaitoje; NEkurk naujų. Prune = git-atšaukiama; turinys lieka skill'uose.
 
-=== DALIS A: promote 6xlz70 kaip forward-guardrail nata ===
-1) growth/2026-07-16-...6xlz70.md → antraštėje: „STATUS: PROMOTED 2026-07-16 (human-gate: vartotojas) — dizaino guardrail".
-2) Pridėk „Kuravimo pastaba (forward-strengthening)":
-   - „Imam kaip APSAUGĄ, ne kritiką. Pamokos HERA'ai: (1) HELD-OUT eval — nevertink self-edit (5c/5d) ant tų pačių
-     užduočių, kurias jis optimizuoja (overfitting rizika); (2) test-time scaling / daugiau lygiagrečių bandymų >
-     agresyvus harness self-mod (patvirtina biudžeto-compute liniją, „parallel terraced scan"); (3) human-gate
-     VALIDUOTAS (be žmogaus intelekto meta-agento self-mod ≈ 0 pagerėjimas); (4) perimtini: finalization-gate (netikrink
-     'baigta' kol nepatikrinti rezultatai/failai/testai) + agent-debugger su progresyviu atskleidimu (skill jau turim)."
-   - Sąsajos (wiki): self-edit (5c/5d), eval-vartai (Fazė 11), human-gate, `[[progresyvus-konteksto-atskleidimas-llm]]`.
-   - Šaltinis: YouTube paaiškinimas AI2/UW straipsnio (2026-07-14); ne pats straipsnis. Faithfulness ~0.7 (triukšmas).
+A) PROMOTE (6) — antraštėje „STATUS: PROMOTED 2026-07-18 (human-gate: vartotojas)":
+   1. `*vb9qbn*` — Hermes lygiagretūs įrankiai (sel 9.0).
+   2. `*235xe8*` — H-JEPA / GeoWorld.
+   3. `*hji6hh*` — kognityvinis organizavimas (RSI).
+   4. Copycat nata (`2026-07-15-copycat-*`) — jei dar ne promoted (science-checked); jei jau — praleisk.
+   5. `*kq6reu*` — „Statybinių brėžinių apdorojimas" (PDF→SQLite+LLM Wiki). PROMOTE, BET pridėk vėliavą:
+      „⚠️ Marketingo skaičiai („100% tikslumas", „50–72× žetonų") NEPATVIRTINTI — imam METODĄ (vektorinis PDF→
+      objektų grupavimas→SQLite→Markdown wiki, Karpathy), skaičių necituoti kaip fakto. Sąsaja: hera_wikilink grafas +
+      cad-site-agent DXF pipeline + deterministinis-core. domain: cad-3d (pastatomas €0, be GPU — skirtingai nei GIFT)."
+   6. MERGE dublis — sistemų dinamika: `*zo9qtf*` „metodologija" + naujas MIT „sisteminis mąstymas". Sujungti į VIENĄ
+      (imk stipresnį/išsamesnį; jei MIT sinchronizuotas — jį bazei, zo9qtf pažymėk „merged into MIT"; jei MIT nerastas —
+      promote zo9qtf ir pažymėk). PROMOTED 2026-07-18.
 
-=== DALIS B: hera_eval held-out sustiprinimas (Fazė 11) ===
-3) hera_eval.py: golden_set padalink į DVI disjunktiškas dalis:
-   - `ref` (gali informuoti baseline/tuning) ir `holdout` (NIEKADA nenaudojama tuninimui — TIK generalizacijos matas).
-   - run_eval grąžina abu: holdout balas = TIKRAS generalizacijos signalas.
-   - **OVERFITTING flag** (tyrimo esmė): jei ref-balas kyla, o holdout-balas NEkyla (skirtumas > delta) → verdict
-     pažymi „⚠️ overfitting: ref↑ holdout→flat" ir iškelia žmogui (advisory). Tai self-edit'o sąžiningumo vartas.
-   - Jei golden_set per mažas padalinti — pridėk kelis held-out atvejus deterministiškai iš esamų skills/growth (be LLM),
-     arba pažymėk holdout kaip „sėkla, plėsti". NElauk tinklo, nenaudok model-call.
-   - HERA_EVAL lieka default 0 (dormant — tik korektiškesnis prieš įjungiant). NEkeisk gyvo pipeline elgesio.
-4) BENCHMARK: hera_eval --bench turi likti 100% + pridėk atvejus: ref/holdout split kraunasi, overfitting-flag logika
-   (ref↑holdout-flat→flag; abu↑→ok; abu-flat→ok). Įrašyk X/Y. <100% → NEkeisk numatytų, pranešk.
+B) PRIIMTI kaip žinojimas (2) — „STATUS: PRIIMTA kaip žinojimas 2026-07-18 (human-gate)":
+   1. `*fyxg05*` — Claude platforma (referencinė žinia).
+   2. `*yarabu*` — Claude Artifacts. Pridėk vėliavą: „Funkcija reali (vieši Artifacts+multiplayer+Claude Tag), BET
+      šaltinis marketingas (Julian Goldie/AI Profit Boardroom); skaičiai (65% kodo, 85k narių) NEPATVIRTINTI — necituoti."
 
-=== BENDRA ===
-5) BACKUP: commit hera-core-backup (kodas) + hera-vault (nata). Persistent askpass yra. Push nepavyko → NEkartok, pranešk.
-RIBOS: €0. Jokių lokalių/GPU modelių/tinklo. Jokio pytest-all. Anti-rc124: deterministiška. NEperrašinėk
-hera_selfedit/council — tik hera_eval + nata. Viešo NELIESK.
+C) PRUNE (42 saugūs) — įvykdyk eviction TIK toms growth natoms su `eviction_candidate: true`, IŠSKYRUS 2 HOLD:
+   - HOLD (NEtrink): `*gdx0fm*` ir `*lto8bb*` (šios sesijos epistminės vėliavos — palik žalią provenance; pašalink jose
+     tik `eviction_candidate` žymą arba palik kaip yra, bet NEtrink).
+   - Likusius 40 eviction-kandidatų (growth) — pašalink failus (git rm). SKILL.md low-importance (2) — NEtrink, tik
+     pažymėk (skills necouchinam). Turinys lieka distiliuotuose skill'uose — necouch.
+   - Įrašyk trajektoriją: curation/batch-2026-07-18 (promote 6, accept 2, merge 1, prune 40, hold 2).
 
-ATASKAITA (HERA botas, trumpai): (a) 6xlz70 promoted kaip guardrail (pamokos+sąsajos)? (b) held-out split įdiegtas +
-overfitting-flag? (c) bench X/Y; (d) HERA_EVAL lieka 0? (e) backup push OK/ne; (f) 1 eil. kas toliau.
+D) WIKI + DURABILUMAS: paleisk hera_wikilink + hera_lint deterministinį pass (parodyk orphan/dangling PO batch —
+   dangling buvo 12, prune gali sumažinti). Commit + push hera-vault. Push nepavyko → NEkartok begalos, pranešk.
+
+RIBOS: €0. Deterministiška (jokių LLM/tinklo — visi sprendimai duoti). Jokio pytest-all. Viešo NELIESK. Skills NEtrink.
+Prune tik growth eviction-kandidatus (be 2 HOLD). Raktų nespausdink.
+
+ATASKAITA (HERA botas, trumpai): (a) promote 6 (kurie)? (b) priimti 2? (c) merge dublis (kuris bazei)? (d) prune N
+(patvirtink 40, hold 2)? (e) wiki-lint orphan/dangling PO; (f) vault push OK/ne; (g) 1 eil. backlog švarus?
