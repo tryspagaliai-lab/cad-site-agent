@@ -1,25 +1,25 @@
-UŽDUOTIS — SKUBU: patikrink ar 3 nauji bot-token kintamieji YRA /root/ai_digest.env (BE reikšmių). <5 min.
-NEleisk pytest. Fail-safe. €0. RAKTŲ/REIKŠMIŲ NESPAUSDINK NIEKADA. Ataskaita TIK į HERA botą. Nieko NEKEISK — tik SKAITYK.
+UŽDUOTIS — SKUBU: išvalyk bot-token pėdsakus iš /root/.bash_history. <5 min.
+NEleisk pytest. Fail-safe. €0. RAKTŲ/REIKŠMIŲ NESPAUSDINK NIEKADA (nei istorijoje, nei ataskaitoje). Ataskaita TIK į HERA botą.
 
-KONTEKSTAS: vartotojas per SSH pridėjo 3 naujų botų token'us į /root/ai_digest.env. Reikia patvirtinti kad įrašyti
-teisingai, be reikšmių spausdinimo (saugumas). Dizaino eilutė anksčiau turėjo klaidą (PASTE_TOKEN) — patikrink kad
-dabar švaru (tik viena teisinga eilutė kiekvienam).
+KONTEKSTAS: setup metu bot-token'ai pateko į root komandų istoriją (echo 'DESIGN_BOT_TOKEN=...' ir kt., + viena
+standalone token eilutė). Vartotojas NEregeneruoja — vietoj to valom pėdsaką iš history. Env failo (ai_digest.env)
+NELIESK — token'ai TEN turi likti (jie ten ir reikalingi).
 
-ŽINGSNIAI (READ-ONLY, be reikšmių):
-1) Kiekvienam kintamajam patikrink AR YRA eilutė ir KIEK jų (turi būti PO 1):
-   - DESIGN_BOT_TOKEN
-   - AGRO_BOT_TOKEN
-   - AITECH_BOT_TOKEN
-   Naudok: `grep -c '^DESIGN_BOT_TOKEN=' /root/ai_digest.env` ir t.t. (grąžina SKAIČIŲ, ne reikšmę).
-2) Patikrink kad NĖRA likusios blogos eilutės `DESIGN_BOT_TOKEN=PASTE_TOKEN`:
-   `grep -c 'PASTE_TOKEN' /root/ai_digest.env` (turi būti 0).
-3) Patikrink token FORMATĄ be jo spausdinimo: ar reikšmė atitinka `^[0-9]+:` (skaičiai + dvitaškis)? Naudok tik
-   TRUE/FALSE išvedimą, pvz.: `grep -qE '^DESIGN_BOT_TOKEN=[0-9]+:' /root/ai_digest.env && echo "DESIGN: formatas OK" || echo "DESIGN: BLOGAS"`.
-   Tą patį AGRO ir AITECH. NIEKADA neišvesk pačios reikšmės.
-4) Patvirtink kad TELEGRAM_TOKEN (senasis, @tryspagaliabot) NEpaliestas (grep -c, turi būti ≥1).
+ŽINGSNIAI (deterministiška, per python3 — nes VPS hardening blokuoja grep/sed ant kai kurių failų):
+1) Python3 vienkartiniu skriptu apdorok TIK `/root/.bash_history`:
+   - Perskaityk eilutes.
+   - IŠMESK bet kurią eilutę, kuri atitinka BENT VIENĄ:
+     • turi `_BOT_TOKEN=` (echo/sed komandos su token'ais)
+     • atitinka regex `\b\d{6,}:AA[\w-]{20,}\b` (Telegram token forma — standalone token eilutė)
+     • turi `PASTE_TOKEN`
+   - Perrašyk failą su likusiomis eilutėmis (atominis: temp→os.replace). Teises palik kaip buvo (chmod 600 jei buvo).
+   - Išvesk TIK: kiek eilučių pašalinta ir kiek liko. JOKIŲ eilučių turinio/reikšmių.
+2) Jei yra ir /root/.python_history ar kitas akivaizdus history su token'ais — tas pats (bet NEliesk ai_digest.env,
+   .env, konfigų, kodo). TIK history failai.
+3) Patikrink (be turinio): ar po valymo `\d{6,}:AA` likučių history'je 0? Išvesk TRUE/FALSE.
 
-RIBOS: €0. READ-ONLY (jokio rašymo/keitimo). Raktų/reikšmių NIEKADA nespausdink — tik skaičiai/OK/BLOGAS. Anti-rc124.
+RIBOS: €0. Liesk TIK history failus. Env/kodo/konfigų NELIESK. Reikšmių/token'ų NIEKADA nespausdink. Anti-rc124
+(grynas failo apdorojimas, be tinklo/LLM).
 
-ATASKAITA (HERA botas, TRUMPAI, be reikšmių): (a) DESIGN_BOT_TOKEN: kiek eilučių + formatas OK/blogas;
-(b) AGRO_BOT_TOKEN: kiek + formatas; (c) AITECH_BOT_TOKEN: kiek + formatas; (d) PASTE_TOKEN likučių: 0/ne;
-(e) TELEGRAM_TOKEN nepaliestas? (f) 1 eil. ar viskas paruošta topic-aware žingsniui.
+ATASKAITA (HERA botas, TRUMPAI, be reikšmių): (a) /root/.bash_history: pašalinta N eilučių, liko M; (b) token-likučių
+history'je: 0/ne; (c) ar kiti history failai tvarkyti? (d) ai_digest.env nepaliestas patvirtinta? (e) 1 eil. done.
