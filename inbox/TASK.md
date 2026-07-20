@@ -1,35 +1,36 @@
-UŽDUOTIS — human-gate: PROMOTE „MemoHarness" (lk471o) su architektūros-validavimo pastabomis. <8 min.
-NEleisk pytest. Fail-safe. €0. Raktų nespausdink. Deterministiška (be LLM/tinklo — turinys duotas). Ataskaita TIK į
-HERA botą. Privatus hera-vault. Viešo cad-site-agent NELIESK.
+UŽDUOTIS — (A) PROMOTE „RAG prieštaringi dokumentai" (gfc7mj) + (B) DANGLING šakninis taisymas (71 ir auga). <14 min.
+NEleisk pytest. Fail-safe. €0. Raktų nespausdink. Deterministiška (be LLM/tinklo). Ataskaita TIK į HERA botą.
+Privatus hera-vault (+ hera-core-backup jei B keičia kodą). Viešo cad-site-agent NELIESK.
 
-KONTEKSTAS: vartotojas peržiūrėjo ingestą „MemoHarness" (growth/2026-07-20-20260720T100630Z-lk471o.md; Notre Dame/
-LMU/USC 2026-07-14; instance-adaptive harness optimizavimas per vykdymo atmintį) ir patvirtino PROMOTE. Praeina
-forward-strengthening filtrą: N-tas išorinis HERA architektūros validavimas + 1 nauja perimtina idėja.
+=== A) PROMOTE gfc7mj (human-gate: vartotojas patvirtino; taryba promote_candidate 12) ===
+1) growth/2026-07-20-20260720T105330Z-gfc7mj.md antraštėje: „STATUS: PROMOTED 2026-07-20 (human-gate: vartotojas)".
+2) „Kuravimo pastaba (forward-strengthening)":
+   - „Validuoja HERA praktikas: (1) supersedence/prune srautas (Loop C) = 'pasenusi taisyklė negali gyventi šalia
+     naujos'; (2) epistemic flags praktika = 'AI ≤ Duomenys' (nuomonė ≠ faktas, keli atsakymai → rodyti visus su
+     kontekstu); (3) faithfulness vartų filosofija = 'dažnai ne haliucinacija, o blogai suprojektuota sistema'."
+   - „PERIMTINOS IDĖJOS (kandidatai, €0 determ.): (a) SUPERSEDENCE ŽYMA retrieval'e — kai Memora grąžina natą,
+     kurią naujesnė pakeičia/prieštarauja, pažymėti, ne tyliai servuoti abu; (b) CLARIFICATION LOOP — per bendra
+     užklausa → prašyti patikslinti, ne spėlioti (ateities retrieval sąsajai)."
+   - „Šaltinis: YouTube, be marketingo. Faithfulness ~0.7 (tikėtina vertimo triukšmas)."
+3) Wiki + trajektorija: hera_wikilink pass; curation/human-gate-promote.
 
-ŽINGSNIAI (tik šis failas; jei nerandi — pranešk, NEkurk naujo):
+=== B) DANGLING ŠAKNINIS TAISYMAS — 12→59→71, Loop B NEsivalo kaip žadėta ===
+4) DIAGNOZĖ: kur tie 71 dangling? (loopC prune report sakė „40 = index/concepts.md nuorodos į prunintus id, savaime
+   pasitaisys per Loop B concepts.md regeneravimą" — NEPASITAISĖ ir auga po kiekvieno prune.) Nustatyk:
+   - Ar Loop B concepts.md regeneravimas iš viso šalina nuorodas į nebeegzistuojančius failus? (Tikėtina — NE:
+     regeneruoja turinį, bet palieka senas [[nuorodas]] arba dangling'ai gyvena kituose index/analysis failuose.)
+   - Išvardink TOP failus pagal dangling kiekį (concepts.md? analysis/*? senos growth natos?).
+5) FIX (deterministinis):
+   - Index/concepts/analysis failuose: nuorodas į nebeegzistuojančius failus PAŠALINK arba pakeisk į paskirties
+     skill'ą (jei prune žinutėje „perkelta į skill X" — nukreipk į [[X]]). Growth/skills TURINIO natose nuorodų
+     neperrašinėk agresyviai — tik jei nuoroda į prunintą failą, pakeisk į paskirties skill'ą.
+   - ŠAKNIS: pataisyk Loop B/concepts regeneravimą (arba hera_wikilink/lint pass'ą), kad po prune AUTOMATIŠKAI
+     valytų/nukreiptų nuorodas į nebeegzistuojančius taikinius (deterministinis žingsnis, be LLM). Kad kitą kartą
+     dangling nebeaugtų. Jei kodo keitimas — commit į hera-core-backup, bench'ai (hera_lint) turi likti žali.
+6) VERIFIKACIJA: hera_lint PO — parodyk orphan/dangling skaičius (tikslas: dangling ~0-5, ne 71). Jei kai kurių
+   negalima išvalyti saugiai — pasakyk kiek liko ir kodėl.
 
-1) Antraštėje: „STATUS: PROMOTED 2026-07-20 (human-gate: vartotojas)".
+7) BACKUP: vault + (jei kodas) hera-core-backup push. Nepavyko → NEkartok begalos, pranešk.
 
-2) Pridėk „Kuravimo pastaba (forward-strengthening)":
-   - „N-tas išorinis HERA architektūros validavimas: (a) epizodinė+semantinė atmintis su distiliuotomis taisyklėmis
-     = mūsų Memora (primary_abstraction); (b) anti-šablonų bankas (nesėkmės saugomos ir naudojamos) = mūsų
-     rejected-edit buffer 5d — akademiškai validuotas; (c) epizodų distiliavimas į taisykles = mūsų skill-akrecija 5b;
-     (d) test-time compute vietoj svorių keitimo = mūsų biudžeto linija (Copycat parallel terraced scan / GIFT)."
-   - „Sąsaja su [[6xlz70 harness-guardrail]]: PAPILDO, ne paneigia — AI2/UW parodė, kad GLOBALI harness evoliucija
-     overfitting'a; MemoHarness tą apeina per-užduotį adaptyvia konfigūracija iš atminties (test-time kryptis).
-     BET held-out vertinimo pamoka galioja ir čia — benchmark'ai tie patys (Terminal-Bench)."
-   - „NAUJA PERIMTINA IDĖJA (kandidatas ateities fazei): instance-adaptive KONFIGŪRACIJA per Memora — prieš
-     apdorojant ingestą, pagal panašumą į praeities atvejus parinkti pipeline nustatymus (biudžetą/įrankius/
-     ekstrakcijos kelią) vietoj vienos globalios konfigūracijos. 'RAG programinės įrangos architektūrai.' €0,
-     esama Memora mechanika. Šešių dimensijų harness dekompozicija (kontekstas/įrankiai/generavimas/topologija/
-     atmintis/išvestis) — naudinga diagnostikos taksonomija klaidoms lokalizuoti."
-   - „⚠️ Benchmark skaičiai (72→80%, 50→73%, 42→65%) iš darbo — necituoti kaip mūsų patikrintų. Šaltinis: YouTube
-     paaiškinimas (tas pats kanalas kaip 6xlz70, be marketingo); faithfulness ~0.7 (tikėtina vertimo triukšmas)."
-
-3) WIKI + trajektorija: hera_wikilink pass (sąsajos: Memora nata, 6xlz70, skill-akrecija/rejected-edit temos jei
-   grafe). Trajektorija: curation/human-gate-promote.
-
-4) BACKUP: commit hera-vault. Push nepavyko → NEkartok begalos, pranešk.
-
-ATASKAITA (HERA botas, trumpai): (a) lk471o PROMOTED + pastabos įrašytos? (b) wiki sąsajos (kiek nuorodų)?
-(c) vault push OK/ne; (d) 1 eil. kas toliau.
+ATASKAITA (HERA botas, trumpai): (a) gfc7mj PROMOTED + pastabos; (b) dangling diagnozė (kur gyveno, kodėl Loop B
+nevalė); (c) fix: dangling PRIEŠ 71 → PO N; šaknis pataisyta (auto-valymas po prune)? (d) push OK/ne; (e) 1 eil. toliau.
