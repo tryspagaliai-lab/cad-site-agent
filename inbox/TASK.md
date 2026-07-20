@@ -1,49 +1,41 @@
-UŽDUOTIS — ai_digest TOPIC-AWARE: pridėti DIZAINO temą/botą (esamas AI-news NEPALIESTAS). <18 min.
-NEleisk pytest-all. Fail-safe. €0. Raktų nespausdink. Ataskaita TIK į HERA botą.
-ANTI-RC124: KIEKVIENAS feed/HF/GitHub fetch HARD timeout (≤20s), JOKIO retry; per-feed klaida → skip, ne crash.
+UŽDUOTIS — LOOP C HUMAN-GATE sprendimas: patvirtinti 6 growth prune, ATMESTI gdx0fm+lto8bb ir 2 skill eviction. <10 min.
+NEleisk pytest. Fail-safe. €0. Raktų nespausdink. Deterministiška (be LLM/tinklo). Ataskaita TIK į HERA botą.
+Privatus hera-vault. Viešo cad-site-agent NELIESK.
 
-KONTEKSTAS: 3 nauji token'ai env'e (DESIGN_BOT_TOKEN etc.). Darom ai_digest.py DAUGIA-TEMĮ. DABAR TIK dizainas.
-Esamas AI-news topic (TELEGRAM_TOKEN → @tryspagaliabot, dabartiniai 16 feeds + 24 HF org, seen.jsonl) turi likti
-100% NEPAKEISTAS (elgesys identiškas). Nauja tema pridedama ŠALIA. Filtras/pristatymas/v3-santraukos pernaudojami.
+KONTEKSTAS: Loop C (2026-07-20 04:00) staged 11 konsolidacijos pasiūlymų + 13 eviction kandidatų. Vartotojas
+peržiūrėjo ir nusprendė (human-gate). Vykdyk TIKSLIAI taip:
 
-1) REFAKTORINK į TOPICS struktūrą (be esamo elgesio pakeitimo):
-   - `TOPICS = {}` kur kiekviena tema = {token_env, feeds[], hf_orgs[], github_atom[], arxiv_cats[], filter_kw[],
-     seen_path, label}. Esamą elgesį įdėk kaip temą „ai" (token_env=TELEGRAM_TOKEN, esami feeds/org/seen.jsonl —
-     BE pakeitimų). Cron run'as pereina per visas temas; kiekviena NEPRIKLAUSOMA (sava seen, savas token, savas send).
-     Vienos temos klaida NEsugriauna kitų (per-topic try/except, fail-safe).
+A) PATVIRTINTI — prune šiuos 6 growth (distiliuoti į skills, turinys ten gyvena; git-atšaukiama):
+   - growth/2026-07-13-20260713T121330Z-i8suoz.md  (→ skill di-kodo-generatoriu-atranka)
+   - growth/2026-07-13-20260713T171430Z-96hcmw.md  (→ skill llm-kvantavimo-strategijos-pasirinkimas)
+   - growth/2026-07-13-20260713T174400Z-fidnk7.md  (→ skill pkc-duomenu-generavimas)
+   - growth/2026-07-13-20260713T183030Z-f0bs8d.md  (→ skill di-programuotoju-darbo-eigu-projektavimas)
+   + kiti 2 iš Loop C 11-uko, kurie yra PAPRASTI distiliuoti growth (NE gdx0fm, NE lto8bb) — jei tokie yra proposals/
+   sąraše. PRIEŠ trindamas f0bs8d: patikrink, kad jo „Kuravimo pastaba (forward-strengthening)" 4 pamokos + guardrail
+   žymė YRA perkelta į paskirties skill'ą arba FUTURE_GPU/kitą natą; jei nėra — PERKELK pastabą į skill'ą, tada prune.
+   Tas pats i8suoz („55% AI kodo spragų" atsargumo vėliava) ir fidnk7 (SearchEyes sėkla → hera_research v2) — vėliavos
+   turi išlikti skill'uose. Jei perkelti neįmanoma — praleisk tą failą ir pažymėk ataskaitoje.
 
-2) DIZAINO tema „design" (token_env=DESIGN_BOT_TOKEN, seen_path=/var/lib/ai_digest/seen_design.jsonl):
-   - HF orgai (per-org createdAt, kaip esama mechanika): black-forest-labs, tencent (FILTRUOK pagal „Hunyuan3D"),
-     stabilityai, stepfun-ai. (Filtras 3-4 punkte.)
-   - GitHub .atom (NAUJAS feed tipas — pridėk fetch: append .atom, feedparser): 
-     https://github.com/comfyanonymous/ComfyUI/releases.atom , https://github.com/Tencent-Hunyuan/Hunyuan3D-2/releases.atom
-   - RSS: https://radiancefields.substack.com/feed (Gaussian Splatting/NeRF) ; https://www.blendernation.com/feed/
-     (⚠️ siųsk BROWSER User-Agent header, pvz. "Mozilla/5.0 ..."; jei 403 → fallback Feedburner
-     https://feeds.feedburner.com/Blendernation ; jei ir tas nepavyksta → skip, ne crash).
-   - arXiv cs.CV + cs.GR (kaip esama arXiv RSS mechanika): https://rss.arxiv.org/rss/cs.CV , https://rss.arxiv.org/rss/cs.GR
-   - (HN Algolia — ATIDĖTA kitai bangai, nepridedam dabar.)
+B) ATMESTI (NIEKO nedaryti su failais, TIK pažymėti proposals kaip REJECTED su priežastim):
+   - gdx0fm prune → REJECTED: „HOLD (human-gate 2026-07-18): episteminės vėliavos — nepatvirtinti marketingo
+     skaičiai, žalias provenance saugomas sąmoningai. NEteikti pakartotinai." 
+   - lto8bb prune → REJECTED: ta pati priežastis (SkillOpt — rejected-edit buffer provenance).
+   - skill breziniu-sluoksniu-standartas eviction → REJECTED: „skills nešalinam; cad-domenas aktualus (kq6reu/cad-3d)."
+   - skill bwrap-agent-isolation eviction → REJECTED: „GYVAS 5b promotintas skill, sandbox izoliacijos pagrindas
+     (5a/5c naudoja). NIEKADA nešalinti."
+   - Jei įmanoma — pridėk NO-RESTAGE žymą gdx0fm/lto8bb (kad Loop C nebeteiktų jų kas savaitę; pvz. frontmatter
+     `consolidation: hold-permanent`), ir Loop C logika tegul gerbia šitą žymą (jei lengva — pridėk patikrą; jei ne —
+     tik žymą, logiką kitą kartą).
 
-3) DIZAINO RELEVANCIJOS FILTRAS (deterministinis, be LLM; nes tencent/arXiv platūs):
-   - Palik įrašą TIK jei title/tags atitinka design/image/3D raktažodžius: text-to-image, image, diffusion, controlnet,
-     flux, hunyuan3d, 3d, gaussian splat, nerf, blender, render, archviz, design, sdxl, comfyui, inpaint, lora (image).
-   - Tas pats esamas triukšmo filtras (is_noise: gguf/quant/probe) TAIP PAT taikomas.
+C) TRAJEKTORIJA + WIKI: curation/loopC-gate-2026-07-20 įrašas (approve 6, reject 4+). hera_wikilink/lint pass po
+   prune — parodyk orphan/dangling PO (dangling buvo 59 — patikrink ar concepts.md regeneravosi; jei dangling
+   nemažėja, pažymėk ataskaitoje kodėl).
 
-4) SANTRAUKOS: pernaudok v3 batch Gemini, BET „kur_panaudoti" tilt į DIZAINO/3D/ArchViz kontekstą
-   (kaip vartotojas galėtų panaudoti savo dizaino/3D/vizualizacijos darbe — Blender, ComfyUI, ArchViz pipeline).
-   Fallback bare įrašas jei Gemini lūžta. €0, HARD 48s, no retry.
+D) BACKUP: commit hera-vault. Push nepavyko → NEkartok begalos, pranešk.
 
-5) SIUNTIMAS: dizaino tema → DESIGN_BOT_TOKEN botas, per esamą skaidymo mechaniką (≤3800 sim.). „0 naujų → nieko naujo".
+RIBOS: €0. Deterministiška. Skills NETRINAM niekada. gdx0fm/lto8bb failų NELIESK (tik proposal žymos + frontmatter).
+Jokio pytest-all. Raktų nespausdink.
 
-6) VERIFIKACIJA (privaloma): 
-   - Patvirtink kad tema „ai" (senas botas) NEPAKEISTA (kodo diff nekliudo jos feeds/org/seen/token).
-   - DRY-RUN dizaino temos: parodyk kiek surinko/po filtro/naujų.
-   - TEST-SEND į DIZAINO botą (DESIGN_BOT_TOKEN): žyma „🧪 TESTAS — DIZAINO botas". seen_design NEkeisk dėl testo.
-
-7) BACKUP: commit ai_digest.py → hera-core-backup. Push nepavyko → NEkartok begalos, pranešk.
-
-RIBOS: €0. AI-news tema (TELEGRAM_TOKEN/@tryspagaliabot/seen.jsonl) NEPALIESTA. Jokio pytest-all. Anti-rc124 (HARD
-timeout kiekvienam fetch, no retry, per-topic+per-feed fail-safe). Raktų nespausdink. Agro/ai-tech temos — VĖLIAU.
-
-ATASKAITA (HERA botas, trumpai): (a) topic-aware struktūra + „ai" tema nepakeista (patvirtink)? (b) dizaino tema:
-šaltiniai prijungti (HF/GitHub-atom/RSS/arXiv)? (c) GitHub .atom + browser-UA veikia? (d) dizaino dry-run: surinkta/
-filtruota/nauji; (e) test-send į DIZAINO botą OK (kiek įrašų)? (f) backup push OK/ne; (g) 1 eil. kas toliau (agro).
+ATASKAITA (HERA botas, trumpai): (a) prune N patvirtinta (kurie; ar vėliavos perkeltos); (b) atmesta 4+ (patvirtink
+gdx0fm/lto8bb/2 skills saugūs); (c) NO-RESTAGE žyma pridėta? (d) wiki-lint PO: orphan/dangling (ar 59 sumažėjo?);
+(e) vault push OK/ne; (f) 1 eil. kas toliau.
