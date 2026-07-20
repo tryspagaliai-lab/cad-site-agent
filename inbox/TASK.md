@@ -1,41 +1,35 @@
-UŽDUOTIS — LOOP C HUMAN-GATE sprendimas: patvirtinti 6 growth prune, ATMESTI gdx0fm+lto8bb ir 2 skill eviction. <10 min.
-NEleisk pytest. Fail-safe. €0. Raktų nespausdink. Deterministiška (be LLM/tinklo). Ataskaita TIK į HERA botą.
-Privatus hera-vault. Viešo cad-site-agent NELIESK.
+UŽDUOTIS — human-gate: PROMOTE „MemoHarness" (lk471o) su architektūros-validavimo pastabomis. <8 min.
+NEleisk pytest. Fail-safe. €0. Raktų nespausdink. Deterministiška (be LLM/tinklo — turinys duotas). Ataskaita TIK į
+HERA botą. Privatus hera-vault. Viešo cad-site-agent NELIESK.
 
-KONTEKSTAS: Loop C (2026-07-20 04:00) staged 11 konsolidacijos pasiūlymų + 13 eviction kandidatų. Vartotojas
-peržiūrėjo ir nusprendė (human-gate). Vykdyk TIKSLIAI taip:
+KONTEKSTAS: vartotojas peržiūrėjo ingestą „MemoHarness" (growth/2026-07-20-20260720T100630Z-lk471o.md; Notre Dame/
+LMU/USC 2026-07-14; instance-adaptive harness optimizavimas per vykdymo atmintį) ir patvirtino PROMOTE. Praeina
+forward-strengthening filtrą: N-tas išorinis HERA architektūros validavimas + 1 nauja perimtina idėja.
 
-A) PATVIRTINTI — prune šiuos 6 growth (distiliuoti į skills, turinys ten gyvena; git-atšaukiama):
-   - growth/2026-07-13-20260713T121330Z-i8suoz.md  (→ skill di-kodo-generatoriu-atranka)
-   - growth/2026-07-13-20260713T171430Z-96hcmw.md  (→ skill llm-kvantavimo-strategijos-pasirinkimas)
-   - growth/2026-07-13-20260713T174400Z-fidnk7.md  (→ skill pkc-duomenu-generavimas)
-   - growth/2026-07-13-20260713T183030Z-f0bs8d.md  (→ skill di-programuotoju-darbo-eigu-projektavimas)
-   + kiti 2 iš Loop C 11-uko, kurie yra PAPRASTI distiliuoti growth (NE gdx0fm, NE lto8bb) — jei tokie yra proposals/
-   sąraše. PRIEŠ trindamas f0bs8d: patikrink, kad jo „Kuravimo pastaba (forward-strengthening)" 4 pamokos + guardrail
-   žymė YRA perkelta į paskirties skill'ą arba FUTURE_GPU/kitą natą; jei nėra — PERKELK pastabą į skill'ą, tada prune.
-   Tas pats i8suoz („55% AI kodo spragų" atsargumo vėliava) ir fidnk7 (SearchEyes sėkla → hera_research v2) — vėliavos
-   turi išlikti skill'uose. Jei perkelti neįmanoma — praleisk tą failą ir pažymėk ataskaitoje.
+ŽINGSNIAI (tik šis failas; jei nerandi — pranešk, NEkurk naujo):
 
-B) ATMESTI (NIEKO nedaryti su failais, TIK pažymėti proposals kaip REJECTED su priežastim):
-   - gdx0fm prune → REJECTED: „HOLD (human-gate 2026-07-18): episteminės vėliavos — nepatvirtinti marketingo
-     skaičiai, žalias provenance saugomas sąmoningai. NEteikti pakartotinai." 
-   - lto8bb prune → REJECTED: ta pati priežastis (SkillOpt — rejected-edit buffer provenance).
-   - skill breziniu-sluoksniu-standartas eviction → REJECTED: „skills nešalinam; cad-domenas aktualus (kq6reu/cad-3d)."
-   - skill bwrap-agent-isolation eviction → REJECTED: „GYVAS 5b promotintas skill, sandbox izoliacijos pagrindas
-     (5a/5c naudoja). NIEKADA nešalinti."
-   - Jei įmanoma — pridėk NO-RESTAGE žymą gdx0fm/lto8bb (kad Loop C nebeteiktų jų kas savaitę; pvz. frontmatter
-     `consolidation: hold-permanent`), ir Loop C logika tegul gerbia šitą žymą (jei lengva — pridėk patikrą; jei ne —
-     tik žymą, logiką kitą kartą).
+1) Antraštėje: „STATUS: PROMOTED 2026-07-20 (human-gate: vartotojas)".
 
-C) TRAJEKTORIJA + WIKI: curation/loopC-gate-2026-07-20 įrašas (approve 6, reject 4+). hera_wikilink/lint pass po
-   prune — parodyk orphan/dangling PO (dangling buvo 59 — patikrink ar concepts.md regeneravosi; jei dangling
-   nemažėja, pažymėk ataskaitoje kodėl).
+2) Pridėk „Kuravimo pastaba (forward-strengthening)":
+   - „N-tas išorinis HERA architektūros validavimas: (a) epizodinė+semantinė atmintis su distiliuotomis taisyklėmis
+     = mūsų Memora (primary_abstraction); (b) anti-šablonų bankas (nesėkmės saugomos ir naudojamos) = mūsų
+     rejected-edit buffer 5d — akademiškai validuotas; (c) epizodų distiliavimas į taisykles = mūsų skill-akrecija 5b;
+     (d) test-time compute vietoj svorių keitimo = mūsų biudžeto linija (Copycat parallel terraced scan / GIFT)."
+   - „Sąsaja su [[6xlz70 harness-guardrail]]: PAPILDO, ne paneigia — AI2/UW parodė, kad GLOBALI harness evoliucija
+     overfitting'a; MemoHarness tą apeina per-užduotį adaptyvia konfigūracija iš atminties (test-time kryptis).
+     BET held-out vertinimo pamoka galioja ir čia — benchmark'ai tie patys (Terminal-Bench)."
+   - „NAUJA PERIMTINA IDĖJA (kandidatas ateities fazei): instance-adaptive KONFIGŪRACIJA per Memora — prieš
+     apdorojant ingestą, pagal panašumą į praeities atvejus parinkti pipeline nustatymus (biudžetą/įrankius/
+     ekstrakcijos kelią) vietoj vienos globalios konfigūracijos. 'RAG programinės įrangos architektūrai.' €0,
+     esama Memora mechanika. Šešių dimensijų harness dekompozicija (kontekstas/įrankiai/generavimas/topologija/
+     atmintis/išvestis) — naudinga diagnostikos taksonomija klaidoms lokalizuoti."
+   - „⚠️ Benchmark skaičiai (72→80%, 50→73%, 42→65%) iš darbo — necituoti kaip mūsų patikrintų. Šaltinis: YouTube
+     paaiškinimas (tas pats kanalas kaip 6xlz70, be marketingo); faithfulness ~0.7 (tikėtina vertimo triukšmas)."
 
-D) BACKUP: commit hera-vault. Push nepavyko → NEkartok begalos, pranešk.
+3) WIKI + trajektorija: hera_wikilink pass (sąsajos: Memora nata, 6xlz70, skill-akrecija/rejected-edit temos jei
+   grafe). Trajektorija: curation/human-gate-promote.
 
-RIBOS: €0. Deterministiška. Skills NETRINAM niekada. gdx0fm/lto8bb failų NELIESK (tik proposal žymos + frontmatter).
-Jokio pytest-all. Raktų nespausdink.
+4) BACKUP: commit hera-vault. Push nepavyko → NEkartok begalos, pranešk.
 
-ATASKAITA (HERA botas, trumpai): (a) prune N patvirtinta (kurie; ar vėliavos perkeltos); (b) atmesta 4+ (patvirtink
-gdx0fm/lto8bb/2 skills saugūs); (c) NO-RESTAGE žyma pridėta? (d) wiki-lint PO: orphan/dangling (ar 59 sumažėjo?);
-(e) vault push OK/ne; (f) 1 eil. kas toliau.
+ATASKAITA (HERA botas, trumpai): (a) lk471o PROMOTED + pastabos įrašytos? (b) wiki sąsajos (kiek nuorodų)?
+(c) vault push OK/ne; (d) 1 eil. kas toliau.
