@@ -1,63 +1,38 @@
-UŽDUOTIS — VPS pakeitimai (3 dalys): (A) prisegti runner prie Sonnet 5; (B) pastatyti @AI_HOWTO_BOT digest temą; (C) pridėti 2 feed'us. <14 min.
-NEleisk pytest. Fail-safe. €0. Ataskaita TIK į HERA botą. Privatus hera-vault; viešo cad-site-agent NELIESK.
-PASTABA: 3ds Max IR AutoCAD MCP vault natos JAU sukurtos tiesiogiai (vault commit c325abd) — jų NEBEDARYK.
+UŽDUOTIS — Fazė 13: „EMG-lite failure-diff rules" (hera_diffrules.py). <14 min.
+NEleisk pytest (tik savo mini-testą). Fail-safe. €0. Deterministiška (BE LLM). Ataskaita TIK į HERA botą.
+Privatus hera-vault (/opt/hera-vault). Viešo cad-site-agent NELIESK.
 
-============================================================
-(A) SONNET 5 PIN — runner modelis (svarbiausia, daryk PIRMA)
-============================================================
-Priežastis: bendra Claude prenumeratos sesijos riba stabdo runner'į. Prisegam prie Sonnet 5, kad nebedegintų quota.
-1) Backup: `mkdir -p /root/hera-core-backup && cp /usr/local/bin/vps_agent_runner.sh /root/hera-core-backup/vps_agent_runner.sh.$(date +%s)`.
-2) Rask eilutę su `claude -p` (arba `claude --print`). Jei JOJE dar NĖRA `--model`, pridėk `--model claude-sonnet-5`.
-   Pvz.: `claude -p ...` → `claude --model claude-sonnet-5 -p ...`. Jei jau yra kitas --model, pakeisk į claude-sonnet-5.
-3) `bash -n /usr/local/bin/vps_agent_runner.sh` (sintaksės patikra). Jei blogai — atstatyk iš backup, pranešk, STOP.
-4) Į ataskaitą įrašyk PRIEŠ/PO `claude ...` eilutę.
+KONTEKSTAS (kodėl): EMG preprint (UESTC 2026-07-15, vault nata 6s36r7) — klaidų taisymas ne per brangų LLM
+samprotavimą, o per deterministinį nepavykusios↔pavykusios trajektorijos palyginimą offline; test-time tik paieška.
+Tai HERA architektūros validacija #3. Mes imam TIK idėjos branduolį (seq-diff, NE pilną Fused Gromov-Wasserstein —
+overkill mūsų masteliui). Human-gate: vartotojas patvirtino („Varom").
 
-============================================================
-(B) @AI_HOWTO_BOT — nauja digest tema `aitech` faile /root/ai_digest.py
-============================================================
-Kontekstas: 4-as botas. Tema = AI EKSPLOATAVIMO METODAI / how-to (kaip praktiškai naudoti AI įrankius, agentus,
-workflow'us), NE bendros naujienos. Token env: AITECH_BOT_TOKEN (jau /root/ai_digest.env). seen: /root/seen_howto.jsonl.
-1) Į TOPICS dict pridėk raktą `aitech` tokio pat pavidalo kaip esami (ai/design/agro): laukai token_env,
-   feeds, hf_orgs, github_atom, arxiv_cats, filter_kw, seen_path, label. Reik minimaliai:
-   - token_env: "AITECH_BOT_TOKEN"
-   - seen_path: "/root/seen_howto.jsonl"
-   - label: "🤖 AI how-to / eksploatavimo metodai"
-   - feeds (patvirtinti šaltiniai iš deep-research; naudok User-Agent kaip kituose):
-       https://www.anthropic.com/rss.xml,
-       https://openai.com/blog/rss.xml,
-       https://huggingface.co/blog/feed.xml,
-       https://simonwillison.net/atom/everything/,
-       https://www.latent.space/feed,
-       https://blog.langchain.dev/rss/,
-       https://www.llamaindex.ai/blog/feed.xml,
-       https://newsletter.maartengrootendorst.com/feed,
-       https://eugeneyan.com/rss/
-   - github_atom (kaip kitur, .atom):
-       https://github.com/langchain-ai/langchain/releases.atom,
-       https://github.com/run-llama/llama_index/releases.atom,
-       https://github.com/microsoft/autogen/releases.atom,
-       https://github.com/crewAIInc/crewAI/releases.atom,
-       https://github.com/openai/openai-cookbook/commits/main.atom
-   - hf_orgs: [] (nebūtina šiai temai; palik tuščią sąrašą)
-   - arxiv_cats: ["cs.AI","cs.CL"]  (per filter_kw susiaurinsim į agent/RAG/tooling)
-   - filter_kw: agent, agentic, RAG, retrieval, tool use, function calling, MCP, prompt, fine-tun, workflow,
-     orchestrat, LLM app, evaluation, eval, guardrail
-2) Kaip ir kitos temos — per-topic try/except, per-topic seen, per-topic token, per-topic send. NELIESK ai/design/agro logikos.
-3) Panaudojimo aprašas kaip visose temose: kiekvienam įrašui 2–3 sakiniai „Kas tai" + „Kur panaudoti"
-   (usage pakreiptas į vartotojo kontekstą: AI orkestracija, agentai, ArchViz/CAD automatizacija).
+1) Sukurk /root/hera_diffrules.py (kaip kiti hera_* moduliai; HERA_DIFFRULES jungiklis, default 0 = no-op):
+   - ĮVESTIS (v1, kas jau yra diske — prisitaikyk prie realios struktūros, NEgriauk):
+     a) Sesijų indeksas (hera_index_append.py rašomas JSONL; runner_session įrašai su ts/rc/task_title).
+     b) /root/agent_result_<blob>.txt failai (runner išvestys).
+     c) Jei yra rejected-edit buferis (5d) — rejected↔accepted poros.
+   - LOGIKA (deterministinė, be tinklo, be LLM):
+     * Rask FAILURE→SUCCESS poras: ankstesnis įrašas rc!=0 (arba timeout 124) + vėlesnis rc==0, kurių
+       task_title panašus (normalizuok: lowercase, be skyrybos; sutampa >=60% žodžių arba pirmi 5 žodžiai).
+     * Kiekvienai porai ištrauk skirtumą: iš failed rezultato failo — klaidos eilutės (grep -iE
+       'error|timeout|fail|traceback|exit|rc=' pirmi ~5 hit'ai); iš succeeded — kas suveikė (pirmos ~5
+       prasmingos eilutės). Suformuok TAISYKLĘ: „KONTEKSTAS (task raktažodžiai) / KLAIDA (kas nepavyko) /
+       KOREKCIJA (kas suveikė) / šaltinis: <blob_fail>→<blob_ok>, datos".
+   - IŠVESTIS: /opt/hera-vault/rules/failure-diff/<data>-<trumpas-slug>.md (po vieną taisyklę; YAML-ish
+     antraštė: date, kind: failure-diff-rule, source_pair, keywords). Dedup: jei taisyklė su ta pačia
+     source_pair jau egzistuoja — praleisk. Vault sync cron patems pats; Memora indeksuos natūraliai
+     (JOKIO runner-prompt injection v1 — tai v2 su atskiru human-gate).
+   - Fail-safe: viskas try/except, bet kokia klaida → no-op + viena eilutė į /root/hera_diffrules.log.
+2) Mini-testas (be pytest): python3 su 2 sintetiniais index įrašais (rc=124 → rc=0, panašus title) +
+   2 fake result failais tmp'e → patikrina kad sugeneruojama >=1 taisyklė ir kad dedup veikia (2-as
+   paleidimas nekuria dublio). Įdėk testą kaip `if __name__ == "__main__" and "--selftest" in sys.argv`.
+3) Paleisk REALIAI vieną kartą: `HERA_DIFFRULES=1 python3 /root/hera_diffrules.py` — kiek porų rado ir
+   kiek taisyklių sukūrė istoriniuose duomenyse (gali būti 0 — tai OK, praneša skaičių).
+4) Cron NEDĖK (v1 rankinis/užduotinis paleidimas; cron — po human-gate v2).
+5) Vault: į /opt/hera-vault/docs/ROADMAP.md pridėk eilutę „Fazė 13 EMG-lite failure-diff rules — ĮDIEGTA
+   <data>, HERA_DIFFRULES def 0, v1 be prompt-injection". BACKUP: cp /root/hera_diffrules.py
+   /root/hera-core-backup/. Vault commit+push per esamą sync mechanizmą arba tiesiogiai (pull --rebase pirma).
 
-============================================================
-(C) FEED papildymai (tame pačiame /root/ai_digest.py)
-============================================================
-- Į `ai` temos feeds pridėk: https://aimodels.substack.com/feed
-- Į `design` temos feeds pridėk: https://tldr.tech/api/rss/design
-
-============================================================
-PATIKRA + BACKUP
-============================================================
-5) `python3 -c "import ast; ast.parse(open('/root/ai_digest.py').read()); print('OK')"` — sintaksė.
-6) Testinis paleidimas TIK aitech temai jei skriptas turi tokį rėžimą; jei ne — nepaleisk viso (kad 08:00 cron atliktų).
-7) BACKUP: `cp /root/ai_digest.py /root/hera-core-backup/ai_digest.py.$(date +%s)`. Nepavyko patikra → atstatyk iš backup, pranešk, STOP.
-
-ATASKAITA (HERA botas, trumpai): (A) claude eilutė prieš/po; (B) aitech tema pridėta OK/ne, feeds skaičius;
-(C) 2 feed'ai pridėti; (5) ast OK/ne; (7) backup OK.
+ATASKAITA (HERA botas, trumpai): (1) modulis sukurtas OK/ne; (2) selftest PASS/FAIL; (3) realus bėgimas:
+N porų / M taisyklių; (5) ROADMAP + backup OK.
