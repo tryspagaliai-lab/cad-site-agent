@@ -116,6 +116,40 @@ dashboard (staged+prune+faithfulness balai). Vault duomenys PRIVATŪS — nesida
 
 **Atnaujinta:** 2026-07-18
 
+## BŪSENA 2026-07-21 — multi-bot digest (4 temos) GYVAS; vault sync užgrūdintas
+> Ši skiltis PAKEIČIA 07-18 būseną. Nauja sesija: pratęsk nuo ČIA (naujausia). Visi €0, fail-safe, anti-rc124, human-gate.
+
+**Multi-bot Telegram digest — 4 TEMINIAI botai GYVI** (kiekvienas = „AI EKSPLOATAVIMO METODAI" savo srityje, NE
+bendros naujienos; kiekvienam įrašui 2–3 sakiniai „Kas tai" + „Kur panaudoti", usage pakreiptas į vartotojo kontekstą):
+- **AI news** (esamas) — bendri AI leidimai/metodai.
+- **Design** — dizaino/vizualizacijos AI įrankiai ir metodai.
+- **Ūkininkas / @ARTOJAS_BOT** — žemės ūkio AI (Semantic Scholar backbone; EU+Azijos+Ispanijos/Singapūro/Korėjos tyrimai).
+- **@AI_HOWTO_BOT (`aitech` tema)** — praktinis AI how-to (agentai, RAG, tool use, MCP, workflow'ai).
+- Architektūra: `ai_digest.py` topic-aware `TOPICS` dict (per-topic feeds/hf_orgs/github_atom/arxiv_cats/filter_kw/
+  seen/token/label; per-topic try/except; per-topic seen.jsonl dedup). Cron 08:00 Vilnius.
+
+**Digest v3 — pataisos + praplėtimas:**
+- Delivery fix: PILNAS numeruotas sąrašas, split į ≤3800 ženklų žinutes (buvo: Gemini kondensuodavo į TOP-3).
+- Noise fix: HF per-org `?author=` release backbone (global createdAt = triukšmas, pašalintas) + `is_noise()` filtras
+  (gguf/awq/probe/ppo…); +7 flagship orgs. GitHub `.atom` feed'ai (keyless), Semantic Scholar bulk (keyless),
+  arXiv, OpenAlex (nuo 2026-02 reikia FREE key — gated per OPENALEX_KEY), browser User-Agent Cloudflare feed'ams.
+- Nauji feed'ai: `aimodels.substack.com/feed` (ai tema), `tldr.tech/api/rss/design` (design tema).
+
+**cad-3d žinių kaupimas (vault, domain cad-3d):**
+- **3ds Max MCP serveriai** — cl0nazepamm/loonghao/317431629; DESKTOP-FUTURE (reikia Windows+Max mašinos).
+- **AutoCAD MCP serveriai** — U-C4N/autocad-mcp ⭐ = dual-engine, **ezdxf HEADLESS ant Linux → TIESIOGINĖ sinergija su
+  cad-site-agent (irgi ezdxf) DABAR, €0, ne desktop-future**; + puran-water/daobataotie/AnCode666.
+
+**Model policy (patvirtinta):** VPS runner pinnintas prie **Sonnet 5** (nebedegina bendros Claude prenumeratos quota);
+orchestrator/planner = Fable 5 / Opus 4.8; grunt work = Gemini/Groq/GLM (€0).
+
+**Infra fix (2026-07-21):** `hera_vault_sync.sh` push'ino BE `pull --rebase` → po tiesioginių orchestratoriaus push'ų
+VPS vault push'ai kaubdavosi (buvo 40 nepush'intų commit'ų, remote atsiliko nuo 07-20 15:30). SUTVARKYTA: rankinis
+rebase+push atkūrė viską į remote, + skriptas užgrūdintas (`git pull --rebase -X theirs` prieš push, su rebase-abort
+saugikliu) ir patikrintas gyvai (PUSH OK). Runner „nukritęs" aliarmas buvo klaidingas (cloud konteinerio laikrodis).
+
+**Atnaujinta:** 2026-07-21
+
 ## Repo struktūros pastaba (svarbu)
 - GitHub repo `tryspagaliai-lab/cad-site-agent` turi VISĄ turinį po vienu
   poaplankiu `cad-site-agent/`. Git šaknis yra lygiu aukščiau.
