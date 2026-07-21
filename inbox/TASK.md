@@ -1,27 +1,23 @@
-UŽDUOTIS — perkrauti n8n konteinerį, kad įsigaliotų 3 MCP endpoint'ų deaktyvavimas. <8 min.
-NEleisk pytest. Fail-safe: jei ABEJOJI ar kažkas ne taip — STOP ir reportuok, NIEKO neperkrauk. €0. Ataskaita TIK į HERA botą.
-Viešo cad-site-agent NELIESK. hera-vault NELIESK (tik jei nori įrašyti session-log — neprivaloma).
+UŽDUOTIS — READ-ONLY patikra: ar n8n :5678 (ir UI/API) tiesiogiai atviras internete? NIEKO NEKEISK. <8 min.
+NEleisk pytest. Fail-safe. €0. TIK skaitymas — jokio firewall/port/config keitimo, jokio restart. Ataskaita TIK į HERA botą.
+Viešo cad-site-agent NELIESK. hera-vault NELIESK. Secret'us (raktus/token'us) redaguok į [REDACTED].
 
-KONTEKSTAS: 3 n8n MCP trigger'iai (MCP Universal Router /desk, Claude VPS Shell zzVpsShellMcp01, Claude VPS Control
-jij5EQGypNkPsHgh) buvo atviri internete be auth. JAU deaktyvuoti DB'je (active=false), BET veikianti n8n instancija
-laiko webhook'us atmintyje kol nebus RESTART. Ši užduotis: saugiai perkrauti n8n konteinerį, kad skylė faktiškai užsidarytų.
-Tu veiki HOST'e kaip root su docker prieiga. n8n konteineris ≈ ID 1688a40d274f (patikrink dinamiškai, gali keistis).
+KONTEKSTAS: MCP shell endpoint'ai jau uždaryti. Bet cloudflared tunelio host'e nerasta → n8n internetą pasiekia kitu keliu
+(greičiausiai tiesioginis :5678 port-map). Reikia išsiaiškinti TIKSLIAI kaip n8n viešas, kad tada (atskira užduotimi, su
+vartotojo leidimu) galėtume riboti. ŠI užduotis — tik diagnostika.
 
-ŽINGSNIAI:
-1) RASK n8n konteinerį: `docker ps --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' | grep -i n8n`.
-   Jei nerasta ARBA randama >1 kandidatas neaiškiai — STOP, reportuok ką matai, NIEKO nedaryk.
-2) PRIEŠ restart — patvirtink DB būseną (read-only): `docker exec <ID> n8n export:workflow --all --output=/tmp/a.json`
-   tada patikrink 3 MCP workflow'ų active reikšmes (pvz. per `docker exec <ID> node -e` arba grep). VISI 3 turi būti
-   active=false. Jei bent vienas active=true — STOP, reportuok (kažkas atsuko atgal), NEperkrauk.
-3) RESTART: `docker restart <ID>`. Pal’auk kol pakyla: iki ~40s cikle tikrink `docker ps --filter id=<ID> --format '{{.Status}}'`
-   kol rodo „Up".
-4) PO restart — patvirtink kad n8n gyvas (Status „Up") IR kad 3 workflow'ai liko active=false (dar kartą export-check
-   iš konteinerio). 
-5) ENDPOINT test (best-effort, neprivalomas jei URL nerasta): rask cloudflared public URL host'e
-   (`systemctl cat cloudflared 2>/dev/null` ARBA `cat ~/.cloudflared/*.yml /etc/cloudflared/*.yml 2>/dev/null` ARBA
-   `ps aux | grep -i cloudflared | grep -v grep`). Jei radai URL — `curl -s -o /dev/null -w "%{http_code}" <URL>/desk`
-   → tikimasi NE 200 (uždaryta; 404/000/502 ok). URL PATĮ užrašyk ataskaitoj (ne į git). Jei URL nerasta — praleisk, pažymėk.
-6) NErotuok raktų (tai vartotojo darbas per konsoles). NEliesk kitų workflow'ų (Link Parser ir kt. lai lieka kaip yra).
+ŽINGSNIAI (visi read-only):
+1) DOCKER PORT MAP: `docker port n8n-n8n-1 2>/dev/null`; `docker inspect n8n-n8n-1 --format '{{json .HostConfig.PortBindings}} {{json .NetworkSettings.Ports}}' 2>/dev/null`.
+   → Ar 5678 bind'intas 0.0.0.0 (viešas) ar 127.0.0.1 (tik localhost)?
+2) HOST LISTENER'IAI: `ss -tlnp 2>/dev/null | grep -E ':5678|:80|:443|:5679'` (kokiu adresu klauso).
+3) FIREWALL: `ufw status verbose 2>/dev/null`; jei ufw nėra — `iptables -S 2>/dev/null | head -40`; `nft list ruleset 2>/dev/null | head -40`.
+   → Ar :5678 iš išorės leidžiamas ar blokuojamas?
+4) REVERSE PROXY? `docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}' | grep -iE 'nginx|caddy|traefik|proxy|npm'`;
+   `ps aux | grep -iE 'nginx|caddy|traefik' | grep -v grep | head`.
+5) N8N VIEŠAS URL (iš konteinerio env, redaguok secret'us): `docker exec n8n-n8n-1 printenv 2>/dev/null | grep -iE 'N8N_HOST|N8N_PROTOCOL|WEBHOOK_URL|N8N_EDITOR_BASE_URL|N8N_PORT' | sed -E 's/(KEY|TOKEN|PASSWORD|SECRET)=.*/\1=[REDACTED]/I'`.
+6) IŠORINIS PASIEKIAMUMAS (iš host'o į savo public IP): `curl -s -o /dev/null -w "%{http_code}" --max-time 8 http://77.42.94.63:5678/ 2>&1`;
+   `curl -s -o /dev/null -w "%{http_code}" --max-time 8 https://77.42.94.63:5678/ 2>&1` (jei 200/401/302 = pasiekiamas; 000/timeout = ne).
+7) Jei matosi domenas (iš env WEBHOOK_URL ar reverse proxy) — pažymėk ataskaitoj (ne git).
 
-ATASKAITA (HERA botas, trumpai): konteineris (ID/name/image); prieš-restart 3×active; restart OK + „Up"; po-restart 3×active;
-endpoint curl kodas (arba „URL nerasta"); ar viskas švaru. Jei kur STOP — kodėl.
+ATASKAITA (HERA botas, trumpai): (1) 5678 bind 0.0.0.0|127.0.0.1; (2) listener adresas; (3) firewall verdiktas (:5678 open|blocked|nėra fw);
+(4) reverse proxy yra|nėra (koks); (5) n8n public URL/protokolas (redaguota); (6) išorinio curl kodai; IŠVADA: kaip n8n viešas + ar :5678 tiesiogiai atviras.
