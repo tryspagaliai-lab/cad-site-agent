@@ -1,22 +1,31 @@
-UŽDUOTIS — hera_semsearch KOKYBĖS testas #2: NAUJOS 8 užklausos (ne tos pačios kaip pirmam teste). READ-ONLY. <10 min.
-NEleisk pytest. Fail-safe. €0. Ataskaita TIK į HERA botą. Nieko nekeisk.
+UŽDUOTIS — semsearch v1.1: CHUNKING + profile/ + before/after testas (16 užklausų). <30 min.
+Fail-safe: jei abejoji STOP+backup restore. NEleisk pytest. €0 (lokalu). Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK (untracked + /opt/hera-processor).
 
-KONTEKSTAS: nepriklausomas kokybės signalas su KITU užklausų rinkiniu (ne a-h iš praeito testo). Tikslas — patvirtinti ar
-diagnozė (ranking disbalansas: ilgi skill aprašai užgožia trumpus growth/memory įrašus) laikosi ir su naujom užklausom.
+KONTEKSTAS: 2 kokybės testai (16 užklausų) diagnozavo RANKING disbalansą — ilgi/bendri skill dok. užgožia specifinius trumpus
+(taikinys nusėda net iki #54/151). Fix = CHUNKING: skaidyti dok. į pastraipas, embeddint kiekvieną → trumpas įrašas konkuruoja
+kaip vienas fokusuotas chunk'as. + pridėti profile/ (apimties fix h). NELIESK apimties gedimų agro/faithfulness (atskiras turinio klausimas).
 
 ŽINGSNIAI:
-1) Index šviežias (inkrementinis build jei reikia).
-2) Paleisk ŠIAS 8 NAUJAS užklausas (LT+EN, semantika ne raktažodžiai; kiekvienai top-3 su path+score+snippet):
-   1) „agentai izoliuotai ir saugiai vykdo kodą smėlio dėžėje"        (sandbox/bwrap izoliacija)
-   2) „RAG ir prieštaringi ar konfliktuojantys dokumentai"           (RAG-conflicting-docs)
-   3) „GPU nuoma ir modelių hostinimas savo serveriuose"            (FUTURE_GPU / self-hosting)
-   4) „automatinis brėžinių ir CAD failų apdorojimas"                (cad drawing processing / DXF)
-   5) „naujų įgūdžių formavimas iš patirties"                        (skill accretion)
-   6) „faktų tikrinimas ir haliucinacijų aptikimas"                  (faithfulness)
-   7) „ilgo konteksto išlaikymas ir projekto atmintis"               (journal / context retention)
-   8) „self-improvement per near-misses ir biudžetą"                 (GIFT / self-optimization / overfitting)
-3) Kiekvienai: PATAIKĖ (relevantus top-1) / DALINAI (relevantus top-3 bet ne #1) / MISS. Jei MISS — patikrink manifest ar
-   taikinys APSKRITAI indeksuotas (yra vault'e ir index'e) → ar tai RANKING (indeksuotas bet nusėdo) ar APIMTIS (nėra vault'e/index'e).
+1) BACKUP: hera_council-nesusijęs — cp dabartinį hera_semsearch.py → /root/hera-core-backup/hera_semsearch.py.$(date +%s); ir dabartinį index/state kopija (kad grįžtama).
+2) MODIFIKUOK hera_semsearch.py (def 0 no-op išlieka; NELIESK council/kitų modulių):
+   - CHUNKING: kiekvieną dok. (growth/skills/profile/*.md + memory_index įrašus) skaidyk į chunk'us pagal markdown struktūrą
+     (## antraštės / pastraipos), target ~80-250 žodžių, sulieti per mažus. Kiekvienas chunk embeddinamas ATSKIRAI.
+   - INDEX saugo: chunk_id, parent_path, parent_sha, chunk_snippet, vektorius. Inkrementinis pagal parent_sha (re-chunk tik pakeistus).
+   - QUERY: embeddina užklausą → cosine per VISUS chunk'us → grupuok pagal parent_path → dok. balas = MAX chunk balas → top-K dok.
+     su geriausiu chunk snippet. (Tai passage-retrieval, taiso ilgio dilution.)
+   - Pridėk profile/ prie indeksuojamų šaltinių.
+   - Fail-safe, €0, jokio tinklo query metu.
+3) REBUILD chunked index. Užrašyk: chunk skaičius, RAM peak, build laikas, index dydis.
+4) SELFTEST (--selftest, be pytest): semantinis top-1 (paraphrase) + HERA_SEMSEARCH=0 no-op → PASS.
+5) BEFORE/AFTER — paleisk VISAS 16 užklausų (top-1 path+score+verdiktas), palygink su ankstesniais:
+   TEST#1: a)„begaliniai LLM ciklai/pergalvojimas" b)„mokytis iš klaidų taisyti" c)„patvirtinti darbą prieš pradedant"
+     d)„3D modeliavimo AI įrankiai" e)„žemės ūkio AI ūkininkams" f)„sujungti kelis AI modelius sprendimui"
+     g)„semantinė atmintis tarp pokalbių" h)„vartotojo tikslai ir 3D dizaino patirtis"
+   TEST#2: 1)„agentai izoliuotai saugiai vykdo kodą" 2)„RAG prieštaringi dokumentai" 3)„GPU nuoma hostinimas"
+     4)„automatinis brėžinių/CAD apdorojimas" 5)„naujų įgūdžių formavimas iš patirties" 6)„faktų tikrinimas haliucinacijos"
+     7)„ilgo konteksto projekto atmintis" 8)„self-improvement per near-misses biudžetą"
+   YPAČ pažymėk RANKING taikinius ar PAGERĖJO: a,c,d,h (test#1) + q4,q8 (test#2). Apimties (e,q6 agro/faithfulness) tikėtina lieka MISS — OK.
+6) IŠVADA: bendras skaičius PRIEŠ (test1:1/2/5, test2:5/0/3) vs PO chunking; ar ranking taikiniai pakilo į top-1/3. 
+7) BACKUP kodą /opt/hera-processor + commit/push; ROADMAP „semsearch v1.1 chunking + profile" pastaba.
 
-ATASKAITA (HERA botas): 8 užklausos × top-1 (path+score) + verdiktas; suvestinė X PATAIKĖ / Y DALINAI / Z MISS;
-palyginimas su pirmu testu — ar ranking-disbalanso diagnozė patvirtinta; kurie MISS = ranking vs apimtis. Nieko nekeisk.
+ATASKAITA (HERA botas): chunk sk. + resursai; selftest PASS/FAIL; 16 užklausų PO-verdiktai (ypač a/c/d/h/q4/q8 pokytis); bendras before/after skaičius; backup+ROADMAP. Jei STOP — kodėl + restore.
