@@ -1,21 +1,16 @@
-UŽDUOTIS — (A) patvirtinti GitHub token rotaciją (runner fetch + vault push) + (B) n8n UI-auth patikra. <9 min.
+UŽDUOTIS — patvirtinti kad vault push su nauju token'u vėl veikia (403 dingo?). <6 min.
 NEleisk pytest. Fail-safe. €0. Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK. Secret'us redaguok.
-Vienintelis leidžiamas write = vault heartbeat state failas (B dalis — tik read).
+Vienintelis write = vault heartbeat state failas + normalus sync push.
 
-=== (A) TOKEN ROTACIJOS PATVIRTINIMAS ===
-1) Runner repo fetch: `git -C /opt/cad-site-agent fetch origin claude/authorize-claude-code-vps-1dcvrv 2>&1 | tail -3`
-   → jei nėra „Authentication failed"/„fatal" = OK. (Tai, kad skaitai šią užduotį, jau reiškia fetch veikia — bet patvirtink eksplicitiškai.)
-2) Vault push test su nauju token'u (per esamą sync mechanizmą):
-   `date -u +%FT%TZ > /opt/hera-vault/state/token_rotation_check.txt`
-   `bash /usr/local/bin/hera_vault_sync.sh; tail -4 /var/log/hera_vault_sync.log`
-   → tikimasi „PUSH OK". Jei „Authentication failed" ar „PUSH nepavyko" dėl auth → vault kelyje token neatnaujintas, PRANEŠK (STOP B daliai nebūtina).
+KONTEKSTAS: PAT teisės GitHub'e ką tik pataisytos (All repositories + Contents: Read and write). Token'o reikšmė VPS'e
+NEPAKEISTA — tik GitHub-side teisės. Reikia patvirtinti kad hera-vault push nebe 403.
 
-=== (B) n8n UI-AUTH (read-only, be login, be account kūrimo) ===
-3) `BASE=$(docker exec n8n-n8n-1 printenv WEBHOOK_URL 2>/dev/null | tr -d '\r' | sed 's:/*$::')`; echo "BASE=$BASE" (jei tuščia — N8N_EDITOR_BASE_URL).
-4) `curl -s --max-time 10 "$BASE/rest/settings" | grep -oE '"showSetupOnFirstLoad":[a-z]*'`
-   → true = owner NESUKURTAS (KRITIŠKA); false = owner yra (gerai).
-5) `curl -s -o /dev/null -w "%{http_code}\n" --max-time 10 "$BASE/rest/workflows"` (be auth → 401 tikimasi; 200 = ATVIRA!).
-6) `curl -s -o /dev/null -w "root=%{http_code} redir=%{redirect_url}\n" --max-time 10 "$BASE/"`.
+ŽINGSNIAI:
+1) Heartbeat: `date -u +%FT%TZ > /opt/hera-vault/state/token_rotation_check.txt`.
+2) Paleisk sync: `bash /usr/local/bin/hera_vault_sync.sh; echo "rc=$?"`.
+3) Log: `tail -5 /var/log/hera_vault_sync.log`.
+4) Būsena: `git -C /opt/hera-vault rev-list --left-right --count HEAD...origin/main 2>&1` (po pull-rebase; tikimasi „0 0" jei push OK).
+   Jei log rodo „PUSH OK" IR left/right = 0 0 → SĖKMĖ (403 dingo, backlog išpush'intas).
+   Jei „403" ar „Authentication failed" → token teisės dar ne iki galo (arba org approval reikia); pranešk tikslią klaidą.
 
-ATASKAITA (HERA botas, trumpai): (A) runner fetch OK/auth-fail; vault PUSH OK/auth-fail;
-(B) showSetupOnFirstLoad true|false; /rest/workflows kodas (401=saugu/200=atvira); / kodas+redirect. IŠVADA.
+ATASKAITA (HERA botas, trumpai): sync rc; log paskutinės eilutės (PUSH OK / 403 / kita); ahead/behind (0 0 = švaru); IŠVADA: vault push veikia taip/ne.
