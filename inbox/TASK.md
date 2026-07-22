@@ -1,20 +1,21 @@
-UŽDUOTIS — READ-ONLY: ar n8n UI (per domeną) reikalauja login / ar owner-account sukurtas? NIEKO NEKEISK. <7 min.
-NEleisk pytest. Fail-safe. €0. TIK skaitymas — jokio login, jokio account kūrimo, jokio config keitimo. Ataskaita TIK į HERA botą.
-Viešo cad-site-agent NELIESK. hera-vault NELIESK. Secret'us redaguok. Domeną ataskaitoj rodyk (HERA botas privatus).
+UŽDUOTIS — (A) patvirtinti GitHub token rotaciją (runner fetch + vault push) + (B) n8n UI-auth patikra. <9 min.
+NEleisk pytest. Fail-safe. €0. Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK. Secret'us redaguok.
+Vienintelis leidžiamas write = vault heartbeat state failas (B dalis — tik read).
 
-KONTEKSTAS: n8n viešas TIK per Caddy (https://n8n.<domenas>/), :5678 tiesiogiai neatviras. Belieka patikrinti likutinę
-riziką: ar UI už login, ar owner-account jau sukurtas (jei NE — bet kas užėjęs galėtų pasisavinti owner rolę = kritiška).
+=== (A) TOKEN ROTACIJOS PATVIRTINIMAS ===
+1) Runner repo fetch: `git -C /opt/cad-site-agent fetch origin claude/authorize-claude-code-vps-1dcvrv 2>&1 | tail -3`
+   → jei nėra „Authentication failed"/„fatal" = OK. (Tai, kad skaitai šią užduotį, jau reiškia fetch veikia — bet patvirtink eksplicitiškai.)
+2) Vault push test su nauju token'u (per esamą sync mechanizmą):
+   `date -u +%FT%TZ > /opt/hera-vault/state/token_rotation_check.txt`
+   `bash /usr/local/bin/hera_vault_sync.sh; tail -4 /var/log/hera_vault_sync.log`
+   → tikimasi „PUSH OK". Jei „Authentication failed" ar „PUSH nepavyko" dėl auth → vault kelyje token neatnaujintas, PRANEŠK (STOP B daliai nebūtina).
 
-ŽINGSNIAI (visi read-only, curl be jokių kredencialų):
-1) BASE URL iš env: `BASE=$(docker exec n8n-n8n-1 printenv WEBHOOK_URL 2>/dev/null | tr -d '\r' | sed 's:/*$::')`; echo "BASE=$BASE".
-   (Jei tuščia — imk iš N8N_EDITOR_BASE_URL. Jei ir tas tuščias — STOP, reportuok.)
-2) SETUP BŪSENA (svarbiausia): `curl -s --max-time 10 "$BASE/rest/settings"` → ištrauk lauką
-   `userManagement.showSetupOnFirstLoad` (grep -oE '"showSetupOnFirstLoad":[a-z]*').
-   → =true = owner NESUKURTAS (KRITIŠKA: bet kas gali claim'inti). =false = owner jau yra (gerai).
-3) LOGIN REIKALAVIMAS: `curl -s -o /dev/null -w "root=%{http_code} redirect=%{redirect_url}\n" --max-time 10 "$BASE/"`;
-   `curl -s -o /dev/null -w "%{http_code}\n" --max-time 10 "$BASE/rest/workflows"` (be auth → tikimasi 401; jei 200 = UI/API ATVIRAS!).
-4) (jei yra) `curl -s -o /dev/null -w "%{http_code}\n" --max-time 10 "$BASE/rest/login"` — tik statusui.
-5) MFA/2FA (jei matosi settings): pažymėk ar įjungta (neprivaloma).
+=== (B) n8n UI-AUTH (read-only, be login, be account kūrimo) ===
+3) `BASE=$(docker exec n8n-n8n-1 printenv WEBHOOK_URL 2>/dev/null | tr -d '\r' | sed 's:/*$::')`; echo "BASE=$BASE" (jei tuščia — N8N_EDITOR_BASE_URL).
+4) `curl -s --max-time 10 "$BASE/rest/settings" | grep -oE '"showSetupOnFirstLoad":[a-z]*'`
+   → true = owner NESUKURTAS (KRITIŠKA); false = owner yra (gerai).
+5) `curl -s -o /dev/null -w "%{http_code}\n" --max-time 10 "$BASE/rest/workflows"` (be auth → 401 tikimasi; 200 = ATVIRA!).
+6) `curl -s -o /dev/null -w "root=%{http_code} redir=%{redirect_url}\n" --max-time 10 "$BASE/"`.
 
-ATASKAITA (HERA botas, trumpai): BASE URL; showSetupOnFirstLoad true|false (owner sukurtas ne|taip);
-/rest/workflows be auth kodas (401=apsaugota / 200=ATVIRA); / kodas+redirect; IŠVADA: UI saugus (login + owner set) ar rizika.
+ATASKAITA (HERA botas, trumpai): (A) runner fetch OK/auth-fail; vault PUSH OK/auth-fail;
+(B) showSetupOnFirstLoad true|false; /rest/workflows kodas (401=saugu/200=atvira); / kodas+redirect. IŠVADA.
