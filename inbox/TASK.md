@@ -1,32 +1,22 @@
-UŽDUOTIS — Fazė 17: hera_semsearch — €0 LOKALI semantinė paieška per vault (embedding). <30 min.
-Fail-safe: jei NETELPA €0/resursuose (4GB RAM, be GPU) — STOP+reportuok, NEbloatink VPS. NEleisk pytest. €0 (jokio API, viskas lokaliai).
-Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK (kodą dėk untracked + kopija /opt/hera-processor). Secret'us NEliesk.
+UŽDUOTIS — hera_semsearch KOKYBĖS testas: paleisk realias užklausas, parodyk top-3. READ-ONLY (tik query, jokių pakeitimų). <10 min.
+NEleisk pytest. Fail-safe. €0. Ataskaita TIK į HERA botą.
 
-KONTEKSTAS: HERA turi persistentišką atmintį (memory_index.jsonl, growth/, skills/, reasoningbank), BET paieška =
-leksinė/anchor (cue_anchors), NE semantinė. Trūkumas: rasti „ką kalbėjom apie X" kai užrašyta kitais žodžiais. Statom
-€0 lokalų embedding-paieškos sluoksnį. NEadoptuojam MemPalace (self-built, HERA-native, be trečios šalies rizikos).
-
-SVARBU (resursai): VPS 4GB RAM, be GPU. VENK torch bloat. PIRMENYBĖ lengviems lokaliams embedder'iams:
-  1-as pasirinkimas: fastembed (ONNX, be torch) su mažu MULTILINGUAL modeliu (LT+EN), pvz. intfloat/multilingual-e5-small
-     ar BAAI/bge-small (ONNX). Jei fastembed netelpa — 2) llama.cpp/GGUF embedding modelis; 3) jei jau yra sentence-transformers.
-  Jei NĖ VIENAS netelpa €0/RAM — STOP, reportuok kas realiai įmanoma (nediek torch 2GB be reikalo).
+KONTEKSTAS: Fazė 17 hera_semsearch gyvas (fastembed, def 0, index=growth+skills+memory_index). Testuojam ar semantinis recall
+tikrai geras + ką praleidžia (index apimtis). Rezultatas nulems ar plėsti index (sessions/proposals/profile) ir ar integruot į runner.
 
 ŽINGSNIAI:
-1) FEASIBILITY (pirma): `df -h /`, `free -m`; pasirink embedder pagal tai kas telpa (€0, lokalus, multilingual). Užrašyk sprendimą.
-   Modelio download OK (VPS turi internetą), bet flag'ni dydį (MB) ataskaitoj.
-2) hera_semsearch.py (HERA_SEMSEARCH jungiklis def 0 = no-op importui; CLI veikia visada):
-   - `build`: skenuoja /opt/hera-vault/{growth,skills}/*.md + memory_index.jsonl → tekstą embeddina LOKALIAI → saugo vektorius +
-     manifest (path, sha, snippet) į STATE dir (/opt/hera-processor/semsearch/ ARBA /root/hera_semsearch/ — NE į vault git, kad
-     nebūtų binarų churn). INKREMENTINIS: re-embeddina TIK pakeistus (sha palyginimas).
-   - `query "<klausimas>"`: embeddina klausimą → cosine top-K (def 5) → spausdina path + score + snippet.
-   - Fail-safe: viskas try/except; klaida → log /root/hera_semsearch.log, ne crash. €0, jokio tinklo query metu.
-3) SELFTEST (--selftest, be pytest): (a) mažas sintetinis rinkinys, query KITAIS žodžiais ta pačia prasme → teisingas top-hit
-   (įrodo semantiką, ne raktažodžius); (b) HERA_SEMSEARCH=0 importas = no-op.
-4) REALUS DEMO: `build` ant tikro vault + 2 query pvz: „kaip veikia taryba/council" ir „atminties paieška tarp sesijų" → parodyk top-3
-   (path+score). Tai parodo ar semantika realiai veikia mūsų LT+EN turiny.
-5) RESURSŲ ATASKAITA (svarbu): modelis+dydis MB, RAM peak build metu, index dydis, build laikas, disk po.
-6) Cron NEDĖK. Runner integracija = ATSKIRAS žingsnis (v2 vėliau). BACKUP: hera_semsearch.py → /opt/hera-processor + commit/push.
-   Vault ROADMAP.md: „Fazė 17 hera_semsearch (€0 lokali semantinė vault paieška) — ĮDIEGTA <data>, HERA_SEMSEARCH def 0, <embedder>, runner integr.=vėliau".
+1) Įsitikink index šviežias: `HERA_SEMSEARCH=1 python3 <kelias>/hera_semsearch.py build` (inkrementinis, greitas). 
+2) Paleisk ŠIAS 8 užklausas (mišrios LT+EN, testuoja SEMANTIKĄ ne raktažodžius; kiekvienai top-3 su path+score+snippet):
+   a) „kaip apsisaugoti nuo begalinių LLM ciklų ir pergalvojimo"        (turėtų rast loop-guard/PUMA/anti-rc124)
+   b) „mokytis iš klaidų ir jas taisyti automatiškai"                    (EMG/diffrules)
+   c) „patvirtinti kad darbas atliktas prieš pradedant"                  (validator-first/model-synthesis)
+   d) „3D modeliavimo ir vizualizacijos AI įrankiai"                     (3ds Max / AutoCAD MCP natos)
+   e) „žemės ūkio dirbtinis intelektas ūkininkams"                       (agro)
+   f) „sujungti kelis skirtingus AI modelius vienam sprendimui"          (council / model-synthesis)
+   g) „semantinė atmintis ir paieška tarp pokalbių"                      (self-ref: semsearch/MemPalace/atmintis)
+   h) „vartotojo tikslai ir 3D dizaino patirtis"                         (profile — TIKĖTINA MISS, nes profile ne index'e)
+3) Kiekvienai užklausai įvertink: PATAIKĖ (relevantus top-1) / DALINAI / MISS. Ypač pažymėk h) ir f) — ar praleido dėl index apimties
+   (profile/sessions/proposals neindeksuoti), ar dėl semantikos.
 
-ATASKAITA (HERA botas, trumpai): pasirinktas embedder+dydis; feasibility (df/free verdiktas); modulis+selftest PASS/FAIL;
-demo 2 query top-3 (ar semantika veikia); resursai (RAM peak/index dydis/laikas); backup+ROADMAP. Jei STOP — kodėl + kas įmanoma vietoj.
+ATASKAITA (HERA botas): 8 užklausos × top-1 (path+score) + verdiktas PATAIKĖ/DALINAI/MISS; bendra išvada — ar semantika gera;
+kurios užklausos praleistos DĖL INDEX APIMTIES (rekomendacija plėst sessions/proposals/profile ar ne). Nieko nekeisk.
