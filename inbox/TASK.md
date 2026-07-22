@@ -1,32 +1,28 @@
-UŽDUOTIS — Fazė 15: „Output loop/stagnation guard" (hera_loopguard.py) — anti-rc124 priedas. <14 min.
-NEleisk pytest (tik savo selftest). Fail-safe. €0. Deterministiška (BE LLM, be tinklo, be hidden-states). Ataskaita TIK į HERA botą.
-Privatus hera-vault (/opt/hera-vault). Viešo cad-site-agent NELIESK. Secret'us redaguok.
+UŽDUOTIS — Fazė 16 (v2): įpinti loop-guard + diffrules į vps_agent_runner.sh — ADVISORY, flag-gated, fail-safe. <15 min.
+KRITIŠKA: čia backbone (runner). NEleisk pytest. Fail-safe MAX. €0. Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK.
+PAGRINDINĖ TAISYKLĖ: su HERA_* flag'ais = 0 runner elgesys turi likti 100% IDENTIŠKAS. Jei ABEJOJI — atstatyk iš backup, STOP, pranešk.
 
-KONTEKSTAS (kodėl): PUMA preprint (vault nata je8nfw) — aptikti kada modelis nustoja realiai samprotauti (overthinking/
-kilpos/stagnacija) ir nutraukti anksčiau nei suveikia HARD timeout. IMAM TIK HERA-įmanomą dalį: OUTPUT teksto analizę
-(NE latentinę geometriją/„momentum" — reikia hidden-states, uždariems API modeliams neįmanoma). Validacija #5 anti-rc124.
-Human-gate: vartotojas patvirtino („Varom").
+KONTEKSTAS: turim 3 gyvus modulius (hera_diffrules.py Fazė13, hera_validator.py Fazė14, hera_loopguard.py Fazė15), visi
+v1 selftest PASS. v2 = įpinti į runner. ŠIOJE užduotyje darom TIK 2 SAUGIAUSIUS (loop-guard advisory + diffrules post-hook).
+Validator-first (reikia TASK.md assertions konvencijos) = v2.1 vėliau, NE dabar.
 
-1) Sukurk /root/hera_loopguard.py (kaip kiti hera_* moduliai; HERA_LOOPGUARD jungiklis, default 0 = no-op):
-   - ĮVESTIS: output tekstas kaip eilučių/blokų sąrašas (arba viena styga → skaidyk į eilutes). Determ., be LLM.
-   - APTINKA (3 signalai, kiekvienas su slenksčiu ir įrodymu):
-     a) LOOP (post-convergence recurrence): normalizuota eilutė/blokas (lower, trim, collapse whitespace) kartojasi >= K kartų
-        (def K=4) → loop. Grąžink kartojamą fragmentą + kiekį.
-     b) RE-VALIDATION kilpa: validacijos-markerių frazių pasikartojimas virš slenksčio (pvz. „verify|re-check|validate|
-        confirm again|patikrinu|dar kartą" >= M kartų, def M=5) → recurrence.
-     c) STAGNACIJA (no new content): slankiu langu (def N=6 paskutinių blokų) naujų unikalių tokenų/žodžių prieaugis ~0
-        (pvz. Jaccard su ankstesniu langu > 0.9 ARBA naujų-žodžių dalis < 0.05) → stagnation.
-   - IŠVESTIS: dict {status: ok|loop|revalidation|stagnation, evidence, recommend: continue|truncate|restart}.
-     (loop/revalidation → recommend restart arba truncate; stagnation → truncate.) ADVISORY — nieko pats nenutraukia v1.
-   - Fail-safe: viskas try/except; klaida → status="ok"+flag log (/root/hera_loopguard.log); NIEKADA necrashink.
-2) SELFTEST (`--selftest`, be pytest): 4 sintetiniai output'ai → teisinga klasifikacija:
-   (a) sveikas progresuojantis → ok; (b) tas pats blokas ×5 → loop; (c) „let me verify..." ×6 → revalidation;
-   (d) 6 blokai be naujo turinio → stagnation. + HERA_LOOPGUARD=0 → no-op. Spausdink PASS/FAIL kiekvienam.
-3) Integravimas į runner = v2 (atskiras human-gate) — v1 tik modulis + selftest paruošti. Ryšys su anti-rc124: papildo
-   HARD timeout (aptinka anksčiau); ateity gali maitinti hera_diffrules (loop→failure signalas).
-4) Cron NEDĖK. BACKUP: cp /root/hera_loopguard.py /opt/hera-processor/ + push. 
-5) Vault ROADMAP.md: „Fazė 15 Output loop/stagnation guard (hera_loopguard) — ĮDIEGTA <data>, HERA_LOOPGUARD def 0, v1 determ.
-   OUTPUT-only (PUMA HERA-įmanoma dalis), anti-rc124 priedas; runner integr.=v2". Vault commit/push per sync (pull --rebase pirma).
+ŽINGSNIAI:
+1) BACKUP BŪTINAS: `mkdir -p /root/hera-core-backup && cp /usr/local/bin/vps_agent_runner.sh /root/hera-core-backup/vps_agent_runner.sh.$(date +%s)`.
+   Taip pat commit'ink dabartinį į /opt/hera-processor jei ten laikai (kaip modulius).
+2) Perskaityk /usr/local/bin/vps_agent_runner.sh. Rask kur apskaičiuojamas OUT ir RC (po `claude ... -p`), ir kur send_tg siunčia rezultatą.
+3) ĮTERPK 2 dalykus, VISKAS fail-safe (subshell + `|| true`, kaip jau daro esamas indekso blokas skripto gale):
+   (A) LOOP-GUARD (advisory): PO to kai OUT ir RC žinomi, PRIEŠ galutinį send_tg — jei `[ "${HERA_LOOPGUARD:-0}" = "1" ]`,
+       paleisk determ. patikrą ant OUT: `LG=$( printf '%s' "$OUT" | HERA_LOOPGUARD=1 python3 /root/hera_loopguard.py --stdin 2>/dev/null || true )`.
+       (Jei hera_loopguard.py neturi --stdin rėžimo — PRIDĖK jį: skaito stdin, spausdina 1 eilutę „status=... recommend=..."; be crash.)
+       Sudaryk trumpą LG_NOTE (pvz. „\n⚠️ loop-guard: <status>/<recommend>" jei status!=ok, kitaip tuščią). Įterp LG_NOTE į send_tg tekstą.
+       Su flag=0 → LG_NOTE tuščias, žinutė nepakitusi.
+   (B) DIFFRULES (post-hook): skripto GALE (šalia esamo indekso subshell'io) — jei `[ "${HERA_DIFFRULES:-0}" = "1" ]`,
+       `( HERA_DIFFRULES=1 /usr/bin/python3 /root/hera_diffrules.py ) >>"$LOG" 2>&1 || true`. Su flag=0 → nieko.
+   NELIESK: fetch, blob-dedup, claude -p eilutės, timeout, STATE rašymo, esamo indekso bloko.
+4) FLAG'Ų NEĮJUNK — palik HERA_LOOPGUARD ir HERA_DIFFRULES neapibrėžtus/0 (dormant plumbing). Vartotojas įjungs vėliau po verifikacijos.
+5) PATIKRA: `bash -n /usr/local/bin/vps_agent_runner.sh` → turi būti OK. Jei blogai → atstatyk iš backup, STOP, pranešk.
+   Papildomai: mock-testas su flag=0 kad post-process blokai no-op (pvz. paleisk tik tuos naujus fragmentus atskirai su HERA_*=0).
+6) Į ataskaitą įrašyk PRIEŠ/PO svarbias eilutes (diff santrauką), backup kelią, bash -n rezultatą.
 
-ATASKAITA (HERA botas, trumpai): (1) modulis OK/ne; (2) selftest PASS/FAIL (ok/loop/revalidation/stagnation/no-op);
-(4) backup+push OK; (5) ROADMAP OK.
+ATASKAITA (HERA botas): backup OK+kelias; (A) loop-guard advisory įterptas (ir ar reikėjo --stdin priedo); (B) diffrules post-hook įterptas;
+bash -n OK/ne; flag'ai palikti 0 (patvirtink); mock no-op patikra. Jei kur STOP — kodėl + kad backup atstatytas.
