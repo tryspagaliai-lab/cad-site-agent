@@ -1,20 +1,26 @@
-UŽDUOTIS — pataisyti thinkingBudget=0 faile n8n/hera/gemini.py (apsaugoti tarybą + maršrutizatorių). <12 min.
-Fail-safe: jei fix neaiškus — STOP+backup restore. NEleisk pytest. €0 (1-2 maži Gemini call'ai). Ataskaita TIK į HERA botą. Secret'us NEliesk.
-Viešo cad-site-agent NELIESK git prasme (failas untracked — palik untracked, kopija + push į hera-core-backup, kaip įprasta).
+UŽDUOTIS — dizaino botas: pridėti naujus šaltinius (patikrinus RSS) + TLDR Design filtras. ai_digest.py TOPICS['design']. <15 min.
+Fail-safe: jei abejoji STOP+backup restore. NEleisk pytest. €0. Ataskaita TIK į HERA botą. Kitų temų (ai/agro/aitech) NELIESK. Secret'us NEliesk.
 
-KONTEKSTAS: ai_digest.py jau pataisytas — gemini-flash-latest nebepriima thinkingBudget=0 (grąžina 400 INVALID_ARGUMENT). Auditas rado
-tą pačią klaidą /opt/cad-site-agent/n8n/hera/gemini.py: gen()/gen_meta() default thinking=0 → siunčia thinkingConfig.thinkingBudget=0.
-Naudoja hera_router.py + hera_council.py (taryba). Fallback rolina tik 503/kvotą, NE 400 — tad taryba gali tyliai gedinti jurorą.
+KONTEKSTAS: vartotojas patvirtino pridėti VISUS naujus šaltinius + TLDR Design filtruoti (tik AI/3D/dizaino-įrankių įrašai).
+Dizaino tikslas = AI eksploatavimo metodai 3D/vizualizacijos/gen-media srityje, NE bendros dizaino naujienos.
 
-ŽINGSNIAI:
-1) BACKUP: cp /opt/cad-site-agent/n8n/hera/gemini.py /root/hera-core-backup/gemini.py.$(date +%s).
-2) FIX (mažas, toks pat principas kaip ai_digest): gen()/gen_meta() — kai thinking<=0 (arba budget=0), NEsiųsk thinkingConfig lauko
-   iš viso (praleisk jį), o ne siųsk thinkingBudget=0. Jei thinking>0 — palik thinkingConfig su tuo budget. Numatytas elgesys („minimizuoti
-   samprotavimą") išlieka, tik be atmetamos 0 reikšmės. NELIESK kitų wrapper dalių (retry/fallback/model sąrašo).
-3) PATIKRA: `python3 -c "import ast; ast.parse(open('/opt/cad-site-agent/n8n/hera/gemini.py').read()); print('OK')"`.
-   RE-TEST: paleisk realų gen() call'ą su default nustatymais (thinking=0), pvz. trumpas promptas → turi grąžinti 200 + tekstą (NE 400).
-   Papildomai (jei greita): mini council/router kelio patikra — pvz. importuok hera_council ir paleisk 1 juror gen() → 200. (NEleisk viso council fan-out.)
-4) BACKUP kodą: cp į /opt/hera-processor (jei ten laikai) + commit/push į hera-core-backup.
+1) BACKUP: cp /root/ai_digest.py /root/hera-core-backup/ai_digest.py.$(date +%s).
+2) PATIKRINK KANDIDATUS (curl su browser User-Agent, timeout 15s; veikiantis = HTTP 200 IR turinys prasideda <?xml/<rss/<feed):
+   - 80.lv:            https://80.lv/feed/   (jei ne — https://80.lv/rss/)
+   - Figma tinklaraštis: https://www.figma.com/blog/feed/   (Figma gali neturėti RSS — jei ne, praleisk, pažymėk)
+   - Two Minute Papers (YouTube kanalas): https://www.youtube.com/feeds/videos.xml?channel_id=UCbfYPyITQ-7l4upoX8nvctg
+   - fal.ai:           https://fal.ai/blog/rss.xml   (jei ne — https://blog.fal.ai/rss/)
+   - Replicate:        https://replicate.com/blog/rss   (jei ne — https://replicate.com/blog/rss.xml)
+   - Hugging Face tinklaraštis: https://huggingface.co/blog/feed.xml   (jei JAU yra kitoj temoj — nedubliuok, pažymėk)
+3) ĮDĖK į TOPICS['design']['feeds'] TIK veikiančius kandidatus. Šie visi = kuruoti (broad=False, be kw filtro — jie jau AI/3D/dizaino-tikslūs),
+   IŠSKYRUS jei feed labai bendras. Two Minute Papers, 80.lv, fal.ai, Replicate, HF, Figma = kuruoti.
+   Jei kuriam NĖ VIENAS URL neveikia — praleisk, pažymėk ataskaitoj (geriau mažiau, bet gyvi — kaip aitech).
+4) TLDR DESIGN FILTRAS: dabartinis TLDR Design įrašas — perjunk į broad=True, kad jam būtų taikomas DESIGN_KW filtras
+   (praeis tik įrašai su AI/3D/dizaino-įrankių raktažodžiais; emoji/telefonų gandai/rebrand'ai atkris). NELIESK DESIGN_KW sąrašo turinio,
+   nebent reikia pridėti akivaizdų trūkstamą raktažodį (pvz. „ai", „generative" jei nėra). Pažymėk ką pakeitei.
+5) PATIKRA: python3 -c "import ast; ast.parse(open('/root/ai_digest.py').read()); print('OK')".
+   Testinis SAUSAS paleidimas TIK design temai (dry-run, be siuntimo jei toks rėžimas yra; jei ne — NEleisk viso digest) → parodyk kiek įrašų surinkta iš naujų šaltinių ir ar TLDR filtras veikia.
+6) BACKUP kodą į /opt/hera-processor + commit/push.
 
-ATASKAITA (HERA botas, trumpai): fix eilutė (prieš/po); ast OK; re-test gen() 200 (ne 400); ar council/router kelias patikrintas; backup kelias.
-Jei STOP — kodėl + restore. NELIESK ai_digest feeds ar TLDR (atskiri žingsniai).
+ATASKAITA (HERA botas, trumpai): kiekvieno kandidato URL → HTTP kodas ir įdėta/praleista; galutinis design feeds skaičius; TLDR broad=True nustatyta;
+ast OK; dry-run įrašų skaičius (jei įmanoma); backup. Jei STOP — kodėl+restore.
