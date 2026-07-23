@@ -1,24 +1,29 @@
-UŽDUOTIS — Fazė 18: „perceived-error" (numanoma klaida) detektorius (hera_perceived_error.py). <14 min.
-NEleisk pytest (tik savo selftest). Fail-safe. €0. Deterministiška (BE LLM, be tinklo). Ataskaita TIK į HERA botą.
-Viešo cad-site-agent NELIESK git prasme (untracked + /opt/hera-processor). Secret'us NEliesk.
+UŽDUOTIS — Fazė 19: „LangFuzz-lite" parafrazių konsistencijos testas (hera_langfuzz.py). <14 min.
+NEleisk pytest (tik savo selftest). Fail-safe. €0. Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK git prasme (untracked + /opt/hera-processor). Secret'us NEliesk.
 
-KONTEKSTAS: iš LangChain lifecycle (validacija #6) — „online eval" be etalono: aptikti kada agentas suklydo iš POKALBIO signalų
-(vartotojo pataisymai „padarei blogai", įklijuota klaida/traceback), ir pažymėti blogus paleidimus peržiūrai. Monitor fazės dalis,
-šalia loop-guard/diffrules. v1 deterministinis, be LLM.
+KONTEKSTAS: iš LangChain lifecycle (LangFuzz idėja) — paleist tą pačią užklausą KELIOM formuluotėm per taikinį; jei atsakymai
+DRASTIŠKAI skiriasi → vienas klaidingas. €0 savitikros metodas (Test fazė). v1 branduolys DETERMINISTINIS (palyginimas be LLM);
+parafrazių generavimas — NEPRIVALOMAS pagalbininkas per JAU pataisytą gemini wrapper'į (fail-safe).
 
-1) Sukurk /root/hera_perceived_error.py (kaip kiti hera_* moduliai; HERA_PERCEIVED_ERROR jungiklis def 0 = no-op importui; CLI/funkc. veikia):
-   - API: `detect(run_output: str, followup: str = "") -> dict` grąžina {status: ok|suspect, signals:[{type,match}], recommend}.
-   - SIGNALŲ TIPAI (deterministiniai, LT+EN, case-insensitive; naudok žodžių ribas kur įmanoma, venk substring false-positive):
-     a) user_correction: „padarei blogai|neteisinga|ne to prašiau|atsuk|sugadin|blogai padary|you messed up|that'?s wrong|not what i asked|no,? you should|undo|revert".
-     b) pasted_error: „traceback|exception|\berror:|\bfailed\b|assert|rc=124|rc=137|rc=1\b|http (4|5)\d\d|stack trace|klaida:".
-     c) run_abort: „NUTRAUKTA|timeout|pakib|124|137" (tik jei kontekste su rc/nutraukimu).
-   - LOGIKA: jei bent 1 signalas → status=suspect + recommend „peržiūrėti"; kitaip ok. Grąžink įrodymus (match ištraukas).
-   - Fail-safe: viskas try/except; klaida → status=ok + flag log /root/hera_perceived_error.log; NIEKAD necrashink. €0, be tinklo.
-2) SELFTEST (`--selftest`, be pytest): (a) output + followup „padarei blogai, atsuk" → suspect(user_correction);
-   (b) švarus output → ok; (c) output su „Traceback ... Error:" → suspect(pasted_error); (d) HERA_PERCEIVED_ERROR=0 → no-op importas.
-   Spausdink PASS/FAIL kiekvienam.
-3) Runner integracija = v2 (atskiras human-gate) — TIK modulis + selftest. Cron NEDĖK.
-4) BACKUP: cp /root/hera_perceived_error.py /opt/hera-processor/ + commit/push. Vault ROADMAP.md: „Fazė 18 perceived-error (hera_perceived_error) —
-   ĮDIEGTA <data>, HERA_PERCEIVED_ERROR def 0, v1 determ., Monitor fazė, runner integr.=vėliau".
+1) Sukurk /root/hera_langfuzz.py (kaip kiti hera_* moduliai; HERA_LANGFUZZ jungiklis def 0 = no-op importui; funkc. veikia):
+   - BRANDUOLYS (determ., €0): `check_consistency(fn, variants, compare="token") -> dict`:
+     * fn = iškviečiamas objektas (callable), priima str, grąžina str (ar dict → serializuok į str).
+     * variants = sąrašas semantiškai vienodų įvesčių formuluočių.
+     * Paleidžia fn(v) kiekvienam variantui (fail-safe: fn klaida vienam → tas rezultatas „ERROR", tęsia).
+     * Palygina išvestis POROMIS pagal compare:
+        - "exact": normalizuotas string lygumas (struktūriniams verdiktams/keliams).
+        - "token": Jaccard žodžių persidengimas (determ.).
+        - "embed": NEPRIVALOMA — jei fastembed/hera_semsearch prieinamas, cosine; jei ne → fallback į token.
+     * divergence = 1 - min poros panašumas. Jei divergence > slenkstis (def 0.5) → inconsistent (pažymėk poras).
+     * Grąžina {consistent: bool, divergence: float, per_variant: [...], flagged_pairs: [...]}.
+   - NEPRIVALOMAS: `gen_paraphrases(question, n=3) -> list[str]` per hera gemini wrapper (n8n/hera/gemini.py, JAU pataisytas thinkingBudget).
+     Fail-safe: jei Gemini nepasiekiamas/klaida → grąžink [question] (1 elementas), NIEKAD necrashink. (Šitas kelias — €0 free tier.)
+   - Fail-safe visur; klaida → log /root/hera_langfuzz.log, saugus grąžinimas. HERA_LANGFUZZ=0 → no-op importui.
+2) SELFTEST (`--selftest`, be pytest): (a) fn grąžina TĄ PATĮ visiems variantams → consistent=True;
+   (b) fn grąžina drastiškai skirtingus → consistent=False + flagged_pairs; (c) fn su viena klaida (išmeta) → graceful, ne crash;
+   (d) HERA_LANGFUZZ=0 → no-op importas. Spausdink PASS/FAIL. (gen_paraphrases NEPRIVALOMA testuoti gyvai — jei greita, 1 call, kitaip praleisk.)
+3) Runner integracija = v2 (atskiras human-gate). Cron NEDĖK.
+4) BACKUP: cp /root/hera_langfuzz.py /opt/hera-processor/ + commit/push. Vault ROADMAP.md: „Fazė 19 LangFuzz-lite (hera_langfuzz) —
+   ĮDIEGTA <data>, HERA_LANGFUZZ def 0, v1 determ. konsistencija + neprivalomas Gemini parafrazių gen, Test fazė, runner integr.=vėliau".
 
-ATASKAITA (HERA botas, trumpai): modulis OK/ne; selftest PASS/FAIL (a/b/c/d); backup+push; ROADMAP. Jei STOP — kodėl.
+ATASKAITA (HERA botas, trumpai): modulis OK/ne; selftest PASS/FAIL (a/b/c/d); ar gen_paraphrases patikrintas; backup+push; ROADMAP. Jei STOP — kodėl.
