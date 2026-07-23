@@ -1,29 +1,36 @@
-UŽDUOTIS — FreeCAD PoC 1 žingsnis: FEASIBILITY probe (galimybių patikra) + minimalus PoC JEI įrankiai jau yra. <10 min.
-NEleisk pytest. Fail-safe. €0. Deterministiška (BE LLM). Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK git prasme. Secret'us NEliesk.
-SVARBU: šis žingsnis NIEKO SUNKAUS NEDIEGIA (jokio apt/pip heavy install). FreeCAD apt ~1.5GB, cadquery/OCP ~300MB+ — tai human-gate, NE dabar.
-Tik PATIKRINK kas jau yra + įvertink install kainą + JEI įrankis jau yra → paleisk mažą PoC. Sprendimą dėl diegimo priims vartotojas po tavo ataskaitos.
+UŽDUOTIS — YouTube ingest guardas: `/post/` community postai → fail-fast (NE video). <12 min.
+NEleisk pytest (tik savo selftest). Fail-safe. €0. Deterministiška (BE LLM, BE tinklo). Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK git prasme. Secret'us NEliesk.
 
-KONTEKSTAS: iš kuruoto ingest'o (FreeCAD MCP, neka-nat/freecad-mcp) — tikslas įrodyti „kodas→parametrinė 3D detalė→export, headless, €0 ant VPS".
-Prieš įsipareigojant sunkiam diegimui ant 4GB VPS, pirma sužinom ką jau turim ir kiek diskas leidžia.
+KONTEKSTAS: du kartus krito ingest'as (id w1w1vb 14:10, hpjasd 20:06) tam pačiam URL:
+`youtube.com/post/UgkxcCM-LQe91DLmzIn6TNJRoBY0u40rsBXC` — tai YouTube COMMUNITY POSTAS (bendruomenės įrašas), NE video.
+Video-transkripcijos vamzdynas (titrai + ASR iš garso) neturi ko transkribuoti → degina 3 retry ciklus × 5 šaltinius veltui.
+TIKSLAS: atpažinti community-post/tab URL PRIEŠ vamzdyną ir grąžinti aiškią žinutę, nedeginant retry.
 
-1) FEASIBILITY (deterministiška, saugu, greita):
-   a) `which freecadcmd freecad FreeCADCmd 2>/dev/null` — ar yra FreeCAD headless binaris?
-   b) `/opt/hera-venv/bin/python3 -c "import cadquery; print(cadquery.__version__)" 2>&1 | head -1` IR sistemos `python3 -c "import FreeCAD" 2>&1 | head -1` — ar parametrinis CAD Python jau importuojasi?
-   c) Disko headroom: `df -h / /root /opt` (Avail stulpelis) + `free -m` (RAM).
-   d) Install kainos ĮVERTIS (BE diegimo): `apt-cache show freecad 2>/dev/null | grep -E "Installed-Size|Size" | head -2` ; ir cadquery dydžio nuoroda pastaboje (~300MB+ OCP). NIEKO neinstaliuok — tik `apt-cache show` (read-only).
+1) SURASK YouTube ingest įėjimo tašką (deterministiškai, grep):
+   - `grep -rn -E "transcript-api|Piped|Invidios|Invidious|video_metadata|kind.*youtube|def .*transcri" /root /opt/hera-processor 2>/dev/null` — rask failą/funkciją kuri paima YouTube URL ir bando titrus/ASR.
+   - Nustatyk kur URL pirmą kartą gaunamas PRIEŠ pradedant 5 šaltinius. Ten dėsim guardą (kuo anksčiau).
 
-2) MINIMALUS PoC — TIK JEI 1a ARBA 1b jau rado veikiantį įrankį (freecadcmd ARBA cadquery importuojasi). Kitaip PRALEISK šį žingsnį (nediek nieko):
-   - Sukurk /root/hera_cadpoc/ ; parašyk mažą skriptą kuris sugeneruoja parametrinę detalę: dėžė 50×30×20mm + 1 skylė Ø8mm centre.
-   - Jei cadquery: `import cadquery as cq; r = cq.Workplane("XY").box(50,30,20).faces(">Z").workplane().hole(8); cq.exporters.export(r, "/root/hera_cadpoc/poc.step"); cq.exporters.export(r, "/root/hera_cadpoc/poc.stl")`.
-   - Jei tik freecadcmd: analogiškas FreeCAD Python API skriptas (Part.makeBox + skylė per Part.makeCylinder cut) → export Part.export į .step; paleisk per `freecadcmd skriptas.py`.
-   - Patikrink kad failai sukurti + dydžiai > 0. Fail-safe: bet kokia klaida → NIEKAD necrashink, log /root/hera_cadpoc/poc.log, ataskaitoj pažymėk klaidą.
+2) BACKUP prieš keitimą: `cp <tas_failas> /opt/hera-processor/backup_<vardas>.$(data +%s)` (arba /root/hera-core-backup/). Būtinai backup.
 
-3) JOKIO push nereikia (probe, nauji failai tik /root/hera_cadpoc, netrackinami). Vault NELIESK šiam žingsniui.
+3) ĮDĖK GUARDĄ (determ., be tinklo — tik URL string analizė):
+   - Funkcija/patikra: jei YouTube URL kelias yra community-tab turinys → NEeik į transkripciją, grąžink kontroliuojamą „nepalaikoma" statusą su aiškia priežastimi.
+   - ATPAŽINIMO TAISYKLĖ (tik string, be tinklo): URL (po normalizacijos, be query) atitinka BET KURĮ:
+       * kelyje yra `/post/`  (pvz. youtube.com/post/Ugkx...)
+       * kelias baigiasi `/community` arba turi `/community?`
+     → tai community postas. (NELIESK `/watch`, `youtu.be/`, `/shorts/`, `/live/`, `/embed/`, `/playlist` — tie realūs video/leistini.)
+   - Elgesys kai atpažinta: grąžink status="unsupported" (arba analogišką esamą „skip/refuse" kelią, kokį naudoja pipeline), su žinute LT:
+     „YouTube community postas (ne video) — transkripcijos nėra. Įklijuok posto tekstą ranka, jei nori jį įtraukti."
+     SVARBU: tai NE 3-retry klaida — grąžink IŠ KARTO (fail-fast), be retry, be tinklo užklausų. Jei pipeline turi „permanent-skip" vs „retry" skirtį — naudok permanent-skip (kaip privatus/negalimas), kad NEbūtų 3 bandymų.
+   - Jei nesi tikras kur tiksliai grąžinti statusą — dėk guardą kuo arčiau įėjimo ir grąžink tą patį tipą kaip esamas „video privatus/negalimas → atsisakau" kelias (permanent, ne retry). NElaušk esamo video srauto.
 
-ATASKAITA (HERA botas, trumpai ir konkrečiai):
-   - Kas JAU įdiegta: freecadcmd? cadquery? FreeCAD python? (versijos jei yra).
-   - Diskas: Avail ant / ir /root; RAM free.
-   - Install kaina: FreeCAD apt Installed-Size (jei gavai); cadquery ~300MB+ pastaba.
-   - PoC: ar paleido? jei taip — failų keliai + dydžiai (poc.step, poc.stl) = ĮRODYMAS kad parametrinis CAD veikia headless €0. Jei praleido — kodėl (nei vieno įrankio).
-   - REKOMENDACIJA vartotojui (1 eilutė): kuris kelias pigiausias €0 headless PoC užbaigti (pvz. „cadquery pip ~300MB, diskas leidžia" ARBA „freecad apt 1.5GB, diskas per mažas → cadquery geriau" ARBA „jau turim X, PoC padarytas").
-   Jei STOP — kodėl.
+4) SELFTEST (`--selftest` arba mažas inline testas, BE pytest, BE tinklo):
+   (a) `youtube.com/post/UgkxcCM-LQe91DLmzIn6TNJRoBY0u40rsBXC` → guardas suveikia, grąžina unsupported/skip, žinutė yra, JOKIO transkripcijos šaltinio nepaleista (0 tinklo).
+   (b) `youtube.com/watch?v=dQw4w9WgXcQ` → guardas NEsuveikia (praeina toliau į normalų srautą; NEreikia realiai transkribuoti — tik patikrink kad guardas grąžina „ne-postas/tęsk").
+   (c) `youtu.be/dQw4w9WgXcQ` ir `youtube.com/shorts/abc123` → guardas NEsuveikia (praeina).
+   (d) `youtube.com/channel/UCxxxx/community` → guardas suveikia (community tab).
+   Spausdink PASS/FAIL kiekvienam.
+
+5) BACKUP kodo į /opt/hera-processor/ (ar /root/hera-core-backup/) + jei tai trackinamas HERA repo (NE viešas cad-site-agent) — commit/push. Vault ROADMAP.md 1 eilutė:
+   „YouTube ingest guardas: /post/ + /community → fail-fast permanent-skip (ne video), determ., €0 — ĮDIEGTA <data>."
+
+ATASKAITA (HERA botas, trumpai): kuris failas/funkcija; kur įdėtas guardas; backup padarytas?; selftest a/b/c/d PASS/FAIL (ypač a: 0 transkripcijos šaltinių paleista; b/c: video srautas nepaliestas); ROADMAP. Jei STOP/neradai įėjimo taško — kodėl + ką radai grep'e.
