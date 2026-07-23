@@ -1,15 +1,20 @@
-UŽDUOTIS — GREITA: patikrinti hera_semsearch.py integralumą po v1.2 timeout, restore jei sugadintas. TIK tai. <5 min.
-NEleisk pytest. Fail-safe. €0. Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK. NEDARYK jokio 16-query testo, jokio index rebuild jei nereikia.
+UŽDUOTIS — READ-ONLY recon: kodėl design digest įrašai „pliki" (be „Kas tai/Kur panaudoti") o news botas turi pilną aprašą? NIEKO NEKEISK. <8 min.
+NEleisk pytest. Fail-safe. €0. Ataskaita TIK į HERA botą. Secret'us NEliesk/redaguok.
 
-KONTEKSTAS: praeita v1.2 užduotis (boilerplate filtras) NUTRŪKO per timeout (rc=124) — per didelė vienam ciklui. hera_semsearch.py
-gali būti pusiau-suredaguotas. Reikia grąžinti į ŽINOMĄ-GERĄ būseną. Semsearch def 0, dormant — jokia gyva sistema nepaveikta.
+KONTEKSTAS: vartotojas: design botas siunčia tik „pavadinimas + [šaltinis] + nuoroda", BE 2-3 sakinių „Kas tai" + „Kur panaudoti"
+usage aprašo. News/AI botas turi pilną aprašą. Bendra taisyklė: KIEKVIENAS botas turi turėti tą usage aprašą. Reikia suprasti KODĖL
+design (ir gal agro/aitech) jo negauna — prieš taisant. Failas: /root/ai_digest.py.
 
-ŽINGSNIAI (greiti):
-1) `HERA_SEMSEARCH=1 python3 <kelias>/hera_semsearch.py --selftest 2>&1 | tail -20` → ar PASS?
-   - Jei PASS → failas sveikas (arba v1.1, arba dalinis v1.2 kuris vis tiek veikia). Pažymėk kurioj versijoj (grep ar yra boilerplate-filtro kodas).
-   - Jei FAIL / import error / crash → SUGADINTAS: restore iš naujausio backupّо:
-     `ls -t /root/hera-core-backup/hera_semsearch.py.* | head -1` → cp į veikiantį kelią → dar kartą --selftest → turi PASS.
-2) NEDARYK boilerplate filtro dabar (tai atskiras mažas žingsnis kitą kartą). NErebuild'ink index jei selftest nereikalauja.
-3) Patvirtink galutinę būseną: selftest PASS + kuri versija (v1.1 švari / v1.2 dalinis-bet-veikia / restored).
+ŽINGSNIAI (visi read-only, tik skaitymas/parodymas):
+1) Parodyk kaip formatuojamas/sudaromas per-item output. Ar yra Gemini „summarize/usage" funkcija, kuri generuoja „Kas tai"+„Kur panaudoti"?
+   Kur ji kviečiama? (grep 'Kas tai\|Kur panaudoti\|summariz\|gemini\|usage\|def send\|def format\|def render' ai_digest.py; parodyk funkcijų parašus + kur kviečiama).
+2) Ar usage-enrichment taikomas VISOMS temoms (ai/design/agro/aitech) vienodai, ar TIK `ai` temai? Parodyk per-topic siuntimo/formatavimo kelią —
+   ar design eina per tą patį enrichment kaip ai, ar per paprastesnį (title+link) kelią.
+3) Jei design eina per enrichment BET vis tiek pliki — ar enrichment TYLIAI fail'ina (pvz. Gemini timeout/klaida → fallback bare)?
+   Patikrink logus (jei yra) ar paskutinis design run rodo klaidą/fallback.
+4) Parodyk DABARTINIUS design temos feeds (TOPICS['design']['feeds'] + github_atom + arxiv_cats + filter_kw).
+5) Trumpai: koks MINIMALUS pakeitimas priverstų design (ir agro/aitech) naudoti tą patį „Kas tai/Kur panaudoti" enrichment kaip ai — ar tai
+   bendros funkcijos iškvietimas visoms temoms, ar per-topic vėliavos, ar enrichment kodo dubliavimas. (Tik ĮVERTINK, NEDARYK.)
 
-ATASKAITA (HERA botas, trumpai): selftest rezultatas (prieš/po restore jei reikėjo); ar buvo sugadintas; galutinė versija (v1.1/v1.2-partial/restored); ar boilerplate-filtro kodas faile yra ar ne. Nieko daugiau nedaryta.
+ATASKAITA (HERA botas, trumpai): (1) enrichment funkcija+kur kviečiama; (2) taikoma visoms ar tik ai; (3) ar design fail'ina/fallback; (4) design feeds sąrašas;
+(5) minimalus fix įvertinimas (kokį kodą liest). Nieko nekeisk.
