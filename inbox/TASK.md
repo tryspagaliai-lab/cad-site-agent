@@ -1,26 +1,24 @@
-UŽDUOTIS — dizaino botas: pridėti naujus šaltinius (patikrinus RSS) + TLDR Design filtras. ai_digest.py TOPICS['design']. <15 min.
-Fail-safe: jei abejoji STOP+backup restore. NEleisk pytest. €0. Ataskaita TIK į HERA botą. Kitų temų (ai/agro/aitech) NELIESK. Secret'us NEliesk.
+UŽDUOTIS — Fazė 18: „perceived-error" (numanoma klaida) detektorius (hera_perceived_error.py). <14 min.
+NEleisk pytest (tik savo selftest). Fail-safe. €0. Deterministiška (BE LLM, be tinklo). Ataskaita TIK į HERA botą.
+Viešo cad-site-agent NELIESK git prasme (untracked + /opt/hera-processor). Secret'us NEliesk.
 
-KONTEKSTAS: vartotojas patvirtino pridėti VISUS naujus šaltinius + TLDR Design filtruoti (tik AI/3D/dizaino-įrankių įrašai).
-Dizaino tikslas = AI eksploatavimo metodai 3D/vizualizacijos/gen-media srityje, NE bendros dizaino naujienos.
+KONTEKSTAS: iš LangChain lifecycle (validacija #6) — „online eval" be etalono: aptikti kada agentas suklydo iš POKALBIO signalų
+(vartotojo pataisymai „padarei blogai", įklijuota klaida/traceback), ir pažymėti blogus paleidimus peržiūrai. Monitor fazės dalis,
+šalia loop-guard/diffrules. v1 deterministinis, be LLM.
 
-1) BACKUP: cp /root/ai_digest.py /root/hera-core-backup/ai_digest.py.$(date +%s).
-2) PATIKRINK KANDIDATUS (curl su browser User-Agent, timeout 15s; veikiantis = HTTP 200 IR turinys prasideda <?xml/<rss/<feed):
-   - 80.lv:            https://80.lv/feed/   (jei ne — https://80.lv/rss/)
-   - Figma tinklaraštis: https://www.figma.com/blog/feed/   (Figma gali neturėti RSS — jei ne, praleisk, pažymėk)
-   - Two Minute Papers (YouTube kanalas): https://www.youtube.com/feeds/videos.xml?channel_id=UCbfYPyITQ-7l4upoX8nvctg
-   - fal.ai:           https://fal.ai/blog/rss.xml   (jei ne — https://blog.fal.ai/rss/)
-   - Replicate:        https://replicate.com/blog/rss   (jei ne — https://replicate.com/blog/rss.xml)
-   - Hugging Face tinklaraštis: https://huggingface.co/blog/feed.xml   (jei JAU yra kitoj temoj — nedubliuok, pažymėk)
-3) ĮDĖK į TOPICS['design']['feeds'] TIK veikiančius kandidatus. Šie visi = kuruoti (broad=False, be kw filtro — jie jau AI/3D/dizaino-tikslūs),
-   IŠSKYRUS jei feed labai bendras. Two Minute Papers, 80.lv, fal.ai, Replicate, HF, Figma = kuruoti.
-   Jei kuriam NĖ VIENAS URL neveikia — praleisk, pažymėk ataskaitoj (geriau mažiau, bet gyvi — kaip aitech).
-4) TLDR DESIGN FILTRAS: dabartinis TLDR Design įrašas — perjunk į broad=True, kad jam būtų taikomas DESIGN_KW filtras
-   (praeis tik įrašai su AI/3D/dizaino-įrankių raktažodžiais; emoji/telefonų gandai/rebrand'ai atkris). NELIESK DESIGN_KW sąrašo turinio,
-   nebent reikia pridėti akivaizdų trūkstamą raktažodį (pvz. „ai", „generative" jei nėra). Pažymėk ką pakeitei.
-5) PATIKRA: python3 -c "import ast; ast.parse(open('/root/ai_digest.py').read()); print('OK')".
-   Testinis SAUSAS paleidimas TIK design temai (dry-run, be siuntimo jei toks rėžimas yra; jei ne — NEleisk viso digest) → parodyk kiek įrašų surinkta iš naujų šaltinių ir ar TLDR filtras veikia.
-6) BACKUP kodą į /opt/hera-processor + commit/push.
+1) Sukurk /root/hera_perceived_error.py (kaip kiti hera_* moduliai; HERA_PERCEIVED_ERROR jungiklis def 0 = no-op importui; CLI/funkc. veikia):
+   - API: `detect(run_output: str, followup: str = "") -> dict` grąžina {status: ok|suspect, signals:[{type,match}], recommend}.
+   - SIGNALŲ TIPAI (deterministiniai, LT+EN, case-insensitive; naudok žodžių ribas kur įmanoma, venk substring false-positive):
+     a) user_correction: „padarei blogai|neteisinga|ne to prašiau|atsuk|sugadin|blogai padary|you messed up|that'?s wrong|not what i asked|no,? you should|undo|revert".
+     b) pasted_error: „traceback|exception|\berror:|\bfailed\b|assert|rc=124|rc=137|rc=1\b|http (4|5)\d\d|stack trace|klaida:".
+     c) run_abort: „NUTRAUKTA|timeout|pakib|124|137" (tik jei kontekste su rc/nutraukimu).
+   - LOGIKA: jei bent 1 signalas → status=suspect + recommend „peržiūrėti"; kitaip ok. Grąžink įrodymus (match ištraukas).
+   - Fail-safe: viskas try/except; klaida → status=ok + flag log /root/hera_perceived_error.log; NIEKAD necrashink. €0, be tinklo.
+2) SELFTEST (`--selftest`, be pytest): (a) output + followup „padarei blogai, atsuk" → suspect(user_correction);
+   (b) švarus output → ok; (c) output su „Traceback ... Error:" → suspect(pasted_error); (d) HERA_PERCEIVED_ERROR=0 → no-op importas.
+   Spausdink PASS/FAIL kiekvienam.
+3) Runner integracija = v2 (atskiras human-gate) — TIK modulis + selftest. Cron NEDĖK.
+4) BACKUP: cp /root/hera_perceived_error.py /opt/hera-processor/ + commit/push. Vault ROADMAP.md: „Fazė 18 perceived-error (hera_perceived_error) —
+   ĮDIEGTA <data>, HERA_PERCEIVED_ERROR def 0, v1 determ., Monitor fazė, runner integr.=vėliau".
 
-ATASKAITA (HERA botas, trumpai): kiekvieno kandidato URL → HTTP kodas ir įdėta/praleista; galutinis design feeds skaičius; TLDR broad=True nustatyta;
-ast OK; dry-run įrašų skaičius (jei įmanoma); backup. Jei STOP — kodėl+restore.
+ATASKAITA (HERA botas, trumpai): modulis OK/ne; selftest PASS/FAIL (a/b/c/d); backup+push; ROADMAP. Jei STOP — kodėl.
