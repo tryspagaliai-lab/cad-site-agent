@@ -1,25 +1,20 @@
-UŽDUOTIS — B: pridėti 3-ią digest lauką „Kur jau panaudota" į enrichment (ai_digest.py) + greitas thinkingBudget=0 auditas. <14 min.
-Fail-safe: jei abejoji STOP+backup restore. NEleisk pytest. €0 (1-2 maži Gemini call'ai). Ataskaita TIK į HERA botą. Secret'us NEliesk.
+UŽDUOTIS — pataisyti thinkingBudget=0 faile n8n/hera/gemini.py (apsaugoti tarybą + maršrutizatorių). <12 min.
+Fail-safe: jei fix neaiškus — STOP+backup restore. NEleisk pytest. €0 (1-2 maži Gemini call'ai). Ataskaita TIK į HERA botą. Secret'us NEliesk.
+Viešo cad-site-agent NELIESK git prasme (failas untracked — palik untracked, kopija + push į hera-core-backup, kaip įprasta).
 
-KONTEKSTAS: 400 fix atliktas — enrichment vėl veikia (kas/kur). Dabar pridedam 3-ią lauką VISOMS 4 temoms: „Kur jau panaudota"
-(kur tai JAU realiai taikoma). Bendras kodas — vienas pakeitimas taiko visoms temoms.
+KONTEKSTAS: ai_digest.py jau pataisytas — gemini-flash-latest nebepriima thinkingBudget=0 (grąžina 400 INVALID_ARGUMENT). Auditas rado
+tą pačią klaidą /opt/cad-site-agent/n8n/hera/gemini.py: gen()/gen_meta() default thinking=0 → siunčia thinkingConfig.thinkingBudget=0.
+Naudoja hera_router.py + hera_council.py (taryba). Fallback rolina tik 503/kvotą, NE 400 — tad taryba gali tyliai gedinti jurorą.
 
 ŽINGSNIAI:
-0) GREITAS AUDITAS (read-only): `grep -rn "thinkingBudget" /root/ /opt/cad-site-agent/n8n/hera/ 2>/dev/null | grep -v hera-core-backup`.
-   Jei rasta „thinkingBudget": 0 (ar =0) KITUR nei jau pataisytas ai_digest.py — PAŽYMĖK ataskaitoj (NEtaisyk čia, atskiras darbas), nes ta pati
-   Gemini deprecation gali tyliai laužyti tuos call'us. Jei niekur kitur — pažymėk „švaru".
-1) BACKUP: cp /root/ai_digest.py /root/hera-core-backup/ai_digest.py.$(date +%s).
-2) MODIFIKUOK ai_digest.py (bendras enrichment kelias, visos 4 temos):
-   - _summarize_batch(): dabar grąžina {i:(cat,kas,kur)}. Praplėsk į 3 usage laukus: pridėk „jau" (kur jau panaudota).
-     Atnaujink JSON prompt/schema kad Gemini grąžintų kas + kur + jau. Prompt'e ĮDĖK EPISTEMINĘ ATSARGĄ (LT):
-     „Kur jau panaudota: nurodyk realias taikymo sritis ar pavyzdžius kur tai JAU naudojama. NEIŠGALVOK konkrečių įmonių,
-     produktų ar deployment'ų — jei tikslių pavyzdžių nežinai, nurodyk bendrą realią taikymo sritį. Jokių fabrikuotų faktų."
-   - build_messages(): kur dedama „Kas tai:"/„Kur panaudoti:", pridėk „Kur jau panaudota:" eilutę (tik jei laukas netuščias).
-   - Išlaikyk esamą fallback (jei enrichment fail — bare, be crash). Neliesk feeds/temų sąrašų.
-3) PATIKRA: `python3 -c "import ast; ast.parse(open('/root/ai_digest.py').read()); print('OK')"`.
-   RE-TEST: paleisk realų _summarize_batch() su 2 sintetiniais įrašais → turi grąžinti 3 laukus (kas/kur/jau) LT, 200. Parodyk pvz output.
-   (NEleisk viso digest — tik vienas batch test.)
-4) BACKUP kodą: cp /root/ai_digest.py /opt/hera-processor/ (jei ten laikai) + commit/push jei taikoma.
+1) BACKUP: cp /opt/cad-site-agent/n8n/hera/gemini.py /root/hera-core-backup/gemini.py.$(date +%s).
+2) FIX (mažas, toks pat principas kaip ai_digest): gen()/gen_meta() — kai thinking<=0 (arba budget=0), NEsiųsk thinkingConfig lauko
+   iš viso (praleisk jį), o ne siųsk thinkingBudget=0. Jei thinking>0 — palik thinkingConfig su tuo budget. Numatytas elgesys („minimizuoti
+   samprotavimą") išlieka, tik be atmetamos 0 reikšmės. NELIESK kitų wrapper dalių (retry/fallback/model sąrašo).
+3) PATIKRA: `python3 -c "import ast; ast.parse(open('/opt/cad-site-agent/n8n/hera/gemini.py').read()); print('OK')"`.
+   RE-TEST: paleisk realų gen() call'ą su default nustatymais (thinking=0), pvz. trumpas promptas → turi grąžinti 200 + tekstą (NE 400).
+   Papildomai (jei greita): mini council/router kelio patikra — pvz. importuok hera_council ir paleisk 1 juror gen() → 200. (NEleisk viso council fan-out.)
+4) BACKUP kodą: cp į /opt/hera-processor (jei ten laikai) + commit/push į hera-core-backup.
 
-ATASKAITA (HERA botas, trumpai): (0) thinkingBudget=0 auditas (rasta kitur? kur / švaru); (2) 3-ias laukas pridėtas OK; (3) ast OK + re-test
-pvz su 3 laukais (kas/kur/jau); backup kelias. Jei STOP — kodėl + restore. NEDĖK naujų feeds ir NEDARYK TLDR filtro — tai atskiri žingsniai.
+ATASKAITA (HERA botas, trumpai): fix eilutė (prieš/po); ast OK; re-test gen() 200 (ne 400); ar council/router kelias patikrintas; backup kelias.
+Jei STOP — kodėl + restore. NELIESK ai_digest feeds ar TLDR (atskiri žingsniai).
