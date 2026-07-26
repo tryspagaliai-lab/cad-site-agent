@@ -1,39 +1,44 @@
-UŽDUOTIS — vault žinių grafas kaip GYVAS puslapis ant VPS (telefonui). <14 min.
+UŽDUOTIS — grafo prieiga BE slaptažodžio, bet NE be apsaugos. <13 min.
 
 ## Tikslas
-Vartotojas dirba TIK telefonu. Orchestratorius jau sugeneravo savarankišką HTML grafą (128 mazgai, 482 ryšiai),
-bet tai momentinė nuotrauka — neatsinaujina. Padaryk, kad grafas gyventų ant VPS: **viena nuoroda, kurią vartotojas
-atsidaro telefone bet kada, ir kuri pati atsinaujina** iš vault.
+Vartotojas (dirba tik telefonu) atsidarė https://n8n.tryspagaliai.com/hera-vault-graph/ — Basic Auth paprašė
+slaptažodžio, ir jis to NENORI (22 simbolių atsitiktinis slaptažodis telefone = kankynė; sprendimas jo).
+Pakeisk apsaugos FORMĄ taip, kad **vartotojas nieko nevestų — nei karto, nei kaskart** — bet puslapis
+NELIKTŲ atviras internetui.
 
-## 🔴 SAUGUMAS — griežčiausias reikalavimas
-Vault PRIVATUS. **Puslapis NEGALI būti pasiekiamas be autentifikacijos.**
-Precedentas: šiame projekte jau buvo incidentas — 3 neautentifikuoti n8n MCP endpoint'ai, teko išjungti.
-NEKARTOK. Jei negali užtikrinti autentifikacijos — **NEPUBLIKUOK, praneša ir sustok.**
-Slaptažodį/token'ą sugeneruok atsitiktinį, įrašyk į HERA botą ATASKAITOJE (tai privatus kanalas), NE į git.
-Jokių kredencialų į jokį repo. Jokio 0.0.0.0 be auth.
+## Sprendimas, kurio noriu (nebent rasi geresnį — tada pagrįsk)
+**Neatspėjamas URL (capability URL) + ilgaamžis slapukas (cookie):**
+- Naujas kelias su ≥128 bitų atsitiktinumo, pvz. `/g/<32+ simbolių atsitiktinis>/`.
+- Pirmas apsilankymas nustato ilgaamžį slapuką (pvz. 1 metai, `HttpOnly`, `Secure`, `SameSite=Lax`) →
+  vartotojas pasižymi nuorodą telefone ir daugiau NIEKADA nieko neveda.
+- Jei slapuko nėra IR kelias neteisingas → **404** (ne 401 — neatskleidžia, kad kažkas ten yra).
+- SENĄ `/hera-vault-graph/` kelią su Basic Auth **pašalink arba palik veikiantį** — tavo sprendimas, bet
+  neturi likti dviejų skirtingos stiprybės durų į tą patį turinį be priežasties.
 
 ## Realybė (ko pats neišvestum)
-- Vault ant VPS: `/opt/hera-vault`. Grafo generavimo logika (kad nekurtum iš naujo): visata = `.md` failų stem'ai
-  **PLIUS katalogų vardai** (`skills/<slug>/SKILL.md` — skills yra KATALOGAI, ne failai; tai jau kartą suklaidino).
-  Katalogą `analysis/` IŠSKIRTI kaip šaltinį — jame lint savo ataskaitos, cituojančios `[[token]]` žmogui, ne nuorodos.
-- Ant VPS jau kažkas sukasi web'e (buvo n8n) — pirma PATIKRINK kas klauso portų ir ar yra nginx/caddy, kad
-  nesudaužytum esamų servisų ir nepaimtum užimto porto.
-- HTML turi būti savarankiškas (0 išorinių užklausų) ir liesti pritaikytas: bakstelėjimas=mazgo ryšiai,
-  tempimas=panorama, suglaudimas=zoom. Jei norisi pavyzdžio — orchestratoriaus versija naudojo canvas + force-directed,
-  bet gali daryti savaip; svarbu kad veiktų telefono naršyklėje.
+- Serveris: esamas Caddy konteineris `n8n-caddy-1`, domenas/TLS `n8n.tryspagaliai.com` — naudok TĄ PATĮ,
+  BE naujo porto, BE naujo DNS, BE tunelio (taip padaryta praeitą kartą, veikė gerai).
+- Generatorius `hera_vault_graph.py` + cron `5,35 * * * *` jau veikia — NELIESK generavimo logikos, tik prieigą.
+- Puslapis daro **0 išorinių užklausų** → Referer nutekėjimo rizikos nėra (svarbu, nes capability URL saugumas
+  remiasi tuo, kad nuoroda nenutekės).
 
 ## Apribojimai
-€0 (jokių naujų mokamų servisų, jokio tunelio su prenumerata). Fail-safe. Determ. generavimas (BE LLM).
-Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. BACKUP prieš keitimą. Vault turinio NEMODIFIKUOK — tik skaitymas.
-Atnaujinimas per cron — DERINK prie esamo `hera_vault_sync.sh` ritmo (*/30), nedėk dažniau.
-Jei kas nors reikalautų atidaryti VPS platesniam internetui be auth — STOP.
+€0. Fail-safe. Ataskaita TIK į HERA botą. **Naują URL siųsk TIK per HERA botą, NIEKADA į git.**
+Viešo `cad-site-agent` NELIESK. BACKUP Caddy konfigo prieš keitimą. n8n maršruto NESUDAUŽYK.
+Pridėk `X-Robots-Tag: noindex, nofollow` ir `robots.txt` Disallow — kad neįsipultų į paieškos sistemas.
+**Jei negali užtikrinti, kad be teisingo kelio/slapuko turinys NEPASIEKIAMAS — STOP, palik kaip yra, praneša.**
 
 ## Įrodymai (ko tikiuosi ataskaitoje)
-1. **URL + kaip autentifikuotis** (vartotojo/slaptažodžio pora arba token'as) — kad vartotojas iškart galėtų atsidaryti telefone.
-2. **Autentifikacijos įrodymas:** `curl` be kredencialų → 401/403; su kredencialais → 200. Parodyk abu.
-3. Kokį web serverį naudojai ir ar NEPALIETEI esamų servisų (kas klausė portų prieš/po).
-4. Mazgų/ryšių skaičius sugeneruotame grafe (turi būti panašu į 128/482; jei labai skiriasi — paaiškink).
-5. Kaip atsinaujina (cron eilutė) + ką daro jei generavimas nepavyksta (turi likti SENAS puslapis, ne tuščias).
+1. **Naujas URL** (paruoštas pasižymėti telefone) — vienas paspaudimas, jokio įvedimo.
+2. `curl` be nieko į SENĄ kelią ir į atsitiktinį neteisingą kelią → **404**; į teisingą → **200**. Parodyk visus.
+3. Ar slapukas tikrai nustatomas (parodyk `Set-Cookie` antraštę) ir ar antras užklausimas BE kelio, tik su slapuku, veikia.
+4. n8n šaknis nepaliesta (200 prieš/po), portai tie patys.
+5. `X-Robots-Tag` + `robots.txt` yra.
 6. BACKUP + push į privatų `hera-core-backup`; ROADMAP.md eilutė.
 
-Jei STOP (saugumas / portų konfliktas) — kodėl, ir ką radai.
+## Sąžininga pastaba, kurią įrašyk į ataskaitą
+Capability URL yra **silpnesnė apsauga nei slaptažodis**: kas turi nuorodą — turi prieigą. Rizika priimtina, nes
+nuoroda gyvena tik vartotojo telefone ir puslapis nieko neeksportuoja. Bet pasakyk vartotojui aiškiai: **nedalinti
+nuorodos, nedaryti ekrano nuotraukų su URL juosta.** Jei nuoroda kada nutekėtų — pakanka pergeneruoti kelią.
+
+Jei STOP — kodėl.
