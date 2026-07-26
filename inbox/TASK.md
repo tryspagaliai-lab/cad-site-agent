@@ -1,58 +1,55 @@
-UŽDUOTIS — Fazė 24 (ETAPAS 1): hera_dxf2png.py — DXF → švarus 2D planas PNG/SVG (ezdxf headless, determ., BE AI). <14 min.
-NEleisk pytest (tik savo selftest). Fail-safe. €0. Deterministiška (BE LLM, BE tinklo). Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK git prasme (modulis gyvena /root/, backup į privatų hera-core-backup). Secret'us NEliesk.
+UŽDUOTIS — Fazė 25 (ETAPAS 2): hera_planrender.py — švarus planas PNG → AI 3D renderis (Gemini). <14 min.
+NEleisk pytest (tik savo selftest). Fail-safe. Ataskaita TIK į HERA botą. Viešo cad-site-agent NELIESK git prasme. Secret'us NEliesk (naudok esamą Gemini raktą kaip kiti hera moduliai; rakto NESPAUSDINK niekur).
 
-KONTEKSTAS: taryba pritarė (7/9, median 8.0) DXF→PNG→AI-renderis krypčiai, BET komercinė vertė kvalifikuota (tik koncepcinei stadijai).
-Todėl SKALDOM: šis ETAPAS 1 = grynai deterministinis DXF→švarus PNG, BE jokio AI, BE API. Vertingas SAVAIME
-(peržiūros/miniatiūros, dokumentacija, ir svarbiausia — PARSINIMO QA: vizualiai patikrinti ar ezdxf teisingai perskaitė brėžinį).
-ETAPAS 2 (PNG→Gemini→3D renderis) = ATSKIRA fazė vėliau, NEDARYK jos čia.
+🔴 SVARBIAUSIA — €0 DISCIPLINA. Gemini VAIZDŲ GENERAVIMAS gali BŪTI MOKAMAS (skirtingai nei tekstas):
+- PIRMAS žingsnis = PROBE (patikra), ar turimas raktas turi NEMOKAMĄ prieigą prie vaizdų generavimo modelio.
+- Jei paaiškėtų, kad tai MOKAMA arba neaišku → **STOP, NIEKO NEGENERUOK, praneša.** Geriau nepadaryta nei sudeginti pinigus.
+- NEĮVESK jokio naujo mokamo tiekėjo. NEregistruok nieko. Tik esamas raktas.
 
-⚠️ SVARBU dėl priklausomybių — NIEKO SUNKAUS NEDIEK aklai:
-- ezdxf JAU yra (cad-site-agent juo naudojasi). Patikrink versiją.
-- Renderinimui ezdxf turi `ezdxf.addons.drawing`. PIRMENYBĖ: NATYVUS SVG backend (be matplotlib) — `ezdxf.addons.drawing.svg`
-  (naujesnės versijos) → SVG be jokių papildomų priklausomybių. Jei SVG→PNG konversijai reikia bibliotekos (cairosvg/Pillow) ir jos NĖRA — 
-  GRĄŽINK SVG kaip pagrindinį formatą (jis puikiai tinka peržiūrai IR Gemini priima vaizdus; PNG tada = optional).
-- matplotlib backend naudok TIK jei matplotlib JAU įdiegtas (patikrink). Jei nėra — NEDIEK (jis ~50-60MB; tai human-gate).
-- Ataskaitoj aiškiai pasakyk: kokį backend'ą naudojai, ko trūko, ir ar kas nors būtų verta įdiegti (bet NEDIEK).
+KONTEKSTAS: Fazė 24 (ETAPAS 1) baigta — hera_dxf2png.py verčia DXF į švarų 2D plano PNG (interpretatorius /opt/cad-venv, ezdxf 1.4.4 + matplotlib).
+Dabar ETAPAS 2: tą PNG paduoti AI vaizdų generavimui → 3D izometrinis renderis (kaip video: „create a 3d isometric floor plan render").
+Taryba pritarė (7/9), BET komercinė vertė KVALIFIKUOTA: tai KONCEPCINIS JUODRAŠTIS / lead-gen, NE galutinis ArchViz.
+Šį sąžiningą pozicionavimą ĮRAŠYK į modulio docstring'ą ir ataskaitą — jokio over-selling.
 
-1) FEASIBILITY (greitai, prieš rašant):
-   a) `/opt/hera-venv/bin/python3 -c "import ezdxf; print(ezdxf.__version__)"` (ir sistemos python3 jei venv neturi).
-      PASTABA: cad-site-agent gali naudoti KITĄ venv — patikrink kur ezdxf realiai gyvena (pvz. /opt/cad-site-agent/.venv). Naudok TĄ interpretatorių.
-   b) ar importuojasi `ezdxf.addons.drawing` + kokie backend'ai (svg natyvus? matplotlib? Pillow?).
-   c) ar yra realių DXF failų testui (pvz. /opt/cad-site-agent/data/**.dxf) — jei yra, PAIMK VIENĄ MAŽĄ kaip realų testą (tik SKAITYMAS, nieko nekeisk).
+1) PROBE (€0 patikra, PRIEŠ rašant generavimo kodą):
+   a) Kokie vaizdų generavimo modeliai pasiekiami esamu Gemini raktu? (pvz. bandyk models.list arba analogiškai kaip hera gemini.py daro; ieškok image/vaizdų generavimo gebėjimo).
+   b) Nustatyk ar tai NEMOKAMA pakopa. Jei API grąžina 429/quota — tai limitas (ok, €0). Jei 402/billing required/„paid tier only" → MOKAMA.
+   c) Ataskaitoj aiškiai pasakyk ką radai. JEI MOKAMA/NEAIŠKU → eik į 4) (modulis be gyvo generavimo), NEBANDYK generuoti.
 
-2) Sukurk /root/hera_dxf2png.py (kaip kiti hera_* moduliai):
-   - Jungiklis: HERA_DXF2PNG def 0 = DRY-RUN (viską apskaičiuoja, grąžina planuojamą rezultatą, BET failo NERAŠO). =1 → rašo.
-   - API: `render_clean(dxf_path, out_path=None, drop_text=True, layer_exclude=None, fmt="auto") -> dict`
-     grąžina {ok, out_path, fmt, entities_total, entities_kept, entities_dropped, dropped_by_type:{...}, layers_excluded:[...], msg}.
-   - ŠVARINIMO LOGIKA (determ., tai atitikmuo AutoCAD `select similar`+`hide`):
-     * jei drop_text=True → praleisk entity tipus: TEXT, MTEXT, DIMENSION, LEADER, MULTILEADER, ATTDEF, ATTRIB, TOLERANCE.
-     * layer_exclude: list pattern'ų (case-insensitive substring), def None → naudok saugų numatytą sąrašą:
-       ["text","dim","anno","annot","hatch-text","notes","tekst","matmen"] (EN+LT). Sluoksnis atitinka bet kurį → jo entity praleidžiami.
-     * VISKAS kita (sienos, linijos, lankai, polilinijos, blokai/INSERT) — IŠLAIKOMA.
-     * Skaičiuok kiek numesta pagal tipą (skaidrumas — vartotojas turi matyti KĄ pašalino).
-   - RENDERINIMAS: naudok ezdxf.addons.drawing su pasirinktu backend'u (svg natyvus PIRMENYBĖ). fmt="auto" → rink geriausią GALIMĄ
-     (png jei gali, kitaip svg). Baltas/šviesus fonas, be tinklelio, be ašių — švarus planas kaip AutoCAD ekrano nuotraukoj.
-   - FAIL-SAFE: bet kokia klaida (blogas DXF, trūkstamas backend, neįrašomas kelias) → grąžink {ok:False, msg:<aiški priežastis>},
-     log /root/hera_dxf2png.log. NIEKAD necrashink. NIEKAD nemodifikuok įvesties DXF (tik skaitymas).
-   - ATMINTIES SAUGIKLIS (taryba įspėjo dėl 4GB): jei entity kiekis > 200000 → grąžink {ok:False, msg:"per didelis brėžinys (N entities) — praleista dėl RAM"}
-     NEBANDYK renderinti. (Determ. riba, apsaugo VPS.)
-   - €0, be tinklo, be LLM, be AI.
+2) Sukurk /root/hera_planrender.py:
+   - Jungiklis: HERA_PLANRENDER def 0 = DRY-RUN (sudaro užklausą (prompt), grąžina ją, BET NEKVIEČIA API, nieko negeneruoja — €0 saugus default). =1 → realus kvietimas.
+   - API: `render_3d(png_path, style="realistic", materials=None, extra=None, out_dir="/root/hera_planrender") -> dict`
+     grąžina {ok, prompt_used, out_path|None, api_called: bool, cost_note, msg}.
+   - UŽKLAUSOS SUDARYMAS (determ. šablonas, BE LLM — pigiau ir nuspėjamiau):
+     bazė: "Create a 3D isometric floor plan render from this 2D architectural plan. Realistic, professional lighting.
+     PRESERVE the exact room layout, wall positions and proportions from the source plan — do not invent or move rooms."
+     + jei materials (pvz. "marble and wooden floor") → pridėk medžiagų sakinį; + extra (pvz. "add decoration to the walls") → pridėk.
+     ⚠️ „PRESERVE exact layout" sakinys BŪTINAS — taryba įspėjo, kad AI haliucinuoja geometriją/mastelį. Tai mūsų mitigacija užklausos lygyje.
+   - PASIRENKAMAS „prompt-apie-prompt" (iš ingest'o + token-offloading principo): jei HERA_PLANRENDER_SMARTPROMPT=1 (def 0),
+     NEMOKAMAS tekstinis modelis (groq arba gemini-flash — tas pats kelias kaip taryboje) parašo detalesnę užklausą; jei jis krenta → fail-safe į determ. šabloną.
+   - Jei generavimas MOKAMAS/neprieinamas → funkcija grąžina {ok:False, api_called:False, cost_note:"vaizdų generavimas nemokamai neprieinamas", prompt_used:<užklausa>}
+     T.y. modulis VIS TIEK naudingas: paruošia užklausą, kurią vartotojas gali RANKINIU BŪDU įklijuoti į Gemini naršyklėje (tiksliai kaip video autorius daro). Tai €0 kelias.
+   - FAIL-SAFE: bet kokia klaida (tinklas, API, diskas) → {ok:False, msg:<priežastis>} + log /root/hera_planrender.log. NIEKAD necrashink. NIEKAD nekartok kvietimo ciklu (jokių retry — kad neišeikvotų kvotos).
+   - Docstring'e SĄŽININGAI: „Koncepcinis juodraštis / lead-gen. NEPAKEIČIA 3D modeliavimo ir tikslaus ArchViz renderio. AI gali iškraipyti geometriją/mastelį — visada patikrink rezultatą."
 
-3) SELFTEST (`--selftest`, be pytest, be tinklo), spausdink PASS/FAIL:
-   (a) sintetinis DXF (sukurk PATS su ezdxf: stačiakampis „sienos" + kelios linijos + 1 TEXT + 1 DIMENSION, sluoksniai „WALLS" ir „TEXT")
-       → render_clean su HERA_DXF2PNG=1: ok=True, failas sukurtas (dydis>0), entities_dropped>=2, dropped_by_type turi TEXT ir/ar DIMENSION,
-       geometrija (sienos) IŠLIKO (entities_kept>0).
-   (b) drop_text=False → TEXT nebenumetamas (entities_kept didesnis nei (a)).
-   (c) def 0 dry-run: HERA_DXF2PNG=0 → grąžina skaičiavimus BET failas NESUKURTAS.
-   (d) fail-safe: neegzistuojantis DXF kelias → ok=False, aiški msg, NE crash.
-   (e) sluoksnių filtras: entity sluoksnyje „A-ANNO-TEXT" numetamas net jei jo tipas LINE (patikrina layer_exclude veikimą).
-   (f) JEI radai realų DXF (1c) — paleisk ant jo, pažymėk ar pavyko + entity skaičius + gautas failas. Jei nerado — pažymėk „praleista".
-   Spausdink PASS/FAIL kiekvienam.
+3) GYVAS TESTAS — TIK JEI 1) parodė NEMOKAMĄ prieigą:
+   - Paimk realų PNG: paleisk hera_dxf2png.py ant to paties realaus DXF (reports/analysis/roman_gardens_gapclosed.hatches_6b_review.dxf) → gauk švarų PNG.
+   - Paleisk render_3d su HERA_PLANRENDER=1 VIENĄ KARTĄ (vieną kvietimą, jokių kartojimų).
+   - Ataskaitoj: ar gavo vaizdą, kelias, dydis, ir SĄŽININGAS vertinimas — ar išlaikytas planas, ar AI haliucinavo.
+   - Jei kvota/429 → tai NORMALU, pažymėk ir eik toliau (ne klaida).
 
-4) BACKUP: cp /root/hera_dxf2png.py į /opt/hera-processor/ (ar /root/hera-core-backup/) + commit/push į PRIVATŲ hera-core-backup (TIK šis failas).
-   Vault ROADMAP.md 1 eilutė: „Fazė 24 hera_dxf2png (ETAPAS 1) — ĮDIEGTA <data>, HERA_DXF2PNG def 0, determ. DXF→švarus planas (ezdxf headless,
-   text/dim filtras, RAM saugiklis), BE AI; vertingas savaime (peržiūra/QA); ETAPAS 2 (→Gemini 3D) = atskira fazė."
+4) SELFTEST (`--selftest`, BE tinklo, BE pytest) — VISADA daromas, net jei generavimas neprieinamas:
+   (a) užklausos sudarymas: render_3d(dry-run) → prompt_used turi „PRESERVE" sakinį + bazę; api_called=False; failas nesukurtas.
+   (b) materials/extra: perduoti "marble and wooden floor" + "add decoration to the walls" → abu atsispindi užklausoje.
+   (c) def 0: HERA_PLANRENDER=0 → api_called=False garantuotai (net jei raktas yra).
+   (d) fail-safe: neegzistuojantis png_path → ok=False, aiški msg, ne crash.
+   Spausdink PASS/FAIL.
 
-ATASKAITA (HERA botas, trumpai): kokį ezdxf/interpretatorių radai; koks RENDER BACKEND panaudotas (svg natyvus / matplotlib / kt.) ir ko trūko;
-selftest a/b/c/d/e/f PASS/FAIL; ar testavai ant realaus DXF (jei taip — rezultatas); ką VERTĖTŲ įdiegti ateity (bet NEDIEGTA); backup+push; ROADMAP.
-Jei STOP — kodėl + ką radai feasibility etape.
+5) BACKUP: cp /root/hera_planrender.py į /opt/hera-processor/ + commit/push į PRIVATŲ hera-core-backup (TIK šis failas).
+   Vault ROADMAP.md 1 eilutė: „Fazė 25 hera_planrender (ETAPAS 2) — ĮDIEGTA <data>, HERA_PLANRENDER def 0 dry-run, planas PNG→AI 3D renderis (Gemini),
+   determ. užklausa su 'PRESERVE layout' mitigacija; pozicionuota kaip koncepcinis juodraštis NE galutinis ArchViz; €0 fallback = rankinis užklausos naudojimas."
+
+ATASKAITA (HERA botas, trumpai): PROBE rezultatas (ar vaizdų generavimas NEMOKAMAS — aiškiai TAIP/NE/neaišku, ir kuo remiesi);
+ar gyvas testas paleistas (jei taip — ar išlaikė planą, sąžiningas vertinimas; jei ne — kodėl, ir tai OK);
+selftest a/b/c/d PASS/FAIL; backup+push; ROADMAP. Jei STOP dėl kaštų — aiškiai pasakyk, tai TEISINGAS elgesys.
+KIEK IŠLEISTA: privalomai pasakyk „€0" arba tikslią sumą jei kažkas kainavo (neturėtų).
