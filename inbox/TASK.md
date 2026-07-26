@@ -1,51 +1,37 @@
-UŽDUOTIS — Fazė 27: verifikavimo ciklas (rubrika + vertintojas + suspaustas pakartojimas). MODULIS, be integracijos. <14 min.
+UŽDUOTIS — Fazė 28: `hera_staleguard` integracija į realius rašymo taškus (ADVISORY, elgesys nesikeičia). <14 min.
 
 ## Tikslas
-Iš kuruoto LangChain „Art of Loop Engineering": HERA turi Ciklus 1, 3, 4, bet **Ciklas 2 (verifikavimo) uždarytas tik
-per pusę**. Turim daug vertintojų (validator, eval, faithfulness, goalanchor, loopguard, diffrules) — bet VISI ADVISORY:
-anotuoja ataskaitą, ir **niekas negrįžta atgal į agentą pataisymui**. Simptomas: 2026-07-26 GoalAnchor pranešė `drift`
-ir nieko neįvyko.
-Sukurk modulį, kuris duoda tris trūkstamus gabalus: **rubriką**, **vertinimą pagal ją**, ir **suspaustą pakartojimo
-užklausą**, jei kriterijai netenkinami.
-
-## 🔴 Kertinis konfliktas, kurį PRIVALAI gerbti
-HERA nekintantis principas: **„HARD timeout, NO retry (anti rc=124)"**. Jis mus jau gelbėjo (semsearch užduotis nukirsta
-per timeout, be žalos). Ciklas 2 pagal apibrėžimą reiškia pakartojimą. Tai NE draudimas, bet reikalauja trijų dalykų kartu:
-1. **MAX 1 pakartojimas** (ne ciklas, ne `while`) — griežtai.
-2. **Laiko biudžetas VISAI grandinei**, ne kiekvienam bandymui — kad du bandymai neviršytų to paties lango kaip vienas.
-3. **Užklausos suspaudimas pakartojime:** perduoti TIK dabartinę artefakto būseną + rubrikos kriterijus, kurie NEĮVYKDYTI.
-   **NE ilgą klaidų istoriją** (tai „context rot" sprendimas iš to paties šaltinio; dera su `hera_ctxtrim` Fazė 20).
-Jei kuris nors iš trijų neįgyvendinamas — geriau grąžink mažiau funkcijų, bet NEpažeisk principo.
+Fazė 26 sukūrė `hera_staleguard.py` (CAS: `read_baseline` → `safe_write`), bet jis STANDALONE — niekas jo nekviečia,
+todėl reali rizika (pasenusio failo perrašymas) lieka nematuojama. Apvyniok pagrindinius rašymo taškus taip, kad
+**pradėtume MATYTI, kaip dažnai tai realiai vyksta**, NEKEIČIANT elgesio.
+`HERA_STALEGUARD` def 0 = ADVISORY jau sukurta būtent tam: rašo kaip anksčiau, bet pažymi incidentą ir praneša.
+Kai turėsim dažnio duomenis — tada atskiras human-gate sprendimas dėl ENFORCE (`=1`).
 
 ## Realybė (ko pats neišvestum)
-- **Rubrika jau egzistuoja neformaliai:** nuo 2026-07-26 kiekvienas `inbox/TASK.md` turi skiltį **„Įrodymai (ko tikiuosi
-  ataskaitoje)"** — tai IR YRA rubrika, tik neišparsinta. Naudok TĄ, nekurk naujo formato. Šis pats failas yra pavyzdys.
-- Modulių konvencija: `/root/hera_<vardas>.py`, `HERA_<VARDAS>` def 0, savas `--selftest` (BE pytest), fail-safe,
-  backup → `/opt/hera-processor/` + push į privatų `hera-core-backup`, ROADMAP.md eilutė.
-- Gretimi moduliai, su kuriais NEDUBLIUOK: `hera_validator` (prieš-darbo proof), `hera_eval` (promocijos vartai),
-  `hera_goalanchor` (drift/injection), `hera_ctxtrim` (didelė išvestis→failas). Šis — apie **užduoties kriterijų
-  įvykdymą po darbo** ir grįžtamąjį ryšį.
-- Vertinimas turi būti kiek įmanoma **deterministinis** (ar kriterijus paminėtas/įvykdytas išvestyje). Jei kuriam nors
-  kriterijui reikia sprendimo, kurio determ. būdu nepadarysi — pažymėk `undecided`, NEspėk. €0 LLM vertintojas = vėliau.
+- Modulis: `/root/hera_staleguard.py`, kopija `/opt/hera-processor/`. API: `read_baseline(path)`, `safe_write(path, content, baseline)`.
+- Pats Fazės 26 agentas nurodė kandidatus: `hera_selfedit.py`, Loop C, galimai runner `STATE.md`. **Patikrink juos, bet
+  spręsk pats** — apvyniok tik tuos, kur (a) skaitymas ir rašymas atskirti laike ir (b) failą realiai gali paliesti kas
+  nors kitas. Kur skaitymas-rašymas atominis arba failas privatus procesui — NEVYNIOK, tai tik rizika be naudos.
+- Žinomi lygiagretūs rašytojai, dėl kurių visa tai daroma: cron runner (*/2), `hera_vault_sync.sh` (*/30), pats vartotojas.
+- Žinoma modulio riba (jau atskleista): nėra tarpprocesinio flock tarp dviejų vienalaikių `safe_write()`. Neapsimesk, kad ją sprendi.
 
 ## Apribojimai
-€0, be tinklo, be LLM. Fail-safe (klaida → „praeita", niekada neblokuoti, niekada necrashinti). Def 0 semantiką
-pasirink ir PAGRĮSK (žr. Fazės 26 precedentą — ten def0=advisory buvo pagrįstas matomumu).
-Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. **Runner'io ir cron NELIESK — integracija yra ATSKIRAS
-human-gate žingsnis, ne šis.** Secret'us NEliesk. BACKUP prieš keitimą.
+€0, be tinklo, be LLM. **Elgesys su def 0 privalo likti IDENTIŠKAS dabartiniam** — tai svarbiausias reikalavimas.
+Fail-safe: jei staleguard importas ar kvietimas kokiu nors būdu nepavyktų, apvyniotas kodas turi veikti kaip anksčiau
+(`try/except` + tęsti), NIEKADA neužblokuoti rašymo ir NIEKADA nesukelti duomenų praradimo.
+BACKUP kiekvieno liečiamo failo prieš keitimą. Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. Secret'us NEliesk.
+**Cron tvarkaraščio NELIESK.** `hera_verify` (Fazė 27) NELIESK — jos integracija yra atskiras žingsnis.
+Jei kuris nors taškas atrodo per rizikingas apvynioti — PRALEISK jį ir pasakyk kodėl. Geriau 2 saugūs taškai nei 5 rizikingi.
 
-## Įrodymai (selftest, be pytest, be tinklo)
-1. **Rubrikos išparsinimas:** paduodi realų `TASK.md` tekstą (naudok šitą patį failą) → ištraukia „Įrodymai" kriterijus
-   kaip atskirus punktus. Parodyk, ką ištraukė.
-2. **Praeina:** išvestis, adresuojanti visus kriterijus → `pass`, jokio pakartojimo.
-3. **Nepraeina:** išvestis, praleidžianti 2 kriterijus → `fail`, ir sugeneruota pakartojimo užklausa mini **TIK tuos 2**,
-   o ne visus. Parodyk sugeneruotą tekstą.
-4. **Suspaudimas įrodytas skaičiais:** pakartojimo užklausa turi būti **žymiai trumpesnė** nei originalus TASK.md +
-   pilna išvestis. Pateik simbolių skaičius prieš/po.
-5. **MAX 1:** po vieno pakartojimo — sustoja, nesvarbu ar pavyko. Įrodyk, kad `while` nėra.
-6. **Neaiškus kriterijus** → `undecided`, ne klaidingas `pass`.
-7. **Fail-safe:** tuščias/sugadintas TASK.md, ne-string įvestis → „praeita", be crash.
-8. BACKUP + push; ROADMAP.md eilutė.
+## Įrodymai (ko tikiuosi ataskaitoje)
+1. **Kuriuos taškus apvyniojai ir kuriuos SĄMONINGAI praleidai** — su priežastimi kiekvienam.
+2. **Elgesio identiškumo įrodymas su def 0:** parodyk, kad apvyniotas kelias daro tą patį, ką prieš tai (pvz. prieš/po
+   palyginimas ar dry-run). Tai kertinis reikalavimas — jei negali įrodyti, nediek.
+3. **Incidento aptikimas veikia:** dirbtinai sukelk pasenusio failo situaciją apvyniotame taške → incidentas
+   užfiksuotas ir matomas (logas/pranešimas), BET rašymas įvyko (nes advisory). Parodyk abu.
+4. **Fail-safe:** imituok staleguard nepasiekiamumą (pvz. importo klaida) → apvyniotas kodas veikia kaip anksčiau.
+5. Esamų selftest'ų/bench nepablogėjimas (paleisk ką turi: staleguard 6/6, bench).
+6. **Kaip pamatysiu dažnį:** kur kaupiasi incidentai ir kaip po savaitės sužinosiu, ar verta įjungti ENFORCE.
+7. BACKUP + push į privatų `hera-core-backup`; ROADMAP.md eilutė.
 
-Ataskaitoje pasakyk, kur modulis būtų kviečiamas realiai (bet NEINTEGRUOK) ir kokia liko neaprėpta dalis.
-Jei STOP — kodėl.
+Jei STOP — kodėl, ir ką radai apie rašymo taškus.
