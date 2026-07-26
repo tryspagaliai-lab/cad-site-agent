@@ -1,44 +1,39 @@
-UŽDUOTIS — grafo prieiga BE slaptažodžio, bet NE be apsaugos. <13 min.
+UŽDUOTIS — hera_goalanchor: pašalinti tarpkalbinį drift false-positive. <12 min.
 
 ## Tikslas
-Vartotojas (dirba tik telefonu) atsidarė https://n8n.tryspagaliai.com/hera-vault-graph/ — Basic Auth paprašė
-slaptažodžio, ir jis to NENORI (22 simbolių atsitiktinis slaptažodis telefone = kankynė; sprendimas jo).
-Pakeisk apsaugos FORMĄ taip, kad **vartotojas nieko nevestų — nei karto, nei kaskart** — bet puslapis
-NELIKTŲ atviras internetui.
-
-## Sprendimas, kurio noriu (nebent rasi geresnį — tada pagrįsk)
-**Neatspėjamas URL (capability URL) + ilgaamžis slapukas (cookie):**
-- Naujas kelias su ≥128 bitų atsitiktinumo, pvz. `/g/<32+ simbolių atsitiktinis>/`.
-- Pirmas apsilankymas nustato ilgaamžį slapuką (pvz. 1 metai, `HttpOnly`, `Secure`, `SameSite=Lax`) →
-  vartotojas pasižymi nuorodą telefone ir daugiau NIEKADA nieko neveda.
-- Jei slapuko nėra IR kelias neteisingas → **404** (ne 401 — neatskleidžia, kad kažkas ten yra).
-- SENĄ `/hera-vault-graph/` kelią su Basic Auth **pašalink arba palik veikiantį** — tavo sprendimas, bet
-  neturi likti dviejų skirtingos stiprybės durų į tą patį turinį be priežasties.
+2026-07-26 GoalAnchor pirmą kartą suveikė produkcijoje ir tai buvo **klaidingas įspėjimas**:
+`🧭 GOALANCHOR status=warn overlap=0.1368 signals=drift` ant VPS-grafo užduoties, kuri buvo atlikta TIKSLIAI pagal TASK.md.
+Priežastis: TASK.md **lietuviškas**, agento galutinė išvestis **angliška** → drift matuojamas žodžių aibių sankirta,
+o tarp LT ir EN teksto ji natūraliai ~0. HERA veikia dvikalbiu režimu, tad tai kartosis.
+Rizika: jei 🧭 vėliava kartos klaidingus įspėjimus, ji taps triukšmu ir bus ignoruojama — guardas praras VISĄ vertę.
+Sutvarkyk taip, kad tarpkalbinis atvejis NEbūtų raportuojamas kaip drift, bet tikras drift būtų gaudomas toliau.
 
 ## Realybė (ko pats neišvestum)
-- Serveris: esamas Caddy konteineris `n8n-caddy-1`, domenas/TLS `n8n.tryspagaliai.com` — naudok TĄ PATĮ,
-  BE naujo porto, BE naujo DNS, BE tunelio (taip padaryta praeitą kartą, veikė gerai).
-- Generatorius `hera_vault_graph.py` + cron `5,35 * * * *` jau veikia — NELIESK generavimo logikos, tik prieigą.
-- Puslapis daro **0 išorinių užklausų** → Referer nutekėjimo rizikos nėra (svarbu, nes capability URL saugumas
-  remiasi tuo, kad nuoroda nenutekės).
+- Modulis `/root/hera_goalanchor.py` (Fazė 21), integruotas į runner'į (Fazė 22) kaip ADVISORY `GA_NOTE` prieš `send_tg`.
+- HERA turinys mišrus: TASK.md rašomas lietuviškai, agentų ataskaitos dažnai angliškos, kartais mišrios.
+- Ta pati problemos klasė jau žinoma projekte: faithfulness vartas duoda „suspect", kai LT santrauka lyginama su EN
+  transkriptu — irgi tarpkalbinis triukšmas, ne haliucinacija. Nesukurk trečio nesuderinto sprendimo; jei logika
+  perpanaudojama, tuo geriau.
+- PF-1..PF-4 injection detekcija nuo kalbos NEPRIKLAUSO ir veikia teisingai — jos NELIESK.
+- HERA turi daugiakalbį embedding modelį (fastembed `paraphrase-multilingual-MiniLM`, naudojamas semsearch).
+  **NEnaudok jo šitam guardui** — guardas turi likti greitas, deterministinis ir be priklausomybių (jis vykdomas
+  kiekviename runner cikle su `timeout 10`). Sprendimas turi būti grynai string/heuristinis.
 
 ## Apribojimai
-€0. Fail-safe. Ataskaita TIK į HERA botą. **Naują URL siųsk TIK per HERA botą, NIEKADA į git.**
-Viešo `cad-site-agent` NELIESK. BACKUP Caddy konfigo prieš keitimą. n8n maršruto NESUDAUŽYK.
-Pridėk `X-Robots-Tag: noindex, nofollow` ir `robots.txt` Disallow — kad neįsipultų į paieškos sistemas.
-**Jei negali užtikrinti, kad be teisingo kelio/slapuko turinys NEPASIEKIAMAS — STOP, palik kaip yra, praneša.**
+€0, be tinklo, be LLM, deterministiška. Fail-safe (klaida → grąžinti „ok", niekada necrashinti, niekada neblokuoti).
+`HERA_GOALANCHOR` def 0 semantika NEKEIČIAMA (išjungta → status „ok", bet signalai vis tiek skaičiuojami).
+Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. BACKUP prieš keitimą. Runner'io NELIESK — tik modulį.
 
-## Įrodymai (ko tikiuosi ataskaitoje)
-1. **Naujas URL** (paruoštas pasižymėti telefone) — vienas paspaudimas, jokio įvedimo.
-2. `curl` be nieko į SENĄ kelią ir į atsitiktinį neteisingą kelią → **404**; į teisingą → **200**. Parodyk visus.
-3. Ar slapukas tikrai nustatomas (parodyk `Set-Cookie` antraštę) ir ar antras užklausimas BE kelio, tik su slapuku, veikia.
-4. n8n šaknis nepaliesta (200 prieš/po), portai tie patys.
-5. `X-Robots-Tag` + `robots.txt` yra.
+## Įrodymai (selftest, be pytest, be tinklo)
+1. **Realus produkcijos atvejis:** LT tikslas + EN kandidatas, turinys ATITINKANTIS → **NE drift** (status ok).
+   Naudok tikrą porą: tikslas = VPS-grafo TASK.md esmė lietuviškai; kandidatas = tos užduoties angliška ataskaita.
+2. **Regresija — tikras drift privalo išlikti:** ta pati kalba, nesusijęs turinys (pvz. tikslas apie DXF parsinimą,
+   kandidatas apie kriptovaliutų pirkimą) → **VIS TIEK warn**. Tai svarbiausias testas: nesuvelk guardo į tylėjimą.
+3. **Tikras drift KITA kalba:** LT tikslas + EN kandidatas, turinys VISIŠKAI nesusijęs → ką grąžina? Aprašyk elgesį
+   sąžiningai. Jei šitas atvejis nebegaudomas — tai priimtina kaina, bet PASAKYK aiškiai ataskaitoje, netylėk.
+4. **Injection nepaliesta:** PF-1 ir PF-4 atvejai (bet kuria kalba) → vis tiek `alert`.
+5. Ankstesni Fazės 21 selftest atvejai (6/6) toliau PASS.
 6. BACKUP + push į privatų `hera-core-backup`; ROADMAP.md eilutė.
 
-## Sąžininga pastaba, kurią įrašyk į ataskaitą
-Capability URL yra **silpnesnė apsauga nei slaptažodis**: kas turi nuorodą — turi prieigą. Rizika priimtina, nes
-nuoroda gyvena tik vartotojo telefone ir puslapis nieko neeksportuoja. Bet pasakyk vartotojui aiškiai: **nedalinti
-nuorodos, nedaryti ekrano nuotraukų su URL juosta.** Jei nuoroda kada nutekėtų — pakanka pergeneruoti kelią.
-
+Ataskaitoje aiškiai pasakyk, KOKĮ metodą pasirinkai kalbų nesutapimui aptikti ir kokia jo klaidos riba.
 Jei STOP — kodėl.
