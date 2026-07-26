@@ -30,17 +30,31 @@ RECENT="$(cd "$PROJ" && git log --oneline -8 2>/dev/null || true)"
 HANDOFF_TXT=""
 [ -f "$HANDOFF" ] && HANDOFF_TXT="$(cat "$HANDOFF")"
 
-# Visų agentų statusai iš bendros koordinacijos lentos
+# Agentų statusai — TIK ŠVIEŽI (konteksto inžinerija 2026-07-26: pasenęs statusas
+# kuria klaidingą sistemos vaizdą ir prieštaraujančias instrukcijas, todėl praleidžiamas).
+# Šviežumas matuojamas pagal PASKUTINĮ COMMIT'Ą, ne failo mtime — po švaraus clone visų
+# failų mtime vienodas, todėl mtime filtras neveiktų. Fail-open: jei datos nustatyti
+# nepavyksta, failas ĮTRAUKIAMAS (geriau perteklius nei prarastas kontekstas).
+STATUS_MAX_AGE_DAYS="${STATUS_MAX_AGE_DAYS:-14}"
 STATUS_TXT=""
+STATUS_SKIPPED=""
 STATUS_DIR="$APP/docs/agent-status"
 if [ -d "$STATUS_DIR" ]; then
+  NOW_TS="$(date +%s)"
+  CUTOFF=$(( STATUS_MAX_AGE_DAYS * 86400 ))
   for f in "$STATUS_DIR"/*.md; do
     [ -f "$f" ] || continue
+    FTS="$(cd "$PROJ" && git log -1 --format=%ct -- "$f" 2>/dev/null || true)"
+    if [ -n "$FTS" ] && [ "$(( NOW_TS - FTS ))" -gt "$CUTOFF" ]; then
+      STATUS_SKIPPED="$STATUS_SKIPPED $(basename "$f")($(( (NOW_TS - FTS) / 86400 ))d)"
+      continue
+    fi
     STATUS_TXT="$STATUS_TXT
 --- $(basename "$f") ---
 $(cat "$f")
 "
   done
+  [ -n "$STATUS_SKIPPED" ] && echo "[session-start] praleisti pasenę statusai (>${STATUS_MAX_AGE_DAYS}d):$STATUS_SKIPPED" 1>&2
 fi
 
 python3 - "$HANDOFF_TXT" "$RECENT" "$STATUS_TXT" <<'PY'
