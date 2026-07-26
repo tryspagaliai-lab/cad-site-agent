@@ -1,39 +1,39 @@
-UŽDUOTIS — hera_goalanchor: pašalinti tarpkalbinį drift false-positive. <12 min.
+UŽDUOTIS — Fazė 26: apsauga nuo pasenusio failo perrašymo (turinio maišos guardas). <13 min.
 
 ## Tikslas
-2026-07-26 GoalAnchor pirmą kartą suveikė produkcijoje ir tai buvo **klaidingas įspėjimas**:
-`🧭 GOALANCHOR status=warn overlap=0.1368 signals=drift` ant VPS-grafo užduoties, kuri buvo atlikta TIKSLIAI pagal TASK.md.
-Priežastis: TASK.md **lietuviškas**, agento galutinė išvestis **angliška** → drift matuojamas žodžių aibių sankirta,
-o tarp LT ir EN teksto ji natūraliai ~0. HERA veikia dvikalbiu režimu, tad tai kartosis.
-Rizika: jei 🧭 vėliava kartos klaidingus įspėjimus, ji taps triukšmu ir bus ignoruojama — guardas praras VISĄ vertę.
-Sutvarkyk taip, kad tarpkalbinis atvejis NEbūtų raportuojamas kaip drift, bet tikras drift būtų gaudomas toliau.
+HERA agentai redaguoja failus VPS'e. Tarp failo PERSKAITYMO ir ĮRAŠYMO jis gali pasikeisti — kitas runner ciklas
+(cron */2), `hera_vault_sync.sh` (*/30), lygiagretus procesas ar pats vartotojas. **Dabar jokio patikrinimo nėra:
+tylus perrašymas įmanomas ir prarastas darbas liktų nepastebėtas.**
+Sukurk deterministinį modulį, kuris leidžia įrašyti TIK jei failas nuo perskaitymo nepasikeitė; kitaip — atmesti
+ir pranešti, niekada tyliai neperrašyti.
+Šaltinis: kuruotas `oh-my-pi` pattern (pakeitimai susiejami su turinio maišos kodais; pataisa pritaikoma iš pirmo
+karto arba atmetama, jei failas pasenęs).
 
 ## Realybė (ko pats neišvestum)
-- Modulis `/root/hera_goalanchor.py` (Fazė 21), integruotas į runner'į (Fazė 22) kaip ADVISORY `GA_NOTE` prieš `send_tg`.
-- HERA turinys mišrus: TASK.md rašomas lietuviškai, agentų ataskaitos dažnai angliškos, kartais mišrios.
-- Ta pati problemos klasė jau žinoma projekte: faithfulness vartas duoda „suspect", kai LT santrauka lyginama su EN
-  transkriptu — irgi tarpkalbinis triukšmas, ne haliucinacija. Nesukurk trečio nesuderinto sprendimo; jei logika
-  perpanaudojama, tuo geriau.
-- PF-1..PF-4 injection detekcija nuo kalbos NEPRIKLAUSO ir veikia teisingai — jos NELIESK.
-- HERA turi daugiakalbį embedding modelį (fastembed `paraphrase-multilingual-MiniLM`, naudojamas semsearch).
-  **NEnaudok jo šitam guardui** — guardas turi likti greitas, deterministinis ir be priklausomybių (jis vykdomas
-  kiekviename runner cikle su `timeout 10`). Sprendimas turi būti grynai string/heuristinis.
+- Modulių konvencija: `/root/hera_<vardas>.py`, `HERA_<VARDAS>` jungiklis **def 0**, savas `--selftest` (BE pytest),
+  fail-safe, backup į `/opt/hera-processor/` + push į privatų `hera-core-backup`, ROADMAP.md eilutė.
+- Gretimi guardai, su kuriais tai turi derėti (nesidubliuoti): `hera_validator` (14), `hera_diffrules` (13),
+  `hera_loopguard` (15), `hera_goalanchor` (21/22). Šis — apie FAILO BŪSENĄ, ne apie turinio kokybę.
+- Rizikos langas realus: vault sync gali perrašyti tuos pačius failus, kuriuos redaguoja agentas.
+- **Def 0 semantika čia turi būti apgalvota:** išjungus jungiklį modulis NETURI blokuoti rašymo (kad integracija būtų
+  saugi), bet TURI mokėti pranešti, kad būtų būtų aptikta ir stebima. Pasirink ir pagrįsk.
 
 ## Apribojimai
-€0, be tinklo, be LLM, deterministiška. Fail-safe (klaida → grąžinti „ok", niekada necrashinti, niekada neblokuoti).
-`HERA_GOALANCHOR` def 0 semantika NEKEIČIAMA (išjungta → status „ok", bet signalai vis tiek skaičiuojami).
-Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. BACKUP prieš keitimą. Runner'io NELIESK — tik modulį.
+€0, be tinklo, be LLM, deterministiška. Fail-safe: **jokia klaida pačiame guarde negali sukelti duomenų praradimo** —
+jei guardas neveikia, elgesys turi būti toks pat saugus kaip be jo (arba saugesnis), niekada necrashinti.
+Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. Runner'io ir cron NELIESK — tik modulis (integracija = vėliau,
+atskiras human-gate). Secret'us NEliesk. Vault turinio NEMODIFIKUOK (testams naudok laikinus failus).
 
 ## Įrodymai (selftest, be pytest, be tinklo)
-1. **Realus produkcijos atvejis:** LT tikslas + EN kandidatas, turinys ATITINKANTIS → **NE drift** (status ok).
-   Naudok tikrą porą: tikslas = VPS-grafo TASK.md esmė lietuviškai; kandidatas = tos užduoties angliška ataskaita.
-2. **Regresija — tikras drift privalo išlikti:** ta pati kalba, nesusijęs turinys (pvz. tikslas apie DXF parsinimą,
-   kandidatas apie kriptovaliutų pirkimą) → **VIS TIEK warn**. Tai svarbiausias testas: nesuvelk guardo į tylėjimą.
-3. **Tikras drift KITA kalba:** LT tikslas + EN kandidatas, turinys VISIŠKAI nesusijęs → ką grąžina? Aprašyk elgesį
-   sąžiningai. Jei šitas atvejis nebegaudomas — tai priimtina kaina, bet PASAKYK aiškiai ataskaitoje, netylėk.
-4. **Injection nepaliesta:** PF-1 ir PF-4 atvejai (bet kuria kalba) → vis tiek `alert`.
-5. Ankstesni Fazės 21 selftest atvejai (6/6) toliau PASS.
-6. BACKUP + push į privatų `hera-core-backup`; ROADMAP.md eilutė.
+1. **Laimingas kelias:** perskaitai → nieko nepasikeitė → įrašymas LEIDŽIAMAS, turinys teisingas.
+2. **Pagrindinis atvejis:** perskaitai → failą pakeičia KAŽKAS KITAS → įrašymas ATMETAMAS, aiški priežastis,
+   **originalus (svetimas) turinys IŠLIEKA nepaliestas** (tai svarbiausia — jokio duomenų praradimo).
+3. **Naujas failas:** failo dar nėra → elgesys apibrėžtas ir saugus (aprašyk kokį pasirinkai).
+4. **Def 0:** jungiklis išjungtas → elgesys pagal tavo pagrindimą iš „Realybė" skilties; parodyk, kad integracija saugi.
+5. **Fail-safe:** neskaitomas/neįrašomas kelias, teisių klaida → be crash, be duomenų praradimo.
+6. **Lenktynių langas:** pademonstruok realų scenarijų — skaitymas, tarpinis svetimas įrašymas, tada bandymas rašyti.
+   Tai turi būti tikras failų sistemos testas, ne tik teorinis.
+7. BACKUP + push; ROADMAP.md eilutė.
 
-Ataskaitoje aiškiai pasakyk, KOKĮ metodą pasirinkai kalbų nesutapimui aptikti ir kokia jo klaidos riba.
+Ataskaitoje pasakyk, kaip modulis būtų integruojamas realiai (kur kviečiamas) — bet **NEINTEGRUOK**, tai kitas žingsnis.
 Jei STOP — kodėl.
