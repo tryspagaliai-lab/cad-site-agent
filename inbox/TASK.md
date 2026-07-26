@@ -1,33 +1,39 @@
-UŽDUOTIS — hera_lint aprėpties auditas ir pataisa. <13 min.
+UŽDUOTIS — vault žinių grafas kaip GYVAS puslapis ant VPS (telefonui). <14 min.
 
 ## Tikslas
-`hera_lint` (Loop B) raportuoja per gerą vaizdą. Loop B rodo `orphan ~17 · dangling ~23`, o nepriklausomas
-skaičiavimas per VISUS vault `.md` failus (2026-07-26, orchestratorius) davė **140 unikalių nutrūkusių taikinių /
-980 paminėjimų ir 245 našlaičius iš 391 užrašo**. Nustatyk KODĖL skiriasi ir sutvarkyk taip, kad Loop B rodytų tiesą.
-Klaidingas „viskas švaru" yra blogiau nei bloga metrika.
+Vartotojas dirba TIK telefonu. Orchestratorius jau sugeneravo savarankišką HTML grafą (128 mazgai, 482 ryšiai),
+bet tai momentinė nuotrauka — neatsinaujina. Padaryk, kad grafas gyventų ant VPS: **viena nuoroda, kurią vartotojas
+atsidaro telefone bet kada, ir kuri pati atsinaujina** iš vault.
+
+## 🔴 SAUGUMAS — griežčiausias reikalavimas
+Vault PRIVATUS. **Puslapis NEGALI būti pasiekiamas be autentifikacijos.**
+Precedentas: šiame projekte jau buvo incidentas — 3 neautentifikuoti n8n MCP endpoint'ai, teko išjungti.
+NEKARTOK. Jei negali užtikrinti autentifikacijos — **NEPUBLIKUOK, praneša ir sustok.**
+Slaptažodį/token'ą sugeneruok atsitiktinį, įrašyk į HERA botą ATASKAITOJE (tai privatus kanalas), NE į git.
+Jokių kredencialų į jokį repo. Jokio 0.0.0.0 be auth.
 
 ## Realybė (ko pats neišvestum)
-- Vault ant VPS: `/opt/hera-vault` (privatus; sinchronizuojamas `hera_vault_sync.sh` kas 30 min).
-- Nepriklausomas skaičiavimas darytas taip: visi `*.md` rekursyviai (be `.git`), nuorodos per `\[\[([^\]|#]+)`,
-  taikinys laikomas išspręstu jei sutampa su bet kurio failo **stem** (Obsidian semantika: basename be `.md`).
-- Orchestratorius ką tik pridėjo `concepts/` aplanką (15 koncepcijų mazgų) — po jų nutrūkę paminėjimai 980→767.
-  Tavo skaičiai gali skirtis nuo 980, jei vault jau sinchronizuotas — tai NORMALU, svarbu dydžio eilė.
-- Žinomas triukšmas, kurį verta traktuoti atskirai (NE tikros nuorodos, o dokumentacijos vietaženkliai):
-  `[[...]]`, `[[slug]]`, `[[YYYY-MM-DD-jobid]]`, `[[TESTDOCBOUND]]`.
+- Vault ant VPS: `/opt/hera-vault`. Grafo generavimo logika (kad nekurtum iš naujo): visata = `.md` failų stem'ai
+  **PLIUS katalogų vardai** (`skills/<slug>/SKILL.md` — skills yra KATALOGAI, ne failai; tai jau kartą suklaidino).
+  Katalogą `analysis/` IŠSKIRTI kaip šaltinį — jame lint savo ataskaitos, cituojančios `[[token]]` žmogui, ne nuorodos.
+- Ant VPS jau kažkas sukasi web'e (buvo n8n) — pirma PATIKRINK kas klauso portų ir ar yra nginx/caddy, kad
+  nesudaužytum esamų servisų ir nepaimtum užimto porto.
+- HTML turi būti savarankiškas (0 išorinių užklausų) ir liesti pritaikytas: bakstelėjimas=mazgo ryšiai,
+  tempimas=panorama, suglaudimas=zoom. Jei norisi pavyzdžio — orchestratoriaus versija naudojo canvas + force-directed,
+  bet gali daryti savaip; svarbu kad veiktų telefono naršyklėje.
 
 ## Apribojimai
-€0, be tinklo, be LLM (grynai deterministiška). Fail-safe. NEleisk pytest. Ataskaita TIK į HERA botą.
-Viešo `cad-site-agent` NELIESK git prasme. Secret'us NEliesk. BACKUP prieš keitimą.
-**NIEKO NETRINK ir neperrašinėk vault turinio** — ši užduotis TIK matuoja ir taiso MATAVIMĄ, ne duomenis.
-Jei pataisa keistų Loop B elgesį rizikingai — palik kaip yra ir praneša.
+€0 (jokių naujų mokamų servisų, jokio tunelio su prenumerata). Fail-safe. Determ. generavimas (BE LLM).
+Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. BACKUP prieš keitimą. Vault turinio NEMODIFIKUOK — tik skaitymas.
+Atnaujinimas per cron — DERINK prie esamo `hera_vault_sync.sh` ritmo (*/30), nedėk dažniau.
+Jei kas nors reikalautų atidaryti VPS platesniam internetui be auth — STOP.
 
 ## Įrodymai (ko tikiuosi ataskaitoje)
-1. **Šakninė priežastis** — kokia tiksliai `hera_lint` aprėptis dabar (kokie aplankai/failai skenuojami, kokia
-   nuorodų regex, kaip sprendžiamas taikinys) ir kuris iš tų dalykų sukelia neatitikimą.
-2. **Skaičiai prieš/po** — `hera_lint` išvestis dabar vs po pataisos, greta nepriklausomo skaičiavimo. Turi sutapti
-   (arba skirtumas turi būti PAAIŠKINTAS, pvz. sąmoningai neįskaičiuoti vietaženkliai).
-3. **Vietaženkliai** — ar juos atskyrei nuo tikrų nutrūkusių nuorodų (rekomenduoju atskirą skaičių, ne sumaišytą).
-4. Selftest arba lygiavertis patikrinimas, kad pataisyta lint versija neužlūžta ir Loop B toliau veikia.
-5. BACKUP + push į privatų `hera-core-backup`; ROADMAP.md eilutė.
+1. **URL + kaip autentifikuotis** (vartotojo/slaptažodžio pora arba token'as) — kad vartotojas iškart galėtų atsidaryti telefone.
+2. **Autentifikacijos įrodymas:** `curl` be kredencialų → 401/403; su kredencialais → 200. Parodyk abu.
+3. Kokį web serverį naudojai ir ar NEPALIETEI esamų servisų (kas klausė portų prieš/po).
+4. Mazgų/ryšių skaičius sugeneruotame grafe (turi būti panašu į 128/482; jei labai skiriasi — paaiškink).
+5. Kaip atsinaujina (cron eilutė) + ką daro jei generavimas nepavyksta (turi likti SENAS puslapis, ne tuščias).
+6. BACKUP + push į privatų `hera-core-backup`; ROADMAP.md eilutė.
 
-Jei STOP — kodėl + ką radai apie dabartinę aprėptį.
+Jei STOP (saugumas / portų konfliktas) — kodėl, ir ką radai.
