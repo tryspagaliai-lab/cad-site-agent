@@ -1,37 +1,44 @@
-UŽDUOTIS — Fazė 28: `hera_staleguard` integracija į realius rašymo taškus (ADVISORY, elgesys nesikeičia). <14 min.
+UŽDUOTIS — Fazė 29: `hera_verify` integracija į runner'į — ADVISORY-FIRST, BE tikro pakartojimo. <14 min.
 
 ## Tikslas
-Fazė 26 sukūrė `hera_staleguard.py` (CAS: `read_baseline` → `safe_write`), bet jis STANDALONE — niekas jo nekviečia,
-todėl reali rizika (pasenusio failo perrašymas) lieka nematuojama. Apvyniok pagrindinius rašymo taškus taip, kad
-**pradėtume MATYTI, kaip dažnai tai realiai vyksta**, NEKEIČIANT elgesio.
-`HERA_STALEGUARD` def 0 = ADVISORY jau sukurta būtent tam: rašo kaip anksčiau, bet pažymi incidentą ir praneša.
-Kai turėsim dažnio duomenis — tada atskiras human-gate sprendimas dėl ENFORCE (`=1`).
+Fazė 27 sukūrė `hera_verify.py` (rubrika + vertinimas + suspausta pakartojimo užklausa), bet jis STANDALONE.
+Uždaryk Ciklą 2, BET pirmu žingsniu **TIK stebėjimo režimu**: po darbo vieneto įvertink išvestį pagal TASK.md
+„Įrodymai" rubriką ir **PARODYK ataskaitoje verdiktą + kokia pakartojimo užklausa BŪTŲ siųsta** —
+**tikro pakartojimo NEVYKDYK.**
+Priežastis: pirma turim įsitikinti, kad leksinis vertinimas TIKSLUS. Jei įjungtume retry su netiksliu vertintoju,
+runner kartotų sėkmingas užduotis arba praleistų nesėkmes. Tai ta pati „pirma išmatuok, tada įjunk" disciplina,
+kurią sėkmingai pritaikė Fazė 28 (staleguard advisory).
+
+## 🔴 Runner yra kertinis — tie patys saugikliai kaip Fazėje 22
+Fazė 22 (GoalAnchor) integravosi į runner'į saugiai; sek TUO PAT precedentu:
+- Kvietimas izoliuotas: `timeout N ... || true` — jei `hera_verify` krenta ar kabo, runner tęsia NORMALIAI.
+- **NEKEISTI:** `flock`, HARD timeout, STATE dedup, exit code, cron tvarkaraštis. Diff turi rodyti TIK anotacijos eilutes.
+- Anotacija prisegama prie ataskaitos šalia esamų `LG_NOTE` / `GA_NOTE` (loop-guard / goalanchor) — tas pats mechanizmas.
+- Tylėti kai `pass`; rodyti tik kai `fail` arba `undecided`.
+Jei kyla NORS MENKIAUSIA abejonė dėl runner'io stabilumo — STOP, nekeisk, praneša.
 
 ## Realybė (ko pats neišvestum)
-- Modulis: `/root/hera_staleguard.py`, kopija `/opt/hera-processor/`. API: `read_baseline(path)`, `safe_write(path, content, baseline)`.
-- Pats Fazės 26 agentas nurodė kandidatus: `hera_selfedit.py`, Loop C, galimai runner `STATE.md`. **Patikrink juos, bet
-  spręsk pats** — apvyniok tik tuos, kur (a) skaitymas ir rašymas atskirti laike ir (b) failą realiai gali paliesti kas
-  nors kitas. Kur skaitymas-rašymas atominis arba failas privatus procesui — NEVYNIOK, tai tik rizika be naudos.
-- Žinomi lygiagretūs rašytojai, dėl kurių visa tai daroma: cron runner (*/2), `hera_vault_sync.sh` (*/30), pats vartotojas.
-- Žinoma modulio riba (jau atskleista): nėra tarpprocesinio flock tarp dviejų vienalaikių `safe_write()`. Neapsimesk, kad ją sprendi.
+- `hera_verify.py`: `parse_rubric(task_text)`, `evaluate(output, criteria)`, `build_retry_prompt(...)`,
+  `run_verification_cycle(...)`. Def0: grynosios funkcijos veikia visada, jungiklis tik TG pranešimui.
+- Runner turi ir TASK.md tekstą, ir agento išvestį (`/root/agent_result_<blob>.txt`) — abu reikalingi vertinimui.
+- **Puiki testavimo medžiaga jau egzistuoja:** kelios paskutinės realiai įvykdytos užduotys (Fazės 26, 27, 28) turi
+  ir TASK.md, ir ataskaitas. Naudok jas RETROSPEKTYVIAI vertintojo tikslumui patikrinti — tai vertingiau nei sintetiniai testai.
+- Šitas pats failas turi „Įrodymai" skiltį — irgi tinkamas parse testui.
 
 ## Apribojimai
-€0, be tinklo, be LLM. **Elgesys su def 0 privalo likti IDENTIŠKAS dabartiniam** — tai svarbiausias reikalavimas.
-Fail-safe: jei staleguard importas ar kvietimas kokiu nors būdu nepavyktų, apvyniotas kodas turi veikti kaip anksčiau
-(`try/except` + tęsti), NIEKADA neužblokuoti rašymo ir NIEKADA nesukelti duomenų praradimo.
-BACKUP kiekvieno liečiamo failo prieš keitimą. Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. Secret'us NEliesk.
-**Cron tvarkaraščio NELIESK.** `hera_verify` (Fazė 27) NELIESK — jos integracija yra atskiras žingsnis.
-Jei kuris nors taškas atrodo per rizikingas apvynioti — PRALEISK jį ir pasakyk kodėl. Geriau 2 saugūs taškai nei 5 rizikingi.
+€0, be tinklo, be LLM. Fail-safe. **JOKIO tikro pakartojimo šiame žingsnyje** — tik vertinimas + parodyta užklausa.
+Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. BACKUP runner'io prieš keitimą. Secret'us NEliesk.
+Cron NELIESK. `hera_staleguard` integracijos (Fazė 28) NELIESK.
 
 ## Įrodymai (ko tikiuosi ataskaitoje)
-1. **Kuriuos taškus apvyniojai ir kuriuos SĄMONINGAI praleidai** — su priežastimi kiekvienam.
-2. **Elgesio identiškumo įrodymas su def 0:** parodyk, kad apvyniotas kelias daro tą patį, ką prieš tai (pvz. prieš/po
-   palyginimas ar dry-run). Tai kertinis reikalavimas — jei negali įrodyti, nediek.
-3. **Incidento aptikimas veikia:** dirbtinai sukelk pasenusio failo situaciją apvyniotame taške → incidentas
-   užfiksuotas ir matomas (logas/pranešimas), BET rašymas įvyko (nes advisory). Parodyk abu.
-4. **Fail-safe:** imituok staleguard nepasiekiamumą (pvz. importo klaida) → apvyniotas kodas veikia kaip anksčiau.
-5. Esamų selftest'ų/bench nepablogėjimas (paleisk ką turi: staleguard 6/6, bench).
-6. **Kaip pamatysiu dažnį:** kur kaupiasi incidentai ir kaip po savaitės sužinosiu, ar verta įjungti ENFORCE.
-7. BACKUP + push į privatų `hera-core-backup`; ROADMAP.md eilutė.
+1. **Vertintojo TIKSLUMAS retrospektyviai:** paleisk vertinimą ant Fazių 26/27/28 TASK.md + jų realių ataskaitų.
+   Kiek įvertino `pass`/`fail`/`undecided` ir ar tai ATITINKA tikrovę (visos trys realiai pavyko)?
+   **Jei vertintojas duoda daug klaidingų `fail` — tai KRITINĖ išvada, pasakyk ją garsiai.** Būtent dėl to nedarome retry.
+2. **Runner'io vientisumas:** `bash -n` OK; diff rodo TIK anotacijos eilutes; `flock`/STATE/timeout/exit code nepaliesti.
+3. **Elgesys nepakito:** kai `pass` — ataskaita atrodo kaip anksčiau (jokio triukšmo).
+4. **Fail-safe:** imituok `hera_verify` klaidą → runner tęsia normaliai, ataskaita išsiunčiama.
+5. **Parodyta pakartojimo užklausa:** vienam `fail` atvejui parodyk, kokia užklausa BŪTŲ siųsta ir jos dydį.
+6. BACKUP + push į privatų `hera-core-backup`; ROADMAP.md eilutė.
+7. **Rekomendacija:** ar vertintojas pakankamai tikslus, kad kitame žingsnyje įjungtume tikrą retry? Sąžiningai.
 
-Jei STOP — kodėl, ir ką radai apie rašymo taškus.
+Jei STOP — kodėl.
