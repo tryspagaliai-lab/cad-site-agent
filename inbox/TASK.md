@@ -1,42 +1,43 @@
-UŽDUOTIS — Fazė 30: `hera_verify` vertintojo pataisa (du bug'ai, rasti Fazės 29 matavimu). <14 min.
+UŽDUOTIS — Fazė 31: kurią modulių KOPIJĄ runner realiai vykdo? Auditas + suvienodinimas. <14 min.
 
 ## Tikslas
-Fazė 29 stebėjimo režimu įrodė, kad vertintojas NETINKAMAS retry. Du defektai:
-1. **`parse_rubric` skilties aptikimas:** ieško pirmos eilutės, KURI PAMINI „įrodymai" — ne ANTRAŠTĖS. Kai proza mini tą
-   žodį prieš tikrą `## Įrodymai` antraštę → ištraukiama klaidinga skiltis. F27 → 0 kriterijų vietoj 8; pačios F29
-   užduoties → 0 vietoj ~7.
-2. **Slenkstis per griežtas:** kai skiltis ištraukta teisingai (F26, F28), leksinis dengimas 0.6 davė **0/7 pass ABIEM
-   realiai SĖKMINGOMS** užduotims. Realios ataskaitos PARAFRAZUOJA kriterijus, nekartoja pažodžiui.
-Sutvarkyk abu taip, kad vertintojas taptų pakankamai tikslus retry sprendimui.
+Fazės 30 agentas pastebėjo: **runner eilutėje ~127 kviečia `/opt/cad-site-agent/n8n/hera/hera_verify.py`**, o taisom
+`/root/hera_verify.py` + `/opt/hera-processor/`. Jei taip yra ir kitiems moduliams — **dalis šiandienos pataisų NĖRA gyvos.**
+
+**Tiesioginis įtarimo patvirtinimas:** GoalAnchor tarpkalbinis fix atliktas šįryt (inkaro atomai, 9/9), bet
+2026-07-27 16:36 runner ataskaitoje VĖL pasirodė `🧭 GOALANCHOR status=warn overlap=0.1441 signals=drift`
+ant lietuviškos užduoties su angliška ataskaita — **tiksliai tas atvejis, kurį pataisa turėjo nuslopinti.**
+Labai tikėtina, kad runner vykdo SENĄ `hera_goalanchor.py` kopiją.
+
+Išsiaiškink tikrą padėtį ir sutvarkyk taip, kad **taisymas vienoje vietoje visada pasiektų runner'į.**
 
 ## Realybė (ko pats neišvestum)
-- `hera_verify.py` (Fazė 27) + `VE_NOTE` runner integracija (Fazė 29, `HERA_VERIFY_CHECK` def 0, IŠJUNGTA).
-- **Etaloninis rinkinys jau egzistuoja ir yra vertingesnis nei sintetiniai testai:** Fazių 26, 27, 28, 29 tikri
-  `inbox/TASK.md` + jų tikros ataskaitos. **Visos keturios realybėje SĖKMINGOS** — vadinasi teisingas vertintojas
-  turi duoti daugumai kriterijų `pass`. Naudok tai kaip matavimo pagrindą prieš/po.
-- HERA turi `hera_semsearch` su DAUGIAKALBIU embedding modeliu (fastembed `paraphrase-multilingual-MiniLM`) — tai
-  galimas kelias parafrazių problemai. **Bet įvertink kainą:** vertintojas kviečiamas kiekviename runner cikle su
-  `timeout 10`. Jei embeddings per lėti ar per sunkūs 4GB VPS — rinkis leksinį sprendimą (sinonimai, dalinis
-  atitikimas, žemesnis slenkstis) ir PASAKYK kodėl. Sprendimas tavo, bet pagrįsk skaičiais.
-- Ta pati „parafrazė ≠ pažodžiui" problema jau spręsta projekte: `hera_goalanchor` naudoja **kalbai invariantinius
-  inkaro atomus**, `hera_faithfulness` — atomų grounding'ą. Perpanaudok idėją, jei tinka.
+- Egzistuoja bent TRYS vietos, kur gyvena tie patys `hera_*.py`: `/root/`, `/opt/hera-processor/` (git repo,
+  push į privatų `hera-core-backup`), `/opt/cad-site-agent/n8n/hera/` (untracked kopija viešame repo medyje).
+- Konvencija iki šiol buvo: taisom `/root/`, backup į `/opt/hera-processor/`. Niekas netikrino, ką runner kviečia.
+- Liečiami moduliai (visi šios savaitės): `hera_goalanchor`, `hera_verify`, `hera_staleguard`, `hera_ctxtrim`,
+  `hera_skillcapture`, `hera_perceived_error`, `hera_langfuzz`, `hera_loopguard`, `hera_diffrules`, `hera_validator`.
+- ⚠️ Viešo `cad-site-agent` git istorijos NELIESTI — bet failai ten **untracked**, tad jų turinį keisti galima
+  (jie ir taip nepatenka į git). Įsitikink, kad `git status` viešame repo NEPASIKEIČIA.
 
 ## Apribojimai
-€0, be tinklo (jei naudosi embeddings — TIK lokalų fastembed, jokių API). Fail-safe: klaida → „praeita", niekada
-neblokuoti. **Retry VIS DAR NEĮJUNGIAMAS** — `HERA_VERIFY_CHECK` lieka def 0, runner'io logikos NEKEISK.
-Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. BACKUP prieš keitimą. Cron/secret'ai NELIESK.
+€0, be tinklo, be LLM. Fail-safe. **BACKUP visų liečiamų failų prieš keitimą.** Ataskaita TIK į HERA botą.
+Cron/secret'ai NELIESK. Jei sprendimas reikalautų keisti runner'io logiką labiau nei kelias kelio (path) eilutes —
+**STOP ir pasiūlyk, nedaryk.** Geriau tikslus diagnozas nei skubotas refaktoringas.
+`HERA_VERIFY_CHECK` lieka def 0. Naujų funkcijų NEDIEK — tik kelių suvienodinimas.
 
 ## Įrodymai
-1. **Antraštės bug'as ištaisytas:** F27 ir F29 TASK.md dabar duoda teisingą kriterijų skaičių (buvo 0). Parodyk prieš/po.
-2. **PAGRINDINIS MATAVIMAS — tikslumas ant etaloninio rinkinio (F26/27/28/29):** kiek `pass`/`fail`/`undecided`
-   PRIEŠ pataisą ir PO. Kadangi visos keturios realiai pavyko, tikslas — dauguma kriterijų `pass`, MAŽAI klaidingų `fail`.
-   Pateik lentelę su skaičiais.
-3. **Klaidingų `pass` patikra (svarbu!):** sukurk atvejį, kur išvestis SĄMONINGAI neįvykdo kriterijaus → turi būti `fail`.
-   Nesuvelk vertintojo į „viską praleidžia" — tai būtų blogiau nei dabar.
-4. Greitis: kiek trunka vienas vertinimas (turi tilpti į `timeout 10` su atsarga). Pateik matavimą.
-5. Esami selftest'ai (8/8) toliau PASS; `bash -n` runner OK (nors jo nekeiti).
-6. BACKUP + push į privatų `hera-core-backup`; **ROADMAP.md eilutė — ir PATIKRINK, kad ji tikrai faile atsirado**
-   (F26–F29 ataskaitos teigė ROADMAP atnaujinimą, o įrašų nebuvo; nekartok).
-7. **Rekomendacija:** ar dabar vertintojas pakankamai tikslus retry įjungimui? Sąžiningai, su skaičiais.
+1. **Kelio žemėlapis:** kiekvienam iš 10 modulių — KURĮ kelią runner (ar kitas gyvas kvietėjas: cron, Loop B/C,
+   dispatcher) realiai vykdo. Lentelė: modulis · runner kviečia · kur naujausia versija · **ar sutampa**.
+2. **Kiek pataisų NEBUVO gyvos:** aiškiai išvardyk, kurios šios savaitės pataisos realiai neveikė produkcijoje.
+   Tai svarbiausia išvada — nesušvelnink jos.
+3. **GoalAnchor konkrečiai:** ar runner vykdoma kopija turi tarpkalbinį fix'ą (inkaro atomus)? Jei ne — patvirtink,
+   kad tai paaiškina 16:36 klaidingą `drift` įspėjimą.
+4. **Suvienodinimas:** padaryk taip, kad būtų VIENAS šaltinis. Pasirink mechanizmą (symlink / runner kelio pataisa /
+   sync žingsnis) ir **pagrįsk**, kodėl jis atsparus (kad po mėnesio kitas agentas vėl nepataisytų ne to failo).
+5. **Patikra po suvienodinimo:** paleisk GoalAnchor ant tos pačios LT-užduotis/EN-ataskaita poros → turi grąžinti
+   `ok` (ne `drift`). Ir `hera_verify` ant F30 etaloninio rinkinio → turi duoti tuos pačius 25 pass.
+6. `bash -n` runner OK; viešo repo `git status` nepakitęs; BACKUP + push į `hera-core-backup`; ROADMAP.md eilutė
+   (**patikrink, kad tikrai faile atsirado** — praeitos 4 ataskaitos to teigė nepagrįstai).
 
-Jei STOP — kodėl.
+Jei STOP — kodėl + pilnas kelio žemėlapis.
