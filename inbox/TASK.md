@@ -1,32 +1,45 @@
-UŽDUOTIS — Fazė 34: `hera_lint` aprėptis — įtraukti `archive/` kaip išsprendžiamą taikinį. <10 min.
+UŽDUOTIS — Fazė 35: forensinė patikra — ar neautentifikuotu shell endpoint'u kas nors pasinaudojo? TIK SKAITYMAS. <14 min.
 
 ## Tikslas
-2026-07-27 archyvuota 20 growth užrašų į `archive/growth-superseded-2026-07-27/` (vartotojo sprendimas:
-**archyvuojam, netrinam** — neapdoroti pėdsakai yra potenciali būsimos treniruotės medžiaga).
-Failai NEDINGO, bet išėjo iš `hera_lint` aprėpties → Loop B dabar rodo **dangling 10 → 29, orphan 28 → 41**.
-Patikrinta faktu: **26 nuorodos (8 unikalūs taikiniai) iš `skills/growth/concepts` rodo į archyvuotus failus.**
-Tai MATAVIMO, ne turinio problema — Obsidian grafe tos nuorodos veikia (jis sprendžia pagal basename).
-Sutvarkyk, kad lint jas vėl matytų kaip išsprendžiamas.
+Iki 2026-07-21 n8n turėjo **3 MCP endpoint'us su `authentication=none`**, pasiekiamus iš interneto per
+`mcp.<domenas>/mcp/*`. Vienas jų — **„Claude VPS Shell"** (`zzVpsShellMcp01`), t.y. **neautentifikuotas shell'as**:
+kas žinojo URL, galėjo vykdyti komandas VPS'e. Endpoint'ai deaktyvuoti + n8n perkrautas; skylė uždaryta ir
+patvirtinta iš išorės. Eilėje nuo tada kabo „3 raktų rotacija (atsargumo priemonė)".
+
+**Šios užduoties tikslas — paversti tą prielaidą ĮRODYMU.** Klausimas ne „ar rotuoti", o **ar apskritai kas nors
+tuo pasinaudojo**. Ir svarbiausia — **ar kas nors ką nors PALIKO.**
+
+## 🔴 TIK SKAITYMAS
+Nieko netaisyk, netrink, nekeisk, nerotuok. Jei rasi kažką įtartino — **PRANEŠK, NEŠALINK.** Pašalinimas gali
+sunaikinti įrodymus ir, jei tai klaidingas aliarmas, sulaužyti veikiančią sistemą. Sprendimą dėl reagavimo priims vartotojas.
+**Secret'ų REIKŠMIŲ niekada nespausdink** — tik faktą „yra/nėra", vardus, datas.
 
 ## Realybė (ko pats neišvestum)
-- Fazė 31 (2026-07-26) jau pridėjo `load_pages(extra_doc_dirs=None, include_concepts=False)` — **opt-in parametrus**.
-  `hera_lint.analyze()` juos naudoja; `hera_wikilink.py` kviečia `load_pages()` BE argumentų, todėl jo elgesys
-  nepakito. **Tą pačią schemą sek** — `archive` turi būti tik išsprendžiamas TAIKINYS, NE šaltinis
-  (nescanuoti jo outgoing nuorodų, kad nekiltų savireferencinė kilpa, kaip būtų su `analysis/`).
-- Kanoninis kelias: `/opt/hera-processor/`. Patikrink faktu, kurį `hera_lint.py` realiai vykdo Loop B, ir taisyk TĄ
-  (Fazė 30 pamoka: pataisyta kopija, kurios niekas nevykdo, yra beverčiai).
-- Vault ant VPS: `/opt/hera-vault`.
+- 3 workflow ID: `zzVpsShellMcp01` (shell), `jij5EQGypNkPsHgh` (control), `mcprouterdesk001` (/desk router).
+  Visi `active=false` nuo 2026-07-21, n8n konteineris perkrautas (`n8n-n8n-1`, n8n-custom 2.28.4).
+- Reverse proxy: `n8n-caddy-1` (Caddy2). Viešas kelias buvo `mcp.<domenas>/mcp/*`.
+- `:5678` docker NEpublikuotas į host; host klauso :80/:443; ufw aktyvus (22/80/443).
+- Teisėtas naudojimas: **orchestratorius pats** naudojo `/desk` router `run_shell` iki uždarymo — tad dalis
+  vykdymų BUS mūsų. Reikia atskirti MŪSŲ nuo svetimų (pagal laiką, IP, User-Agent, komandų turinį).
+- Kada endpoint'ai atsirado — nustatyk pats (n8n DB `createdAt`), kad žinotum tikrą ekspozicijos langą.
+
+## Įrodymai (ko tikiuosi ataskaitoje)
+1. **Ekspozicijos langas:** nuo kada iki kada endpoint'ai buvo aktyvūs ir pasiekiami. Konkrečios datos.
+2. **n8n vykdymų istorija** tiems 3 workflow'ams per tą langą: kiek vykdymų, kada, ar visi paaiškinami mūsų veikla.
+   **Jei yra nepaaiškinamų — tai svarbiausias radinys, pateik detales.**
+3. **Caddy prieigos logai** `mcp.*` / `/mcp/*` keliams: ar buvo užklausų iš IP, kurie nėra mūsų? Skenavimo požymiai
+   (daug 404, botų User-Agent)? Jei logai nesaugomi/rotuoti — pasakyk tai atvirai, tai irgi rezultatas.
+4. **⭐ PERSISTENCIJA — ar kas nors ką nors PALIKO** (svarbiausia dalis; jei shell buvo naudotas, tai matytųsi čia):
+   netikėti cron įrašai · nauji/pakeisti `~/.ssh/authorized_keys` · nauji systemd unit'ai/timer'iai · nežinomi
+   procesai ar klausantys portai · neįprasti naudotojai · `/tmp`, `/var/tmp`, `/dev/shm` vykdomieji failai ·
+   netikėti docker konteineriai/images. Palygink su tuo, kas TURI būti (HERA cron'ai, n8n, Caddy).
+5. **Telegram botai:** ar botų siųstų žinučių istorija atitinka mūsų digest/ataskaitų srautą — jokių svetimų siuntimų?
+6. **Bendras verdiktas:** ar yra kompromitavimo požymių — TAIP / NE / NEAIŠKU (ir kodėl neaišku).
+   Jei NE — pasakyk, kiek stipriai tuo galima pasitikėti (pvz. „logai rotuoti, matomas tik paskutinių N dienų langas").
 
 ## Apribojimai
-€0, be tinklo, be LLM. Fail-safe. **`hera_wikilink` elgesys privalo likti NEPAKITĘS** (jis RAŠO į vault per Loop B hook) —
-įrodyk identišku `--dry-run` prieš/po, kaip Fazėje 31. Vault turinio NEMODIFIKUOK. BACKUP prieš keitimą.
-Ataskaita TIK į HERA botą. Viešo `cad-site-agent` NELIESK. Cron NELIESK.
-
-## Įrodymai
-1. Kurį `hera_lint.py` Loop B realiai vykdo (faktu).
-2. **Skaičiai prieš/po:** dangling ir orphan. Tikslas — tie 26 paminėjimai vėl išsisprendžia; likę dangling turi būti
-   tie patys „tikri" (vietaženkliai + produktų pavadinimai), kurie buvo prieš archyvavimą (~10).
-3. **`hera_wikilink` nepakitęs:** identiškas `--dry-run` rezultatas prieš/po.
-4. `bench` nepablogėjo; BACKUP + push į `hera-core-backup`; ROADMAP.md eilutė (**patikrink grep'u faile**).
+€0, be tinklo į išorę (išskyrus jei reikia patikrinti savo pačių endpoint'ą). Ataskaita TIK į HERA botą.
+Viešo `cad-site-agent` NELIESK. Cron/konfigų NELIESK. Nieko nediek.
+Jei kuri nors patikra neįmanoma (logų nėra, teisių trūksta) — pasakyk, NEapsimesk, kad patikrinai.
 
 Jei STOP — kodėl.
