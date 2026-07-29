@@ -1,68 +1,73 @@
-UŽDUOTIS — Fazė 39: projekcijos vartų atidarymas + ar scrub NEPERSPAUDŽIA (klaidingai pozityvių auditas) + CaRE anotacija. HUMAN-GATE GAUTAS („Varom"). <13 min.
+UŽDUOTIS — Fazė 40: PHONE/ISO pataisa → projekcijos perkūrimas → ATSKIRAS pėdsakų semsearch indeksas. HUMAN-GATE GAUTAS („daryk kaip rekomenduoji"). <14 min.
 
-## Tikslas
-Fazė 38 pastatė dviejų sluoksnių skillcapture: `raw/` (neredaguotas archyvas) + `projection/` (rašoma tik po
-`hera_pii.scrub()`, vartai `HERA_SKILLCAPTURE_PROJECTION` def 0). Kaupiasi 5+ pėdsakai, bet projekcija
-NEGENERUOJAMA → duomenys kol kas niekam nepadeda.
+**Eiliškumas privalomas: 1 → 2 → 3.** Indeksuoti korpusą su sudarkytomis datomis būtų beprasmiška, todėl
+pataisa eina PIRMA, o indeksas — PASKUTINIS. Jei laikas baigiasi, geriau padaryti 1+2 gerai ir sustoti prie 3,
+nei visus tris paskubomis. Dalis 4 (anotacija) — maža, daryk kada patogu.
 
-**Šios fazės tikslas — atidaryti vartus IR atsakyti į vieną konkretų klausimą, kurio testai atsakyti negali:
-ar `hera_pii.scrub()` neperspaudžia (over-redaction) tiek, kad projekcija taptų nenaudinga mokymui?**
-20/20 testų patvirtina, kad scrub PAGAUNA ką turi. Jie NEpatvirtina, kad jis nepagauna to, ko neturėtų.
-Fazė 38 pridėjo 5 naujas kategorijas, iš kurių **PATH ir HOST yra plačios** — būtent jos gali sušveisti tą
-techninį kontekstą, kuris pėdsakuose vertingiausias.
+## 1) PHONE klaidingai pozityvių pataisa (Fazės 39 pasiūlymas, dabar patvirtintas)
+Fazė 39 rado: PHONE kategorija 9/9 suveikimų = **9/9 klaidingai pozityvūs**. 7/9 — ISO datos
+(`scrub("2026-07-29")` → `[PHONE_1]`), 1 — arXiv ID šablonas (`NNNN.NNNNN`), 1 — skaičius+data.
+Tikrų telefono numerių — nė vieno. Pėdsakuose datos yra **vertingas turinys** (chronologija = dalis pėdsako
+vertės mokymui), tad jų šveitimas kenkia be jokios saugumo naudos.
 
-Konkretus pavyzdys, kodėl tai svarbu: `/opt/hera-venv/bin/python3` arba `/opt/cad-venv` NĖRA paslaptis —
-tai esminis techninis kontekstas (mūsų pačių atmintyje tai užrašyta kaip kritinis faktas). Jei PATH taisyklė
-tokius kelius redaguoja, projekcija mokymui bevertė: modelis išmoks „paleisk `[REDACTED]`".
+Padaryk **minimalų saugų susiaurinimą** — tu sprendi tikslią formą, bet:
+- ISO data (tiksliai `\d{4}-\d{2}-\d{2}`) NETURI būti laikoma telefonu.
+- arXiv ID formos (`\d{4}\.\d{4,5}`) taip pat — įvertink, ar verta įtraukti; jei nusprendi neįtraukti, pasakyk kodėl.
+- **Tikrų telefonų aptikimas privalo IŠLIKTI** — pridėk į `test_pii.py` bent po vieną testą kiekvienai naujai
+  išimčiai IR bent vieną, patvirtinantį, kad realus telefono numeris VIS DAR pagaunamas. Regresija čia = saugumo skylė.
+- `test_pii.py` turi likti PASS visas (buvo 24/24).
 
-## Ką padaryti
-1. **Atidaryti projekcijos vartus** (`HERA_SKILLCAPTURE_PROJECTION=1` ten, kur gyvena kiti `HERA_*` — cron/env,
-   pagal esamą konvenciją). Vartai lieka atidaryti ir po užduoties.
-2. **Sugeneruoti projekciją visiems esamiems `raw/` pėdsakams** (5+). Jei modulis neturi „reprojektuoti esamus"
-   kelio — nekurk naujo režimo, tiesiog paleisk per esamą CLI kelią tiek kartų, kiek reikia, arba pasakyk, kad
-   neįmanoma be kodo pakeitimo (tada tik naujiems).
-3. **⭐ KLAIDINGAI POZITYVIŲ AUDITAS — svarbiausia dalis.** Kiekvienai kategorijai (SECRET/IP/PATH/TGCHATID/HOST
-   + senosios) suskaičiuok, kiek kartų suveikė, ir **kiekvienam PATH/HOST/IP suveikimui atsakyk: ar redaguotas
-   dalykas TIKRAI jautrus, ar tai buvo nekaltas techninis kontekstas?** Pateik konkrečius pavyzdžius, KOKIO TIPO
-   dalykai buvo užšveisti (pvz. „6 iš 9 PATH suveikimų = `/opt/*venv*` keliai, t.y. klaidingai pozityvūs").
-4. **Redagavimo tankis (redaction density):** kiek % simbolių pakeista, per pėdsaką. Jei >20–25% — tai signalas.
-5. **NEINDEKSUOK.** semsearch prijungimas = atskiras human-gate. Šioje fazėje projekcija tik sukuriama ir vertinama.
-6. **NETAISYK taisyklių pats.** Jei rasi perspaudimą — **pasiūlyk konkretų susiaurinimą ir jo pagrindimą**,
-   bet nekeisk `hera_pii.py` be atskiro leidimo. (Išimtis: jei rastum PRALEIDIMĄ, t.y. tikrą secret'ą
-   projekcijoje — tai avarija, tada sustok, NEskelbk reikšmės, ir pranešk nedelsiant.)
+## 2) Projekcijos perkūrimas
+Esama projekcija turi `[PHONE_1]` vietoj datų — perkurk ją visiems `raw/` pėdsakams per tą patį `capture()`
+kelią (Fazė 39 paliko `/root/hera_reproject_phase39.py` pakartotiniam naudojimui). Po perkūrimo pranešk
+naują redagavimo tankį ir PHONE suveikimų skaičių (turėtų kristi ~į 0).
 
-## 🔴 Ataskaitos saugumas
-Ataskaitoje **necituok neredaguotų fragmentų**. Klaidingai pozityvius aprašyk **TIPU, ne turiniu**
-(„venv kelias", „vidinis host'o vardas", „docker konteinerio vardas") arba jau suscrub'inta forma.
-Jei kuriam pavyzdžiui reikia rodyti tekstą — rodyk TIK tą, kurį pats patikrinai, kad neturi paslapties.
+## 3) ⭐ ATSKIRAS pėdsakų semsearch indeksas
+**Sprendimas: ATSKIRAS indeksas, NE bendras su vault.** Trys priežastys (kad suprastum ribas, ne kad kartotum):
+pėdsakai yra **operaciniai žurnalai, ne žinios** → bendrame indekse jie triukšmintų normalią paiešką ·
+eilėje laukia `semsearch v1.2 eval`, o naujo korpuso įmaišymas dabar būtų **nekontroliuojamas kintamasis**
+(matuotume korpusą, o manytume, kad matuojam versiją) · atskirą indeksą galima išjungti vienu jungikliu.
 
-## Realybė (ko pats neišvestum)
-- `hera_pii.py` = Rampart modulis, pakartotinai panaudotas; Fazėje 38 papildytas SECRET/IP/PATH/TGCHATID/HOST.
-- Pėdsakai `/root/hera_skills/` (root-only 700, NE git repo). `raw/` neredaguojamas — NELIESK jo turinio.
-- Vartas tikrinamas `_write_projection()` viduje — jo NEapeidinėk net testuodamas.
-- Fail-CLOSED yra TEISINGA šiam vartui (skirtingai nuo advisory modulių) — nekeisk poliariškumo.
-- Kritinis techninis kontekstas mūsų domene: `/opt/cad-venv` (ezdxf 1.4.4), `/opt/hera-venv` (semsearch/fastembed),
-  `/opt/hera-processor`. Šie keliai mokymui VERTINGI, ne jautrūs.
+- Šaltinis: `projection/rag_corpus.jsonl` (NIEKADA `raw/` — tas neredaguotas ir neindeksuojamas niekada).
+- **Pagrindinis vault indeksas turi likti BITAI TAS PATS.** Prieš ir po — užfiksuok įrodymą (dokumentų skaičius
+  ir failo dydis/mtime arba hash). Jei pastebėsi, kad jį palietei — tai avarija, sustok ir pranešk.
+- **Užklausa veikia iš karto per CLI** (kad būtų realiai naudojama ir patikrinama dabar).
+- **Automatinis įpurškimas į runner/agento kontekstą — NE.** Tai atskiras jungiklis, **def 0**, atskiras
+  human-gate ateityje. Priežastis: automatinis įpurškimas teršia kontekstą ir kainuoja; rankinė užklausa — ne.
+- **Sveikatos patikra (sanity check):** paimk atpažįstamą frazę iš vieno pėdsako, paleisk užklausą, patikrink
+  ar TAS pėdsakas grįžta pirmas. Pranešk rezultatą sąžiningai.
+- ⚠️ **Lūkesčių kalibravimas:** korpusas dabar **6 įrašai**. Prie tokio dydžio paieškos kokybė beveik nieko
+  nereiškia. Netrauk išvadų apie naudingumą — tik patvirtink, kad grandinė VEIKIA. Vertinsim, kai bus ~50+.
 
-## Antra dalis (maža) — CaRE kuravimo anotacija
-Vault growth note'ui apie **CaRE (arXiv 2607.24763)** pridėk `## KURAVIMO VERDIKTAS (žmogus, 2026-07-29)`
-tokiu pačiu formatu kaip qcku88/z9ww92 (Fazė 37). Turinys — **DVI dalys, abi PASILIEKAM:**
-· **Metodika — naudojama DABAR:** compute-matched lyginimas + visų šalutinių parametrų fiksavimas; rezultatus
-  teikti PER UŽKLAUSĄ, ne tik agregatą. Pririšta prie `semsearch v1.2 eval` ir tarybos jurorų lyginimo.
-  CaRE parodė: suderinus resursus keli publikuoti reitingai APSIVERTĖ, o temperatūra paaiškino didžiąją
-  metrikos variacijos dalį.
-· **MDLM turinys (difuziniai kalbos modeliai) — PASILIEKA kaip žinia GPU erai:** NFE kaip sąžiningas
-  skaičiavimo matas · remasking strategijos · „informed remasking vs stochastic unmasking" įtampa · 12 atvirų
-  svorių MDLM lyderių lentelė (150M–8B = tilptų į vieną GPU). GPU **BUS** — tada tai bus paruošta atskaitos
-  sistema, ne darbas nuo nulio.
-· ⚠️ Metodologinė pastaba: **„nėra GPU dabar" NĖRA „neaktualu"** — domenas HERA'oje niekada nesiaurinamas;
-  tokiais atvejais ARCHYVUOJAM IR PAŽYMIM (precedentai: FreeCAD MCP, 20 archyvuotų growth užrašų).
-`state/*.json` `council.final_action` **NELIESK** — tarybos verdiktas yra istorinis append-only įrašas
-(Fazės 37 precedentas); žmogaus sprendimas rašomas atskirai, ne perrašant.
+## 4) crypto-Claude kuravimo anotacija
+Note'ui apie **„Discovering cryptographic weaknesses with Claude"** (Simon Willison, 2026-07-28,
+`...-i495fo.md`) pridėk `## KURAVIMO VERDIKTAS (žmogus, 2026-07-30)` tuo pačiu formatu kaip CaRE (prieš `---`):
+· **Kriptoanalizė mums neaktuali — vertė kitur: pasidalintos užklausos.** Pagrindinė žmogaus intervencija buvo
+  **neleisti modeliui pasiduoti** („models tend to think it is impossible to solve so they don't try";
+  „we are not looking for low hanging fruit").
+· **NAUJA gedimo klasė: PRIEŠLAIKINĖ KAPITULIACIJA**, kurios `hera_goalanchor` NEMATO. Drift = nuklysta nuo
+  tikslo. Kapituliacija = paskelbia „neįmanoma" ir grąžina įtikinamą nesėkmę, atrodančią kaip teisėtas atlikimas.
+  **Mūsų pačių instrukcija tai kursto:** „jei neįmanoma — pasakyk, nespėliok" (teisinga dėl faktų) kartu sukuria
+  mažiausio pasipriešinimo kelią. Precedentas: Fazė 36 enumeruodama rado 2 rakto vietas, Fazė 37 skenuodama — 3.
+  **KONVENCIJA: „neįmanoma" galioja tik su „ką bandžiau" sąrašu.**
+· **Kaštų kalibravimas:** 60 val., **~$100k** API kaštų (šaltinio įvertis) vienam publikuoti vertam rezultatui
+  BE praktinio poveikio. Atsvara pagundai tikėtis, kad €0 taryba „atras" kažką nauja — **taryba skirta ŽINOMŲ
+  dalykų trianguliacijai, ne atradimams.**
+· **Trečia nepriklausoma konvergencija dėl autonomijos suvaldymo** (PlanFlip → Import AI 466/OpenAI → šis):
+  kuo pajėgesnis modelis ir ilgesnė autonomija, tuo labiau randa ir išnaudoja aplinkos silpnybes, kai vertinamas
+  balu. Išvada: **nekeičiam nieko** (advisory-first · def 0 · human-gate · no retry · fail-closed vartams).
+· ⚠️ Žymės: „Claude Mythos / Mythos Preview" — nepatikrinamas, mums neprieinamas modelis, imam kaip šaltinio
+  teiginį. $100k — įvertis. Tai **antrinis šaltinis** (link blogas apie Anthropic įrašą), citatos antros rankos.
+`state/*.json` `council.final_action` **NELIESK** (Fazės 37 precedentas).
 
 ## Apribojimai
-€0 · BACKUP prieš `hera_skillcapture.py`/cron keitimą (čia backup'as saugus — jame nėra secret'ų) ·
+€0 · BACKUP prieš `hera_pii.py` ir bet kokį konfigo keitimą · `/opt/hera-venv/bin/python3` semsearch daliai ·
 viešo `cad-site-agent` git NELIESK · push į privatų `hera-core-backup` · HARD timeout, be retry ·
-selftest turi likti PASS po pakeitimų · sąžiningas „ko nepadariau" sąrašas ataskaitoje.
+jokių secret reikšmių ataskaitoje.
+
+**⚠️ NAUJA ATASKAITOS TAISYKLĖ (nuo šiol visoms fazėms):** teiginys „neįmanoma / nepavyko patikrinti" galioja
+**tik kartu su sąrašu, KĄ BANDEI.** Negalimybė turi būti pagrįsta veiksmais, ne intuicija. „Nespėliok" lieka
+galioti; prisideda „ir neapsimesk, kad patikrinai, jei tik pažiūrėjai". *(Fazė 39 parodė teisingą pavyzdį:
+neturėdama duomenų, ji perskaitė regex šaltinį ir davė struktūrinį įrodymą — stipresnį už empirinį mėginį.)*
 
 Jei STOP — kodėl.
