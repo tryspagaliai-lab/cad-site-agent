@@ -1,51 +1,51 @@
-UŽDUOTIS — Fazė 41: LFM2.5-Encoder įgyvendinamumo MATAVIMAS 4GB VPS'e + v1.2 WIP išsaugojimas. HUMAN-GATE GAUTAS („Varom"). <14 min.
+UŽDUOTIS — Fazė 42: ar `claude-agent-sdk` veikia su MŪSŲ esama OAuth prenumerata (be API rakto)? MATAVIMAS. HUMAN-GATE GAUTAS („Varom"). <14 min.
 
-## Dalis A (maža, DARYK PIRMA — pašalina realų praradimo pavojų, ~2 min)
-`hera_semsearch.py` turi **nekomitintą v1.2 WIP diff'ą** (Fazė 40 jį teisingai paliko nepaliestą). Tai pažeidžia
-mūsų durabilumo konvenciją: paruoštas, bet neįvertintas darbas guli VPS'e **be jokio backup'o** — kris mašina,
-dings darbas. **Užkomitink jį į privatų `hera-core-backup` kaip AIŠKIAI PAŽYMĖTĄ WIP** (pvz. commit žinutėje
-`WIP semsearch v1.2 — NOT EVALUATED, do not enable`), kad ateities sesija nepalaikytų jo patvirtintu.
-**Elgsenos NEKEISK, eval'o NEDARYK, nieko neįjunk** — tik išsaugok tai, kas yra.
+## Kodėl (kontekstas, kurio pats neišvestum)
+`vps_agent_runner.sh` dabar kviečia `claude -p` ir **skaito tekstinę išvestį**. Tai trapiausia grandinės vieta —
+iš jos kyla „ataskaita teigia tai, ko nepadarė" klasė klaidų, kurias gaudom rankiniu tikrinimu kiekvieną fazę.
+**Claude Agent SDK** (`claude-agent-sdk`, Python) yra Claude Code supakuotas kaip biblioteka: agent loop,
+konteksto valdymas, hooks, subagentai, teisės, sesijos — programinė sąsaja vietoj teksto parsinimo.
 
-## Dalis B — LFM2.5-Encoder įgyvendinamumo matavimas
+⚠️ **NEPAINIOTI su `anthropic-sdk-python`** — tai kitas produktas, reikalaujantis API rakto (= pinigai;
+mūsų vienintelį raktą ką tik sąmoningai ištrynėm). Šioje užduotyje jo NELIEČIAM.
 
-### Kodėl (kontekstas, kurio pats neišvestum)
-Liquid AI 2026-07-28 išleido **LFM2.5-Encoder-230M / 350M** (atviri svoriai, Hugging Face). Tai **CPU modeliai**
-— 8 192 žetonų kontekstas, ~3,7× greičiau nei ModernBERT-base ilgame kontekste, ~28 s vienam 8k praėjimui
-nešiojamojo CPU. Mums įdomu dėl vieno konkretaus dalyko: **PII aptikimas (40 tipų, 16 kalbų)**.
-Mūsų dabartinis `hera_pii.py` yra regex — Fazė 39 rado 9/9 klaidingai pozityvių, Fazė 40 lopė po vieną išimtį.
-Enkoderis tai spręstų iš esmės. Antriniai kandidatai (NE šioje fazėje): zero-shot maršrutizavimas, „policy linting".
+## Vienintelis klausimas, į kurį reikia atsakyti
+**Ar `claude-agent-sdk` autentifikuojasi mūsų ESAMA prenumeratos OAuth sesija, be jokio API rakto?**
 
-### Tai MATAVIMO užduotis, ne diegimo
-**Nieko neprijunk prie jokio srauto. `hera_pii.py` NELIESK.** Tikslas — vienas sąžiningas atsakymas:
-**ar 230M enkoderis apskritai realus šioje mašinoje, ir kokia kaina.**
+Nespręsk to iš dokumentacijos — **išbandyk**. Priežastis, kodėl tai tikrai atviras klausimas:
+Anthropic dokumentacija sako, kad Claude Code ir Agent SDK laikosi to paties kredencialų eiliškumo, kuriame yra
+**`ant auth login` profilis** (`~/.config/anthropic/`). BET mūsų runner naudoja **`/root/.claude/.credentials.json`** —
+tai Claude Code NUOSAVA saugykla, kitas kelias. Ar SDK skaito ir ją, ar tik `ant` profilius — **nežinoma.**
+Tai ir yra matavimo esmė.
 
-Būtina išmatuoti ir pranešti skaičiais:
-1. **RAM:** kiek laisvos atminties yra DABAR (su veikiančiu n8n + caddy + searxng + hera), ir kiek suvalgo
-   modelis įkeltas. Jei nebetelpa — tai atsakymas, pranešk ir STOP (nesukelk OOM, kuris nužudytų n8n).
-2. **Disko kaina:** svorių dydis + `transformers` priklausomybių dydis, jei jų dar nėra.
-3. **Latencija MŪSŲ tekstams, ne 8k.** Tipinis pėdsakas ~18,6 KB. Išmatuok: šaltas krovimas (cold load) atskirai
-   nuo inferencijos; inferencija tipiniam pėdsakui ir trumpam (~1 KB) tekstui. **Šaltas krovimas svarbus atskirai** —
-   precedentas: embeddings atmesti `hera_verify`'ui, nes 1,2 s šaltas krovimas = 12% `timeout 10` biudžeto.
-4. **Ar PII naudojimas apskritai reikalauja fine-tuning'o?** Blog'e PII aptikimas pateiktas kaip **demo iš
-   fine-tune'into** enkoderio, o bazinis modelis duoda tik reprezentacijas. Jei tam reikia apmokymo (=GPU) —
-   **tai kritinis radinys ir gali visą kryptį uždaryti dabar.** Patikrink, ar HF yra paruoštas PII checkpoint'as,
-   ar tik bazinis. **Šis punktas svarbesnis už greičio skaičius** — jei atsakymas „reikia fine-tune", greitis nesvarbu.
+## 🔴 Tai MATAVIMAS, ne migracija
+`vps_agent_runner.sh` NELIESK. Nieko neprijunk. Nekeisk jokio esamo modulio. Tikslas — vienas sąžiningas
+taip/ne su įrodymu, ir kaina, jei taip.
 
-### Ribos
-- **€0.** Tik atviri svoriai iš HF. Jokių mokamų API.
-- **NEDIEK į sisteminį python3.** Naudok `/opt/hera-venv` arba atskirą laikiną venv; jei diegi `transformers`,
-  pasakyk, kiek vietos užėmė, ir ar palikai, ar išvalei.
-- **n8n neturi nukentėti.** Jei matai, kad RAM prie ribos — sustok. Veikianti sistema > matavimas.
-- Modelis reikalauja `trust_remote_code=True` — tai **savavališko kodo vykdymas iš HF**. Priimtina matavimui,
-  bet **užfiksuok tai ataskaitoje kaip riziką** ir nepalik jo jokiame automatiniame kelyje.
+## Ką išmatuoti ir pranešti
+1. **Ar autentifikacija veikia.** Minimalus testas: SDK užklausa su labai trumpu promptu („atsakyk vienu žodžiu").
+   **Neleisk jokių brangių ar ilgų užklausų** — tikrinam autentifikaciją, ne pajėgumus.
+2. **KURI kredencialų grandies dalis suveikė.** Konkrečiai: ar SDK rado `/root/.claude/.credentials.json`,
+   ar reikėjo `ant auth login` profilio, ar išvis nepavyko be API rakto. **Tai svarbiausia ataskaitos dalis.**
+3. ⚠️ **PATIKRINK DOKUMENTUOTĄ SPĄSTĄ:** OAuth profilis veikia TIK kai `ANTHROPIC_API_KEY` **neapibrėžtas** —
+   net **tuščias** `ANTHROPIC_API_KEY=""` laimi savo eiliškumo vietą ir bando autentifikuotis tuščiu raktu.
+   Patikrink, ar tas kintamasis apskritai egzistuoja runner'io/cron aplinkoje (net tuščias). Jei egzistuoja —
+   tai būsimos migracijos blokatorius ir turi būti ataskaitoje.
+4. **Kaina:** diegimo dydis (venv/npm), RAM, šalto starto laikas. *(Fazė 41 pamoka: skaičiai sprendžia, ne idėja.)*
+5. **Kvotos klausimas:** ar SDK naudojimas semia iš TOS PAČIOS prenumeratos kvotos kaip `claude -p`.
+   Mums tai svarbu — 2026-07-20 buvo išdegintas bendras limitas, todėl runner pinnintas prie Sonnet 5.
+   Jei nustatyti neįmanoma be didelio naudojimo — **NEBANDYK to išsiaiškinti degindamas kvotą**, pasakyk.
 
-### Ataskaitoje
-Lentelė (RAM/diskas/šaltas krovimas/inferencija) · vienareikšmis atsakymas dėl fine-tuning'o poreikio ·
-**tavo rekomendacija: verta ar ne, ir kodėl** · ką palikai diske ir ką išvalei.
+## Ribos
+- **€0.** Jokių API raktų, jokių mokamų kelių. Jei SDK reikalauja API rakto — tai NEIGIAMAS atsakymas, ir gerai; pranešk.
+- **NEDIEK į sisteminį python3.** Laikinas venv; po matavimo išvalyk ir pranešk, ką palikai/ištrynei.
+- **n8n neturi nukentėti.** Jei RAM prie ribos — sustok (Fazės 41 elgsena su cgroup saugikliu buvo teisinga).
+- Viešo `cad-site-agent` git NELIESK · BACKUP jei ką nors keistum (neturėtum) · HARD timeout, be retry.
 
-## Apribojimai
-€0 · BACKUP prieš keitimus · viešo `cad-site-agent` git NELIESK · HARD timeout, be retry · jokių secret reikšmių.
+## Ataskaitoje
+Vienareikšmis **TAIP / NE / NEĮMANOMA NUSTATYTI** dėl OAuth autentifikacijos · kuri kredencialų grandies dalis
+suveikė · `ANTHROPIC_API_KEY` būsena aplinkoje · kaina (diskas/RAM/startas) · kvotos atsakymas arba sąžiningas
+„negaliu nustatyti nedegindamas kvotos" · **tavo rekomendacija: verta migruoti ar ne, ir kodėl.**
 
 **ATASKAITOS TAISYKLĖ:** teiginys „neįmanoma / nepavyko patikrinti" galioja **tik kartu su sąrašu, KĄ BANDEI.**
 Negalimybė turi būti pagrįsta veiksmais, ne intuicija. Neapsimesk, kad patikrinai, jei tik pažiūrėjai.
