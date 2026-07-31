@@ -1,62 +1,49 @@
-UŽDUOTIS — Fazė 47: ar `hera_pii` SECRET šablonas dengia TIKRUS mūsų kredencialų formatus? Auditas + pataisa. HUMAN-GATE GAUTAS („Varom #1"). <14 min.
+UŽDUOTIS — Fazė 48: ar `raw/` pėdsakų archyvas VIENTISAS? TIK SKAITYMAS. HUMAN-GATE GAUTAS („Varom"). <10 min.
 
-## Kodėl (konkretus radinys, ne teorija)
-Fazė 46: apsauginis šablonas `gh[pousr]_` **nepataikė** į `github_pat_...` (GitHub fine-grained PAT) — todėl
-raktas atsispausdino į transkriptą. **Įtarimas: ta pati spraga yra `hera_pii.py` SECRET kategorijoje**, pridėtoje
-Fazėje 38. Jei taip, **GitHub token'as pėdsake pereitų į `projection/` NESUREDAGUOTAS** — spraga saugumo
-kontrolėje, kurią patys ką tik pastatėm ir kuri praėjo 30/30 testų.
-Klasė: tai **PRALEIDIMAS** (miss), priešingas Fazės 39 PHONE klaidingam pozityvui. Ta pati šeima — regex,
-kurio niekas nepatikrino prieš **tikrą formatą**.
+## Kodėl — konkreti neatitiktis, ne nerimas
+- **Fazė 40 (07-30)** išmatavo: `/root/hera_skills/raw/` = **7 pėdsakai**, vidutiniškai ~18,6 KB → ~130 KB.
+- **Fazė 41 (07-30)** tą patį patvirtino nepriklausomai (18,6 KB/pėdsaką, tempas 2,4/d.).
+- **Fazė 47 (07-31)** rašo: „`raw/` turi tik **1 mažą legacy failą (26 KB)**, be PII".
 
-## 🔴 SINTETINIAI DUOMENYS — griežtai
-Visiems testams naudok **išgalvotas, akivaizdžiai netikras** reikšmes (pvz. `github_pat_EXAMPLE...`).
-**NIEKADA nenaudok ir nespausdink tikrų kredencialų** — nei galiojančių, nei negaliojančių, nei iš `hera.env`,
-nei iš `.credentials.json`, nei iš logų. Testų failuose taip pat neturi likti nieko, kas atrodytų kaip tikras raktas.
+**Tai prieštarauja.** Bet **NEKALTINK, kol nepatikrinsi** — labai tikėtina nekalta priežastis: Fazė 47 ieškojo
+konkretaus nescrubbed korpuso failo, iš kurio buvo skaičiuotas 0,0515% tankis, o ne katalogo turinio.
+Projekcija (190 KB) atitinka ~7 pėdsakus, tad duomenys greičiausiai VIETOJE.
+*(Precedentas: GoalAnchor „senos kopijos" hipotezė 07-27 irgi atrodė akivaizdi ir nepasitvirtino.)*
 
-## Dalis A — AUDITAS (pirma, prieš bet kokį keitimą)
+**Kodėl vis tiek tikrinam:** `raw/` yra **LoRA/distiliavimo archyvas**, saugomas taisykle ARCHYVUOJAM-NETRINAM.
+Tylus jo praradimas nepasirodytų NIEKUR, kol neprireiktų — o tada būtų per vėlu.
 
-1. **Kokius formatus SECRET dengia dabar?** Perskaityk esamą šabloną ir surašyk faktą, ne įspūdį.
-2. **Patikrink prieš MŪSŲ realiai naudojamų kredencialų formatus** (sintetiniais pavyzdžiais). Bent:
-   · GitHub **fine-grained** `github_pat_...` ⚠️ (žinomas įtariamas praleidimas)
-   · GitHub classic `ghp_` ir kiti `gho_`/`ghu_`/`ghs_`/`ghr_`
-   · **Anthropic** `sk-ant-...` (turėjom tokį) ir **`sk-ant-oat01-...`** (OAuth/environment tipo)
-   · **Telegram** boto token'as (formatas `<skaitmenys>:<~35 simbolių>`) — mūsų vienintelis grįžtamojo ryšio kanalas
-   · **Gemini/Google** `AIza...` · **Groq** `gsk_...` · GLM/zhipu raktas
-   · Bendri: `-----BEGIN ... PRIVATE KEY-----`
-   Pateik **lentelę: formatas → pagaunamas TAIP/NE.**
+## 🔴 TIK SKAITYMAS
+Nieko netrink, nekurk, neperkelk, netaisyk. Net jei rastum problemą — **PRANEŠK, NETAISYK.** Jei kas nors dingę,
+neteisingas veiksmas gali sunaikinti likusius pėdsakus arba perrašyti tai, ką dar galima atkurti.
 
-3. **⭐ REALAUS POVEIKIO PATIKRA (svarbiausia dalis).** Fazės 43–46 vyko kaip tik apie GitHub raktą, tad
-   pėdsakuose jis greičiausiai YRA. Patikrink:
-   · **`/root/hera_skills/projection/`** (`rag_corpus.jsonl`, `sft_corpus.jsonl`) — ar ten pateko
-     kredencialas NESUREDAGUOTAS? **Tai kritinis klausimas.** Ieškok pagal fingerprint palyginimą
-     (senas = `90fcb4b8`, naujas = `92203a0c`) — **reikšmių nespausdink.**
-   · `raw/` — ten neredaguota PAGAL DIZAINĄ, tai NE problema; tik pasakyk, ar yra (kad žinotume mastą).
-   **Jei projekcijoje kredencialas rastas — tai avarija: pranešk NEDELSIANT ir NEtęsk į B dalį,
-   kol negausi atskiro leidimo.** Nurodyk failą ir eilučių skaičių, be reikšmių.
+## Ką nustatyti
 
-## Dalis B — PATAISA (tik jei A rado praleidimų IR projekcija švari)
-
-Susiaurink/išplėsk SECRET šabloną taip, kad pagautų aukščiau esančius formatus.
-
-**Privalomi testai `test_pii.py` (abiem kryptimis — tai ne pasirinkimas):**
-- Kiekvienam naujai dengiamam formatui: **pagaunamas** (sintetinis pavyzdys).
-- **Regresijos testai: visi seniau pagaunami formatai VIS DAR pagaunami.**
-- **Klaidingų pozityvų testai:** įprastas techninis tekstas NEredaguojamas. Būtinai patikrink bent
-  `/opt/hera-venv`, `/opt/cad-venv`, git SHA (`6828794`), UUID, `github.com` URL be token'o.
-  *(Fazės 39 pamoka: šablonas gali pagauti per daug, ir tai sunaikina mokymo vertę.)*
-- `test_pii.py` turi likti **visas PASS** (buvo 30/30).
-
-**Po pataisos — išmatuok poveikį:** paleisk scrub'ą ant esamų pėdsakų ir pranešk **naują redagavimo tankį**
-(prieš buvo 0,0515%). Jei jis staiga šoktelėjo — tai perspaudimo požymis, pranešk.
-
-## Apribojimai
-€0 · **BACKUP `hera_pii.py` prieš keitimą** · push į privatų `hera-core-backup` · viešo `cad-site-agent` git NELIESK ·
-`hera.env` NELIESK · HARD timeout, be retry · jokių tikrų kredencialų reikšmių niekur.
-**Jei saugesnį kelią blokuoja hook'as — SUSTOK ir pranešk, o ne apeik** (Fazės 44 elgesys teisingas, Fazės 46 `git remote -v` — ne).
+1. **Faktinė `/root/hera_skills/` struktūra:** išvardyk katalogus ir kiekviename failų skaičių + bendrą dydį.
+   Konkrečiai `raw/`, `projection/`, ir bet kokius kitus.
+2. **`raw/` turinys:** kiek `skill_*.json` (+ ar yra `.md` porų), kiek kitų failų, kiekvieno dydis ir **mtime**.
+   Ar yra `_legacy_unscrubbed_rag_corpus.jsonl.pre-gate` (Fazės 38 karantinas) — jo 26 KB gali paaiškinti
+   Fazės 47 teiginį.
+3. **⭐ Kryžminis sutikrinimas su projekcija:** `projection/rag_corpus.jsonl` ir `sft_corpus.jsonl` eilučių skaičius,
+   ir ar kiekvienai projekcijos eilutei egzistuoja atitinkamas `raw/` pėdsakas (pagal `skill_id` ar analogišką lauką).
+   **Tai vienintelis tikras vientisumo testas:** projekcija generuojama IŠ raw, tad projekcijos įrašas be raw
+   šaltinio = prarastas archyvas.
+4. **Ar per pastarąsias paras kas nors trynė?** Patikrink, ar Fazės 46 valymas (kuris trynė backup'us) galėjo
+   paliesti `raw/`. Konkrečiai: ar `hera_skills` kataloge nėra pėdsakų, kad failai buvo pašalinti
+   (pvz. mtime šuolis kataloge be atitinkamo naujo turinio).
+5. **Ar kaupimas vis dar veikia?** Paskutinio pėdsako data — ar atitinka paskutines fazes (45/46/47)?
+   Jei naujausias pėdsakas senas, tai reikštų, kad **capture nustojo veikti**, ir tai būtų atskira, tyli problema.
 
 ## Ataskaitoje
-A: formatų lentelė TAIP/NE · projekcijos patikros rezultatas (kritinis) · B: kas pakeista, `test_pii` rezultatas,
-naujas redagavimo tankis · sąžiningas „ko nepavyko".
+Lentelė: katalogas → failų sk. → dydis · `raw/` failų sąrašas (vardai, dydžiai, mtime) ·
+**kryžminio sutikrinimo rezultatas (projekcijos eilutės vs raw pėdsakai)** ·
+vienareikšmis verdiktas: **archyvas VIENTISAS / TRŪKSTA N / NEAIŠKU + kodėl** ·
+ar capture vis dar kaupia · sąžiningas „ko nepavyko".
+
+## Apribojimai
+€0 · nieko nekeisti · jokių PII/secret reikšmių ataskaitoje (`raw/` yra NEREDAGUOTAS pagal dizainą — **jokio jo
+turinio necituok**, tik metaduomenis: vardus, dydžius, datas, laukų pavadinimus) · HARD timeout, be retry.
+**Jei saugesnį kelią blokuoja hook'as — SUSTOK ir pranešk, o ne apeik.**
 
 **ATASKAITOS TAISYKLĖ:** „neįmanoma / nepavyko" galioja tik su sąrašu, KĄ BANDEI.
 
