@@ -1,47 +1,60 @@
-UŽDUOTIS — Fazė 44: NUIMTI token'ą iš inbox remote URL (kad rakto pergeneravimas nenukirstų valdymo kanalo). HUMAN-GATE GAUTAS („Varom"). <8 min.
+UŽDUOTIS — Fazė 45: patikrinti, kad NAUJAS GitHub raktas veikia VISUR + išvalyti SENO rakto plaintext liekanas. HUMAN-GATE GAUTAS („Padaryta"). <13 min.
 
-## Tikslas — vienas, siauras
-Fazė 43 nustatė: `/opt/cad-site-agent/.git/config` origin URL turi **įkeptą** GitHub PAT
-(`https://<token>@github.com/...`). Repo **VIEŠAS**, bet negaliojantis kredencialas URL'e duoda 401/403 —
-git **NEGRĮŽTA** prie anoniminio pull'o. `vps_agent_runner.sh` tai pagauna `|| exit 0` → paleidimas baigiasi
-**TYLIAI** (be Telegram, be log). Vartotojas netrukus pergeneruos raktą.
+## Kontekstas (ko pats neišvestum)
+Vartotojas ką tik per SSH pergeneravo GitHub PAT ir įrašė naują reikšmę į `/root/hera.env`, po to
+`systemctl restart hera-processor`. **Senas raktas (fingerprint `90fcb4b8`) nuo pergeneravimo momento NEBEGALIOJA.**
+Fazė 44 jau nuėmė token'ą iš inbox remote (inbox dabar anoniminis — todėl ši užduotis tave pasiekė net jei
+kas nors kita sulūžo).
 
-⇒ **Jei nieko nedarysim, pergeneravimas nukirs vienintelį valdymo kanalą, ir pataisymo užduoties atsiųsti nebus kaip.**
+## Dalis A — PATIKRINTI (tikrinam, ne tikim)
+Vartotojas sako, kad pavyko. Agento ir žmogaus teiginiai pas mus tikrinami, ne priimami.
 
-**Šios užduoties tikslas: padaryti inbox fetch'ą NEPRIKLAUSOMĄ nuo rakto** — išimti kredencialą iš remote URL,
-kad `git fetch` eitų anonimiškai. Viešam repo autentifikacijos nereikia.
+1. **`hera.env` fingerprint** (`sha256` pirmi 8 hex nuo `GITHUB_TOKEN` reikšmės) — **privalo SKIRTIS nuo `90fcb4b8`.**
+   Jei sutampa → raktas nepasikeitė, **STOP, pranešk, nieko netrink.**
+2. **Gyvo proceso atmintis:** patikrink `hera-processor` proceso `/proc/<pid>/environ` — ar jis jau turi **naują**
+   reikšmę (fingerprint sutampa su failo). *(Fazė 42 pamoka: konfigai meluoja, `/proc` ne.)*
+   Jei procesas dar su senu → perkrovimas neįvyko arba neuždirbo; pranešk.
+3. **vault sync push** — paleisk `hera_vault_sync.sh` ir parodyk realų rezultatą (rc + log uodegą).
+4. **⭐ `hera-core-backup` push — ATSKIRAI ir BŪTINAI.** Fazė 43 šito patikrinti negalėjo ir net nerado trigger'io,
+   kuris jį paleidžia. Padaryk minimalų nekenksmingą push'ą (pvz. tuščias commit arba trivialus žymos failas),
+   kad įrodytum, jog autentifikacija veikia. **Tai vienintelė vieta, kur naujas raktas dar nepatikrintas.**
+   Jei push nepavyksta — tai svarbiausias radinys, pranešk nedelsiant.
 
-## 🔴 DARYK TIK TAI. Nieko daugiau.
-- `/root/hera.env` **NELIESK** — GITHUB_TOKEN ten LIEKA (jo reikia vault sync ir `hera-core-backup` push'ams;
-  vartotojas jį pakeis pats per SSH po pergeneravimo).
-- `/opt/hera-processor` remote **NELIESK** — jis privatus, jam token reikalingas.
-- `vps_agent_runner.sh` logikos **NEKEISK** — keičiam tik remote URL, ne skriptą.
-- Sesijos jsonl failų **NELIESK** (nuotėkio valymas — atskira fazė po pergeneravimo, kai raktas jau bus negyvas).
+**Jei bet kuri A dalies patikra nepavyksta — B dalies NEDARYK.** Backup'ai su senu raktu yra atstatymo taškas;
+kol nežinai, kad naujas veikia, jų trinti negalima.
 
-## Ką padaryti
-1. **BACKUP:** nusikopijuok `/opt/cad-site-agent/.git/config` (jame yra token — **backup'ą laikyk 600 teisėmis
-   ir NEspausdink turinio**; jis vis tiek netrukus taps negaliojantis).
-2. **Nuimk kredencialą iš origin URL** → grynas `https://github.com/tryspagaliai-lab/cad-site-agent` (arba `.git`).
-   Naudok `git remote set-url` — **NE** rankinį konfigo redagavimą.
-3. **Patikrink, ar dar kas nors toje repo konfigūracijoje neturi įkepto kredencialo** (kiti remote'ai,
-   `insteadOf`, `url.*.pushInsteadOf`, submodules). Skenuok, neenumeruok.
+## Dalis B — IŠVALYTI seno rakto plaintext liekanas (tik jei A praėjo)
+Rotacijos metu atsirado kelios naujos **plaintext seno rakto kopijos**. Raktas negalioja, bet liekanos nereikalingos
+(precedentas: `bash_history` valymas Fazėje 37).
 
-## Įrodymai, kurių reikalauju ataskaitoje
-- **`git fetch origin claude/authorize-claude-code-vps-1dcvrv` VEIKIA po pakeitimo** — paleisk ir parodyk rc=0.
-  Tai svarbiausias įrodymas: jei fetch neveikia anonimiškai, **grąžink backup'ą** ir pranešk STOP.
-- Naujas remote URL (be kredencialo — jį rodyti saugu).
-- Patvirtinimas, kad `hera.env` ir `/opt/hera-processor` remote **nepaliesti**.
-- ⚠️ **Papildoma patikra prieš baigiant:** ar `git fetch` neprašo kredencialo interaktyviai (askpass) — paleisk su
-  `GIT_TERMINAL_PROMPT=0`, kad tylus laukimas nevirstų 15-min timeout'u produkcijoje.
+Žinomos vietos (**skenuok, neenumeruok** — Fazė 36 enumeruodama rado 2, Fazė 37 skenuodama 3):
+- `/root/hera.env.bak.*` — vartotojo backup'as prieš keitimą
+- `/opt/cad-site-agent/.git/config.bak.fase44` — Fazės 44 backup'as
+- **`/root/.claude/projects/-opt-cad-site-agent/*.jsonl`** — Fazėje 43 agentas per klaidą atspausdino **pilną
+  galiojantį raktą** į transkriptą; jis fiziškai įrašytas į tos sesijos failą
 
-## 🔴 Rakto reikšmės NIEKUR nespausdink
-Nei ataskaitoje, nei tarpiniuose failuose, nei komandų išvestyje. Jei reikia lyginti — `sha256` pirmi 8 hex.
-**Ypač: NENAUDOK `git remote get-url origin` be redakcijos** — būtent ta komanda Fazėje 43 nutekino raktą į transkriptą.
-Jei saugesnį kelią blokuoja hook'as — **sustok ir pranešk**, o ne persijunk į nesaugų variantą.
+### Metodas (svarbu, laikykis eiliškumo)
+1. **Pirma** perskaityk seną reikšmę iš vieno backup'o **programiškai** ir patvirtink, kad jos fingerprint = `90fcb4b8`.
+   **NIEKADA jos nespausdink** — naudok tik kaip paieškos/pakeitimo raktą kintamajame.
+2. **jsonl failuose REDAGUOK, NETRINK failų** — pakeisk rakto eilutę į `[REDACTED-FAZE45]`.
+   Priežastis: tai audito įrašas; mums galioja **ARCHYVUOJAM, NETRINAM**. Failas lieka, paslaptis dingsta.
+   ⚠️ Neliesk failo, priklausančio TAVO paties dabartinei sesijai (rizika sugadinti gyvą būseną) — jei toks
+   pasitaiko, pasakyk ir palik.
+3. **Tik po to** ištrink backup'us, kuriuose yra senas raktas (`hera.env.bak.*`, `config.bak.fase44`) — jie
+   nebereikalingi, nes A dalis įrodė, kad naujas veikia.
+4. **Galutinė patikra:** perskenuok `/root`, `/opt`, `/tmp` ir rask, ar fingerprint `90fcb4b8` atitinkanti reikšmė
+   dar kur nors egzistuoja. Jei taip — pranešk vietą (be reikšmės).
 
-## Apribojimai
-€0 · viešo repo git ISTORIJOS neliesk (keičiam tik lokalų `.git/config`) · HARD timeout, be retry ·
-jei kas nors nepavyksta — **atstatyk backup'ą** ir pranešk, geriau veikianti sena būsena nei pusiau pakeista.
+## 🔴 Bendros ribos
+- **Rakto reikšmių (nei seno, nei naujo) niekur nespausdink.** Tik fingerprint'ai.
+- **NENAUDOK `git remote get-url` ar kitų komandų, kurios spausdina URL su kredencialu** — būtent tokia komanda
+  Fazėje 43 nutekino raktą. Jei saugesnį kelią blokuoja hook'as — **sustok ir pranešk**, o ne apeik.
+- `hera.env` turinio nekeisk (tik skaityk fingerprint'ui). Teisės turi likti 600.
+- €0 · viešo `cad-site-agent` git ISTORIJOS neliesk · HARD timeout, be retry.
+
+## Ataskaitoje
+A dalis: 4 patikros su konkrečiais rezultatais (fingerprint'ai, rc, log) · B dalis: kiek vietų rasta, kiek
+suredaguota, kiek ištrinta, galutinio skeno rezultatas · sąžiningas „ko nepavyko".
 
 **ATASKAITOS TAISYKLĖ:** „neįmanoma / nepavyko" galioja tik su sąrašu, KĄ BANDEI.
 
