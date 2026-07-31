@@ -1,60 +1,58 @@
-UŽDUOTIS — Fazė 45: patikrinti, kad NAUJAS GitHub raktas veikia VISUR + išvalyti SENO rakto plaintext liekanas. HUMAN-GATE GAUTAS („Padaryta"). <13 min.
+UŽDUOTIS — Fazė 46: SENO GitHub rakto plaintext liekanų valymas (Fazės 45 B dalis — vartai dabar ATIDARYTI). <12 min.
 
-## Kontekstas (ko pats neišvestum)
-Vartotojas ką tik per SSH pergeneravo GitHub PAT ir įrašė naują reikšmę į `/root/hera.env`, po to
-`systemctl restart hera-processor`. **Senas raktas (fingerprint `90fcb4b8`) nuo pergeneravimo momento NEBEGALIOJA.**
-Fazė 44 jau nuėmė token'ą iš inbox remote (inbox dabar anoniminis — todėl ši užduotis tave pasiekė net jei
-kas nors kita sulūžo).
+## Kodėl vartai atsidarė
+Fazė 45 teisingai sustojo prieš B dalį, nes `hera-processor` dar turėjo seną raktą atmintyje.
+**Tai IŠSPRĘSTA ir patikrinta akyse:** vartotojas paleido `systemctl restart hera-processor` →
+naujas **PID 1977777**, startas 2026-07-31 08:04:00 BST, o `/proc/1977777/environ` GITHUB_TOKEN
+fingerprint = **`92203a0c`** (≠ senas `90fcb4b8`).
+Kartu su Fazės 45 įrodymais (vault sync push RC=0; `hera-core-backup` push `6828794..ad0c808` RC=0)
+**A dalis pilnai patvirtinta. Senas raktas `90fcb4b8` NEBEGALIOJA — jo liekanas galima valyti.**
 
-## Dalis A — PATIKRINTI (tikrinam, ne tikim)
-Vartotojas sako, kad pavyko. Agento ir žmogaus teiginiai pas mus tikrinami, ne priimami.
+## 🔴 Pirma — sanity patikra prieš bet ką (30 s)
+Pats patikrink `/proc/<hera-processor PID>/environ` GITHUB_TOKEN fingerprint.
+**Jei jis NĖRA `92203a0c` arba yra `90fcb4b8` — STOP, nieko netrink, pranešk.**
+Backup'ai yra vienintelis atstatymo taškas; jų negalima liesti remiantis vien šia užduotimi.
 
-1. **`hera.env` fingerprint** (`sha256` pirmi 8 hex nuo `GITHUB_TOKEN` reikšmės) — **privalo SKIRTIS nuo `90fcb4b8`.**
-   Jei sutampa → raktas nepasikeitė, **STOP, pranešk, nieko netrink.**
-2. **Gyvo proceso atmintis:** patikrink `hera-processor` proceso `/proc/<pid>/environ` — ar jis jau turi **naują**
-   reikšmę (fingerprint sutampa su failo). *(Fazė 42 pamoka: konfigai meluoja, `/proc` ne.)*
-   Jei procesas dar su senu → perkrovimas neįvyko arba neuždirbo; pranešk.
-3. **vault sync push** — paleisk `hera_vault_sync.sh` ir parodyk realų rezultatą (rc + log uodegą).
-4. **⭐ `hera-core-backup` push — ATSKIRAI ir BŪTINAI.** Fazė 43 šito patikrinti negalėjo ir net nerado trigger'io,
-   kuris jį paleidžia. Padaryk minimalų nekenksmingą push'ą (pvz. tuščias commit arba trivialus žymos failas),
-   kad įrodytum, jog autentifikacija veikia. **Tai vienintelė vieta, kur naujas raktas dar nepatikrintas.**
-   Jei push nepavyksta — tai svarbiausias radinys, pranešk nedelsiant.
+## Ką padaryti
 
-**Jei bet kuri A dalies patikra nepavyksta — B dalies NEDARYK.** Backup'ai su senu raktu yra atstatymo taškas;
-kol nežinai, kad naujas veikia, jų trinti negalima.
+### 1. Rask seno rakto reikšmę — programiškai, nespausdindamas
+Perskaityk ją iš vieno backup'o (`/root/hera.env.bak.*` arba `/opt/cad-site-agent/.git/config.bak.fase44`)
+**į kintamąjį**, ir patvirtink, kad jos `sha256[:8]` = `90fcb4b8`. Jei nesutampa — STOP, pranešk.
+**Reikšmės niekur nespausdink** — nei ataskaitoje, nei tarpiniuose failuose, nei komandų išvestyje.
 
-## Dalis B — IŠVALYTI seno rakto plaintext liekanas (tik jei A praėjo)
-Rotacijos metu atsirado kelios naujos **plaintext seno rakto kopijos**. Raktas negalioja, bet liekanos nereikalingos
-(precedentas: `bash_history` valymas Fazėje 37).
+### 2. Skenuok, NEenumeruok
+Rask VISAS vietas, kur ta reikšmė dar egzistuoja. Bent: `/root`, `/opt`, `/tmp`, `/var/log`.
+*(Precedentas: Fazė 36 enumeruodama rado 2 vietas, Fazė 37 skenuodama — 3. Enumeracija ≠ paieška.)*
+Žinomi kandidatai, bet **NE baigtinis sąrašas**: `/root/hera.env.bak.*` · `.git/config.bak.fase44` ·
+`/root/.claude/projects/-opt-cad-site-agent/*.jsonl` (Fazėje 43 agentas per klaidą atspausdino pilną raktą) ·
+galimai `/root/.bash_history` (vartotojas naudojo `HISTFILE=/dev/null`, bet patikrink) · vault sync logai.
 
-Žinomos vietos (**skenuok, neenumeruok** — Fazė 36 enumeruodama rado 2, Fazė 37 skenuodama 3):
-- `/root/hera.env.bak.*` — vartotojo backup'as prieš keitimą
-- `/opt/cad-site-agent/.git/config.bak.fase44` — Fazės 44 backup'as
-- **`/root/.claude/projects/-opt-cad-site-agent/*.jsonl`** — Fazėje 43 agentas per klaidą atspausdino **pilną
-  galiojantį raktą** į transkriptą; jis fiziškai įrašytas į tos sesijos failą
+### 3. Tvarkyk pagal tipą — NE viską vienodai
+- **Transkriptų / žurnalų / audito failuose (`*.jsonl`, `*.log`): REDAGUOK, NETRINK failo.**
+  Pakeisk rakto reikšmę į `[REDACTED-FAZE46]`. Priežastis: tai audito įrašai, o mums galioja
+  **ARCHYVUOJAM, NETRINAM** — failas lieka, paslaptis dingsta.
+  ⚠️ **Neliesk failo, priklausančio TAVO paties dabartinei sesijai** (sugadintum gyvą būseną) — jei toks
+  pasitaiko, palik ir aiškiai pasakyk ataskaitoje, kad jis liko.
+- **Backup failus, kurių vienintelis turinys yra senas kredencialas — TRINK.**
+  (`/root/hera.env.bak.*`, `config.bak.fase44`.) Jie nebereikalingi: A dalis įrodė, kad naujas veikia.
 
-### Metodas (svarbu, laikykis eiliškumo)
-1. **Pirma** perskaityk seną reikšmę iš vieno backup'o **programiškai** ir patvirtink, kad jos fingerprint = `90fcb4b8`.
-   **NIEKADA jos nespausdink** — naudok tik kaip paieškos/pakeitimo raktą kintamajame.
-2. **jsonl failuose REDAGUOK, NETRINK failų** — pakeisk rakto eilutę į `[REDACTED-FAZE45]`.
-   Priežastis: tai audito įrašas; mums galioja **ARCHYVUOJAM, NETRINAM**. Failas lieka, paslaptis dingsta.
-   ⚠️ Neliesk failo, priklausančio TAVO paties dabartinei sesijai (rizika sugadinti gyvą būseną) — jei toks
-   pasitaiko, pasakyk ir palik.
-3. **Tik po to** ištrink backup'us, kuriuose yra senas raktas (`hera.env.bak.*`, `config.bak.fase44`) — jie
-   nebereikalingi, nes A dalis įrodė, kad naujas veikia.
-4. **Galutinė patikra:** perskenuok `/root`, `/opt`, `/tmp` ir rask, ar fingerprint `90fcb4b8` atitinkanti reikšmė
-   dar kur nors egzistuoja. Jei taip — pranešk vietą (be reikšmės).
+### 4. Susitvarkyk po savęs (Fazės 45 testų artefaktai)
+- `/opt/hera-processor/PHASE45_PUSH_TEST.md` — tavo pačių sukurtas testinis žymos failas, jau įpush'intas
+  į `hera-core-backup`. **Pašalink ir push'ink pašalinimą** (tai ne žinių medžiaga, o testo šiukšlė —
+  „archyvuojam, netrinam" jai NEGALIOJA).
+- Trivialią eilutę, pridėtą į `/opt/hera-vault/state/vault_sync_status.txt` — irgi atstatyk, jei ji dirbtinė.
 
-## 🔴 Bendros ribos
-- **Rakto reikšmių (nei seno, nei naujo) niekur nespausdink.** Tik fingerprint'ai.
-- **NENAUDOK `git remote get-url` ar kitų komandų, kurios spausdina URL su kredencialu** — būtent tokia komanda
-  Fazėje 43 nutekino raktą. Jei saugesnį kelią blokuoja hook'as — **sustok ir pranešk**, o ne apeik.
-- `hera.env` turinio nekeisk (tik skaityk fingerprint'ui). Teisės turi likti 600.
+### 5. Galutinis skenas
+Pakartok 2 žingsnio skeną. **Ataskaitoje turi būti: kiek vietų rasta, kiek suredaguota, kiek ištrinta,
+ir ar galutinis skenas švarus.** Jei kur nors liko — nurodyk vietą (be reikšmės) ir kodėl liko.
+
+## 🔴 Ribos
+- **Jokių rakto reikšmių (nei seno, nei naujo) niekur.** Tik fingerprint'ai.
+- **NENAUDOK komandų, spausdinančių URL su kredencialu** (`git remote get-url` ir pan.) — būtent tokia
+  komanda Fazėje 43 nutekino raktą. **Jei saugesnį kelią blokuoja hook'as — SUSTOK ir pranešk, o ne apeik.**
+  *(Fazė 44 taip ir pasielgė — tai teisingas elgesys ir jo laikomės.)*
+- `/root/hera.env` **neliesk** (jis blokuotas ir taip; jo turinys teisingas).
 - €0 · viešo `cad-site-agent` git ISTORIJOS neliesk · HARD timeout, be retry.
-
-## Ataskaitoje
-A dalis: 4 patikros su konkrečiais rezultatais (fingerprint'ai, rc, log) · B dalis: kiek vietų rasta, kiek
-suredaguota, kiek ištrinta, galutinio skeno rezultatas · sąžiningas „ko nepavyko".
 
 **ATASKAITOS TAISYKLĖ:** „neįmanoma / nepavyko" galioja tik su sąrašu, KĄ BANDEI.
 
