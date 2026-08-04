@@ -1,60 +1,51 @@
-UŽDUOTIS — Fazė 49: pėdsakų GRANDINĖS (ilgo horizonto trajektorijos) — schemos auditas + minimali papildoma jungtis. HUMAN-GATE GAUTAS („Daryk kaip siūlai"). <14 min.
+# Fazė 50 — Loop C prune vykdymas su verdikto perkėlimu + Fazės 49 likimo diagnostika. HUMAN-GATE GAUTAS („Daryk kaip siūlai"). <14 min.
 
-## Kodėl — išmatuota išorinė problema, ne nuojauta
-Straipsnis „Physics of Multi-Turn Long-Horizon Planning" (Chinese Academy of Sciences, 2026) išmatavo:
-modelis, treniruotas **TIK trumpoms procedūroms**, duoda **93,12% trumpose / 0,83% vidutinėse / 0% ilgose**
-užduotyse. Pridėjus vos **5% vidutinio ilgio** duomenų → vidutinės pakyla iki **51,88%**.
-Antras jų radinys: **aiškus būsenos perėjimo samprotavimas (CoT) = 68,5% tikslumo prieš 22,7%** tiesioginiam
-veiksmo numatymui — t.y. pėdsakai su TARPINIU samprotavimu verti ~3× daugiau nei vien `action→outcome`.
+## Tikslas
 
-**Mūsų padėtis:** anti-rc124 taisyklė („dideles užduotis SKAIDYTI") + 15 min HARD timeout reiškia, kad visi
-15 sukauptų pėdsakų yra **trumpi**. Runner'io patikimumui tai teisinga ir NEKEIČIAM. Bet mokymo korpusui tai
-sisteminis šališkumas, kuris auga kiekvieną dieną.
+1. **Diagnostika (pirmiausia, trumpai, read-only):** Fazė 49 buvo dispatch'inta 2026-08-02 16:56 UTC ir per
+   ~46 val. NEATĖJO jokia ataskaita, nors visi kiti cron'ai (vault sync, ingest, Loop B/C) veikia. Nustatyk,
+   kas įvyko: ar runner'is ją paleido (runner log / STATE dedup / flock liekanos)? Jei paleido — kodėl
+   ataskaita neišėjo? Jei nepaleido — kodėl? Išvada su įrodymais į ataskaitą. Pačios Fazės 49 turinio ČIA
+   nevykdyk — jos audito pusė jau atsakyta iš šalies (schema `atdp-lite-1` chain lauko neturi; užfiksuota
+   vault'e), o grandinės jungties pusė grįš kaip atskira fazė.
 
-**Esminis pastebėjimas:** ilgo horizonto darbo mes JAU dirbam — tik jis **sukapotas per fazes**. Pvz. GitHub rakto
-rotacija = Fazės 43→48: žemėlapis → de-token → patikra → valymas → auditas → vientisumo patikra. Tai VIENA
-trajektorija su vienu tikslu, tik įrašyta kaip 6 atskiri pėdsakai.
-⇒ **Sprendimas NĖRA leisti ilgesnes užduotis (tai grąžintų rc=124). Sprendimas — UŽFIKSUOTI RYŠĮ tarp pėdsakų,**
-kad korpuse atsirastų sudėtinės ilgo horizonto trajektorijos šalia atominių.
+2. **Loop C 6 staged prune įvykdymas TEISINGA tvarka:**
+   a. **PIRMA** — perkelk žmogaus kuravimo verdiktą iš `growth/2026-07-29-20260729T200400Z-eouamt.md` į
+      `skills/mdlm-care-evaluation-protocol/SKILL.md`. Verdikto blokas = turinys, pridėtas prie pastabos PO
+      skill'o sukūrimo (žr. įrodymus). Integruok į skill struktūrą prasmingai, ne aklai append'ink.
+   b. **TADA** — visas 6 pastabas perkelk į `archive/growth-pruned-2026-08-04/`.
+      **ARCHYVUOJAM, NETRINAM** — jokių `rm`; `git mv` su commit'u. Precedentas: `archive/growth-superseded-2026-07-27/`.
+   c. **GALIAUSIAI** — pataisyk Loop C logiką: pastaba, kurios TURINYS keitėsi po skill'o sukūrimo, negali
+      būti automatiškai staged prune (ji gali nešti turinį, kurio skill'e nėra). Palyginimas — git turinio
+      diff'as prieš skill'o sukūrimo commit'ą, **NE mtime** (mtime užterštas paties Loop C žymėjimo).
 
-⚠️ **„5%" dabar nėra tikslas** — prie 15 pėdsakų tai <1. Tikslas: **mechanizmas turi egzistuoti PRIEŠ korpusui
-išaugant.** Vėliau tai kainuos daug daugiau.
+## Realybė (jau patikrinta iš šalies — nekartok, naudok)
 
-## Dalis A — AUDITAS (pirma; jei laiko mažai, ši dalis svarbiausia)
-1. **Ką pėdsako schema realiai fiksuoja?** Išvardyk laukus (`hera_skillcapture.py` + tikras `raw/skill_*.json`).
-2. **Ar fiksuojamas TARPINIS samprotavimas / būsenos perėjimai** — ar tik `action` / `input` / `outcome`?
-   Konkrečiai: ar matomi agento žingsniai (įrankių kvietimai, tarpinės išvados), ar tik galutinė ataskaita?
-   **Tai lemia, ar mūsų pėdsakai iš viso tinka ilgo horizonto mokymui** — atsakyk vienareikšmiškai.
-3. **Ar jau egzistuoja koks nors ryšio laukas** (`parent`, `chain`, `session`, `job_id`)? Netark — patikrink.
+- 6 staged pastabos `growth/`: `2026-07-27-...48qu1o.md` · `2026-07-27-...z69xn1.md` · `2026-07-29-...eouamt.md` ·
+  `2026-07-31-...f9rkr7.md` · `2026-07-31-...zgzpsx.md` · `2026-07-31-...p2ompa.md`.
+- `git diff --numstat <skill-sukūrimo-commit> HEAD -- <pastaba>`: **penkios** rodo lygiai +6 eilutes
+  (uniformu = Loop C staging žymė, saugu archyvuoti), **`eouamt` rodo +23** — žmogaus CaRE verdikto blokas.
+- `skills/mdlm-care-evaluation-protocol/SKILL.md` verdikto turinio NETURI: nėra „GPU", nėra „PER UŽKLAUSĄ",
+  nėra „APSIVERT". Tai sėkmės kriterijaus pagrindas.
+- Ta pati Loop C akloji zona kartojasi jau TREČIĄ kartą — todėl c) yra taisyklės fix, ne vienkartinis lopymas.
 
-## Dalis B — MINIMALI JUNGTIS (tik jei A neranda jau esančios)
-Pridėk **papildomus, neprivalomus** laukus: `chain_id` (grandinės identifikatorius) ir `chain_step` (eilės nr.).
-- **PRIVALOMA: atgalinis suderinamumas.** Esami 15 pėdsakų be šių laukų turi likti galiojantys; `None`/nėra = OK.
-- `--selftest` turi likti **PASS** (buvo 11/11). Pridėk bent 1 testą naujiems laukams + 1 testą, kad senos
-  formos įrašas vis dar apdorojamas.
-- **Projekcijos NEGENERUOK iš naujo ir jos formato NEKEISK** — sudėtinių trajektorijų generavimas yra
-  ATSKIRAS human-gate. Šioje fazėje tik įrašom ryšį.
+## Apribojimai (nekintami)
 
-## Dalis C — BACKFILL (jei lieka laiko)
-Pažymėk esamus 15 pėdsakų grandinėmis. **Išvesk grupavimą IŠ PAČIŲ PĖDSAKŲ** (fazės numeris ir tikslas
-užduoties tekste), o mano žemiau pateiktą sąrašą naudok tik **kryžminei patikrai** — jei nesutampa, pranešk
-neatitikimą, o **mano versijos aklai nepriimk**:
-- **Anthropic rakto arka:** Fazės 35 (forensika) → 36 (žemėlapis) → 37 (valymas)
-- **skillcapture statyba:** 38 (du sluoksniai) → 39 (vartai + FP auditas) → 40 (PHONE pataisa + atskiras indeksas)
-- **GitHub PAT rotacija:** 43 (žemėlapis) → 44 (de-token) → 45 (patikra) → 46 (valymas) → 47 (pii auditas) → 48 (archyvo patikra)
-- Pavieniai (be grandinės): 41 (LFM matavimas), 42 (SDK matavimas)
-Jei kurio nors pėdsako priskirti negali užtikrintai — **palik be `chain_id`**, tai geriau nei klaidingas ryšys.
+- €0 · fail-safe (klaida → no-op) · BACKUP prieš kiekvieną kodo keitimą (push į privatų `hera-core-backup`) ·
+  HARD laiko biudžetas — jei nespėji, geriau a)+b) pilnai, o c) palik aiškiai aprašytą kaip kitą fazę,
+  nei visus tris puse.
+- Viešo `cad-site-agent` repo git'o neliesti; vault keitimai — į `hera-vault`.
+- Loop C pakeitimui — savas `--selftest` (be pytest): dry-run, kur pastaba su po-skill turinio pokyčiu
+  NEPATENKA į staged sąrašą, o nepakitusi — patenka.
 
-## Apribojimai
-€0 · **BACKUP prieš keitimą** · push į privatų `hera-core-backup` · viešo `cad-site-agent` git NELIESK ·
-`raw/` turinio NECITUOK (neredaguotas pagal dizainą — tik laukų vardai, ID, skaičiai) · `hera.env` NELIESK ·
-HARD timeout, be retry. **Jei hook'as blokuoja saugesnį kelią — SUSTOK ir pranešk, o ne apeik.**
+## Sėkmės kriterijai (selftest)
 
-## Ataskaitoje
-A: laukų sąrašas · **vienareikšmis atsakymas, ar fiksuojamas tarpinis samprotavimas** · ar buvo ryšio laukas ·
-B: kas pridėta, selftest rezultatas, atgalinio suderinamumo įrodymas ·
-C: kiek pėdsakų priskirta grandinėms, ar tavo grupavimas sutapo su mano · sąžiningas „ko nepadariau".
+1. `skills/mdlm-care-evaluation-protocol/SKILL.md` po perkėlimo TURI verdikto esmę (grep prieš/po:
+   atsiranda GPU kontekstas ir compute-matched vertinimo išvada).
+2. `growth/` nebeturi nė vienos iš 6 pastabų; `archive/growth-pruned-2026-08-04/` turi visas 6;
+   git istorijoje matomas PERKĖLIMAS, ne trynimas.
+3. Loop C selftest: modifikuota-po-skill pastaba atmetama iš staging, nepakitusi — ne. Backup prieš keitimą.
+4. Fazės 49 diagnostikos išvada su įrodymais (log eilutės / STATE įrašai), ne spėjimu.
 
-**ATASKAITOS TAISYKLĖ:** „neįmanoma / nepavyko" galioja tik su sąrašu, KĄ BANDEI.
-
-Jei STOP — kodėl.
+**ATASKAITOS TAISYKLĖ:** teiginys „neįmanoma / nepavyko patikrinti" galioja **tik kartu su sąrašu, KĄ BANDEI.**
+Negalimybė turi būti pagrįsta veiksmais, ne intuicija. Neapsimesk, kad patikrinai, jei tik pažiūrėjai.
