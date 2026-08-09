@@ -1,56 +1,54 @@
-# Fazė 52 — matavimo sąžiningumo vartas Loop B/C ataskaitose. HUMAN-GATE GAUTAS („Varom"). <14 min.
+# Fazė 53 — taryba: balsų žurnalas (matome) + turtinga santrauka už jungiklio (nekeičiam aklai). <14 min.
 
-## Tikslas
+## Kodėl — rasta kode, ne spėta
 
-1. **Kiekviena Loop B/C ataskaitos metrika privalo nešti savo duomenų langą.** Šiandien ataskaita spausdina
-   skaičių be jokios nuorodos, iš kokių ir kada surinktų duomenų jis gautas — todėl mirusi metrika atrodo
-   lygiai taip pat kaip gyva. Prie kiekvienos skaičiuojamos metrikos pridėk **įrašų skaičių + naujausio
-   įrašo datą**, pvz.:
-   `- **cache-hit %:** 45.5  ⟨n=11, naujausias 2026-07-11, 29 d. senumo⟩`
+`hera_council.py` funkcija `_juror_digest()` tarybos nariui (juror) siunčia **selektoriaus priežastį +
+pirmus `JUROR_BODY_CHARS=3000` ženklus** kandidato, viskas apribota `JUROR_MAXCHARS=4000`. Priežastis
+teisėta: Groq nemokama pakopa (free tier) meta 413 (per didelis siunčiamas krovinys).
+**Pasekmė:** rugpjūčio įrašai buvo 11 925 / 14 575 / 15 159 / 22 553 ženklų ⇒ **taryba balsavo mačiusi
+13–25% teksto, ir būtent PRADŽIĄ — YouTube įžangą.** Antras kokybės vartas tikrina TEMĄ, nes turinio nemato.
 
-2. **Raudona žyma pasenusiai metrikai.** Jei metrikos naujausias įrašas senesnis už ataskaitos periodą
-   (Loop B — paros; Loop C — savaitės), metrika pažymima aiškiai, pvz. `⚠️ PASENĘ` / `STALE`.
-   Kriterijus turi būti bendras (viena funkcija/pagalbinė), o ne įrašytas ranka prie vienos metrikos —
-   kitaip kita mirusi metrika vėl praslys.
+## Tikslas — dvi dalys, sąmoningai šia tvarka
 
-3. **Trumpa read-only diagnozė: kodėl `nav` nustojo rašytis?** (Antraeilis prioritetas — jei laiko
-   mažai, daryk 1+2 pilnai ir šitą palik kitai fazei.) Nustatyk, KAS turėtų rašyti `action=nav` įrašus
-   ir kodėl nustojo: ar navigacijos instrumentacija pašalinta/sugedusi, ar pati navigacija nebevyksta?
-   Išvada su įrodymais (kodo vieta / log'as), ne spėjimu. **Netaisyk** — tik diagnozė.
+**1. BALSŲ ŽURNALAS (visada įjungtas — tai stebimumas, ne elgsenos keitimas).**
+Kiekvienas tarybos nario balsas rašomas į vault: laikas · įrašo id · **modelio pavadinimas** · tiekėjas
+(groq/nvidia/gemini/openrouter) · verdiktas (keep/drop + domain_fit) · **viena eilutė pagrindimo** ·
+santraukos (digest) dydis ženklais · ar balsas buvo galiojantis, ar krito (429/400/413/JSON klaida).
+Šiandien vault'e yra TIK suminis „7 balsų" — kas balsavo ir ką pasakė, neįrašoma niekur. Be šito
+negalim išmatuoti jokio tarybos pakeitimo.
 
-## Realybė (jau patikrinta iš šalies 2026-08-09 — nekartok, naudok)
-
-- `trajectories/*.jsonl`: **29 failai, 570 įrašų, naujausias įrašas 2026-08-08** ⇒ pėdsakų rašymas GYVAS ir auga.
-- **BET `action=nav` įrašų — lygiai 20, ir naujausias iš jų 2026-07-11T17:58:47.** Nė vieno per 29 dienas.
-- 11 iš tų 20 turi `cache_hit` lauką, 5 = True ⇒ **5/11 = 45,45% ≈ 45,5%.** Aritmetika teisinga —
-  miręs yra duomenų šaltinis, ne skaičiuoklė. `vid. įrankių kvietimų / query: 1.55` — iš to paties šaltinio.
-- Loop B tą patį 45,5% atspausdino kiekvienoje ataskaitoje nuo 08-02 iki 08-09 imtinai (patikrinta failuose).
-- **Svarbu:** šis „cache-hit" yra **HERA vidinis vault navigacijos kešas** (L2 santraukos vs žalias
-  `extracted/`), NE Anthropic prompt caching. Nesumaišyk.
-- Kitos Loop B metrikos (skills, growth, wiki-lint orphan/dangling/prov) juda normaliai — jos gyvos.
-  Šio darbo tikslas ne jas taisyti, o padaryti, kad SKIRTUMAS tarp gyvos ir mirusios būtų matomas iš ataskaitos.
+**2. TURTINGA SANTRAUKA UŽ JUNGIKLIO `HERA_COUNCIL_RICHDIGEST`, DEFAULT 0.**
+Vietoj žalios teksto PRADŽIOS siųsti **selektoriaus jau paruoštą struktūrizuotą ištrauką**
+(ESMĖ + PAGRINDINIAI TAŠKAI + FAKTAI IR DUOMENYS). Ji jau egzistuoja, jos tankis didelis, papildomo
+modelio kvietimo NEREIKIA ⇒ €0. Jei tos ištraukos konkrečiam įrašui nėra — **grįžti prie dabartinio
+elgesio** (fail-safe, ne klaida).
+⚠️ **Baitų ribų NEKELIAM.** Groq 413 yra tikras. Keičiasi tik TAI, KAS telpa į tą patį biudžetą.
 
 ## Apribojimai (nekintami)
 
-- €0 · fail-safe (klaida skaičiuojant langą → metrika rodoma be lango, ataskaita NELŪŽTA) · **BACKUP prieš
-  keitimą** (push į privatų `hera-core-backup`) · HARD laiko biudžetas, **NO retry**.
-- Tai **ataskaitos matomumo pataisa** — pačių metrikų skaičiavimo NEKEISK ir mirusio šaltinio netaisyk
-  (3 punktas — tik diagnozė). Jokio naujo modulio, jokių naujų priklausomybių.
+- €0 · fail-safe (klaida → dabartinis elgesys, ne lūžis) · **BACKUP prieš keitimą** (į privatų
+  `hera-core-backup`) · HARD laiko biudžetas, **NO retry**.
+- Jungiklis `HERA_COUNCIL_RICHDIGEST` **default 0** — jokio elgsenos pokyčio be atskiro human-gate.
+  Pirma kaupiam žurnalą su dabartine santrauka, paskui lyginam. **Nekeičiam varto aklai.**
+- Žurnale — jokių raktų; modelių vardai ir verdiktai nėra paslaptis, bet užklausos kūno NEĮRAŠOM (tik dydį).
 - Viešo `cad-site-agent` git'o neliesti.
-- Savas `--selftest` (be pytest): sintetinis duomenų rinkinys su šviežiu ir su pasenusiu įrašu →
-  pirmas be žymės, antras su `PASENĘ`; plius atvejis „0 įrašų" (neturi dalybos iš nulio ar crash'o).
+- Jei laiko trūksta: **1 dalis pilnai, 2 palikti kitai fazei.** Žurnalas be jungiklio yra naudingas;
+  jungiklis be žurnalo — ne.
 
-## Sėkmės kriterijai (selftest)
+## Sėkmės kriterijai (selftest, be pytest)
 
-1. Kita Loop B ataskaita prie cache-hit rodo `n=11, naujausias 2026-07-11` ir **PASENĘ** žymę.
-2. Gyvos metrikos (skills / growth / wiki-lint) rodo savo langą BE žymės — t.y. vartas neduoda
-   klaidingų pozityvų.
-3. Selftest 3/3 (šviežias · pasenęs · tuščias).
+1. Po vieno tarybos paleidimo vault'e atsiranda įrašas su N eilučių = N bandytų tarybos narių, kiekviena
+   su modelio pavadinimu, tiekėju, verdiktu ir santraukos dydžiu. Kritę balsai matomi kaip kritę, ne dingę.
+2. `HERA_COUNCIL_RICHDIGEST=0` (numatytas): santrauka **baitas į baitą tokia pati kaip iki šio pakeitimo** —
+   įrodyti palyginimu, ne teiginiu.
+3. `HERA_COUNCIL_RICHDIGEST=1`: santrauka sudaryta iš struktūrizuotos ištraukos ir **telpa į tą pačią
+   `JUROR_MAXCHARS` ribą**; jei ištraukos nėra — automatiškai grįžta prie senos santraukos.
 4. Backup commit'as `hera-core-backup`.
 
 **ATASKAITOS TAISYKLĖ:** teiginys „neįmanoma / nepavyko patikrinti" galioja **tik kartu su sąrašu, KĄ BANDEI.**
 Negalimybė turi būti pagrįsta veiksmais, ne intuicija. Neapsimesk, kad patikrinai, jei tik pažiūrėjai.
 
-**BACKUP TAISYKLĖ (nauja, nuo Fazės 52):** backup failų **NIEKADA netrinti** — nei valymo komandoje, nei
-„jau nebereikalingas" pagrindu. Palikimas kainuoja 0; trynimui reikia atskiro human-gate. Galioja ir tavo
-paties tą pačią sesiją sukurtiems `.bak` failams.
+**BACKUP TAISYKLĖ:** backup failų **NIEKADA netrinti** — nei valymo komandoje, nei „jau nebereikalingas"
+pagrindu. Palikimas kainuoja 0; trynimui reikia atskiro human-gate. Galioja ir tavo paties `.bak` failams.
+
+**KALBOS TAISYKLĖ:** ataskaitoje kiekvienas angliškas terminas privalo turėti lietuvišką vertimą skliaustuose.
