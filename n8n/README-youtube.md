@@ -1,4 +1,4 @@
-# YouTube be reklamų: ką n8n gali ir ko negali
+# YouTube be reklamų: ką n8n gali, ko negali, ir kaip tai sprendžia kiti
 
 ## Trumpas atsakymas
 
@@ -19,33 +19,66 @@ Yra ir apgaulingas variantas: n8n gali per Execute Command paleisti Playwright
 ar Puppeteer, o tas headless Chrome nuspaus „Skip Ad". Tik tas video grosis
 serveryje, ne tavo ekrane. Reklama praskipinta niekam. Tai ne sprendimas.
 
-## Ką daryti norint žiūrėti be reklamų (gyvai, naršyklėje)
+## Kaip šitą problemą realiai sprendžia žmonės
 
-Tai sprendžia ne automatizacija, o įrankis kliento pusėje:
+Trys atskiros stovyklos, priklausomai nuo to, kur žiūri.
 
-| Ką nori | Ką naudoti |
+### 1. Naršyklėje — plėtiniai
+
+**uBlock Origin** blokuoja YouTube parduotas reklamas. Svarbus 2025–2026 m.
+pokytis: Google Manifest V3 perėjimas išjungė pilną uBlock Origin stabiliame
+Chrome nuo Chrome 138 (2025 m. liepa). Chrome lieka tik uBlock Origin **Lite** su
+apkarpytu funkcionalumu. Pilna versija veikia **Firefox** (rekomenduojama) ir
+Brave. Praktiškai tai reiškia: jei nori patikimo reklamų blokavimo, naršyklės
+pasirinkimas nustojo būti skonio reikalas.
+
+**SponsorBlock** sprendžia kitą problemą — rėmėjų intarpus („šį video remia…"),
+kurie yra *pačiame video faile*. Jokia reklamblokė jų nepasieks, nes tai ne
+reklama, o turinys. Timestampus sužymi bendruomenė. Švariam rezultatui reikia
+**abiejų** įrankių; jie nedubliuoja vienas kito.
+
+Katės ir pelės žaidimas realus: YouTube tikrina, ar užsikrovė reklamų skriptai,
+ir rodo pop-up'ą, jei ne. Kai YouTube ką nors pakeičia, dieną kitą matai
+reklamas, kol atsinaujina filtrai.
+
+### 2. Telefone — ReVanced
+
+Android'e dominuojantis būdas yra **ReVanced** — oficialaus YouTube APK
+patch'inimas. Išmeta reklamas ir atrakina Premium funkcijas: SponsorBlock,
+grojimą fone, atsisiuntimus. Aktyviai vystomas (v21.02.32, 2026 m. sausis).
+
+Kaina: reikia sideload'inti, o YouTube sąmoningai leidžia app'o atnaujinimus,
+kurie laužo patch'us — kartais tenka perinstaliuoti kas savaitę. iOS šito
+lygio sprendimo neturi.
+
+### 3. Serveryje — parsisiuntimas į vietinę biblioteką
+
+Čia įdomiausia dalis ir vienintelė, kur automatizacija apskritai turi prasmę.
+**Kai video parsisiunčiamas tiesiogiai per yt-dlp, YouTube reklamų ten
+paprasčiausiai nėra** — jos niekada nebūna video sraute, jas prilipdo playeris
+atkūrimo metu. Tai ne triukas, o šalutinis efektas. O `--sponsorblock-remove`
+papildomai iškerpa rėmėjų intarpus.
+
+Ir čia svarbiausias radinys: **dauguma žmonių šito nedaro n8n'e.** Tam yra
+specializuoti self-hosted įrankiai:
+
+| Įrankis | Kas tai |
 |---|---|
-| YouTube įterptos reklamos (pre-roll, mid-roll) | **uBlock Origin** (Firefox); arba **YouTube Premium**, jei nori mokėti |
-| Rėmėjų intarpai pačiame video („šį video remia NordVPN…") | **SponsorBlock** — bendruomenės sužymėti timestampai, praleidžiami automatiškai |
-| Atskiras player'is, į kurį reklamos net neateina | **mpv + yt-dlp**, **FreeTube** (desktop), **NewPipe** (Android) |
+| **Pinchflat** | Paprasčiausias. Nurodai kanalus/playlistus, jis periodiškai tikrina ir siunčia. SponsorBlock integracija, first-class palaikymas Plex / Jellyfin / Kodi. Vienas konteineris. |
+| **TubeArchivist** | Galingesnis, su savo web UI kolekcijai naršyti. Reikia Redis + Elasticsearch, tad sunkesnis. Turi Jellyfin pluginą su metaduomenimis ir žiūrėjimo progresu. |
 
-Svarbus niuansas, kurį verta suprasti: **uBlock ir SponsorBlock sprendžia
-skirtingas problemas.** uBlock blokuoja YouTube parduotas reklamas. SponsorBlock
-kerpa rėmėjų intarpus, kurie yra *pačiame video faile* — jokia reklamblokė jų
-nepasieks. Visiškai švariam rezultatui reikia abiejų.
+Jei tavo tikslas yra tiesiog „turėti švarią biblioteką", **Pinchflat padarys tai
+geriau nei bet koks n8n workflow'as** — jis būtent tam ir parašytas, turi kanalų
+prenumeratas, taisyklių sistemą ir net galimybę po kurio laiko perparsiųsti video,
+kad pasiimtų šviežesnius SponsorBlock žymėjimus.
 
-Ir dar vienas: kai video parsisiunčiamas tiesiogiai (yt-dlp), **YouTube reklamų
-ten paprasčiausiai nėra** — jos niekada nebūna video sraute, jas prilipdo
-playeris atkūrimo metu. Todėl atsisiųstas failas be reklamų yra ne triukas, o
-šalutinis efektas.
+**Kada tada n8n?** Kai parsiuntimas yra tik vienas žingsnis ilgesnėje grandinėje,
+kurios Pinchflat nedaro: transkribuoti į Whisper, paduoti LLM'ui santraukos,
+įrašyti į Notion, nusiųsti į Telegram, sujungti su kitomis tavo automatizacijomis.
+Tada `youtube-sponsorfree-library.json` yra tinkamas startas — jį lengva pratęsti.
+Jei tavo scenarijus yra grynas archyvavimas, imk Pinchflat ir nekurk nieko.
 
-## Ką n8n čia realiai gali
-
-n8n vieta yra ne playeris, o **automatika aplink jį**: sekti kanalus ir
-sudėlioti švarią, jau apkarpytą biblioteką, kurią po to žiūri kuo nori — Jellyfin,
-Plex, mpv, telefonas.
-
-Būtent tai daro `youtube-sponsorfree-library.json`:
+## Šitame kataloge esantis workflow'as
 
 ```
 New video on channel (RSS) ┐
@@ -53,89 +86,110 @@ New video on channel (RSS) ┐
 Run manually ──────────────┘                                                           └─→ Failed
 ```
 
-1. **RSS trigeris** kas 15 min tikrina YouTube kanalo feed'ą
+1. **RSS trigeris** kas 15 min tikrina kanalo feed'ą
    (`https://www.youtube.com/feeds/videos.xml?channel_id=...` — oficialus, be API rakto).
 2. **Build yt-dlp job** (Code node) ištraukia video ID ir sukonstruoja komandą.
-   Visi nustatymai — katalogas, kokybė, SponsorBlock kategorijos — yra šio node
-   viršuje.
-3. **yt-dlp + SponsorBlock** parsiunčia video ir iškerpa rėmėjų segmentus.
-4. Rezultatas nukeliauja į `/data/youtube/<Kanalas>/<data> - <pavadinimas> [id].mkv`.
+   Visi nustatymai yra šio node viršuje.
+3. **yt-dlp + SponsorBlock** parsiunčia ir iškerpa rėmėjų segmentus.
+4. Rezultatas: `/data/youtube/<Kanalas>/<data> - <pavadinimas> [id].mkv`.
 
-`--download-archive` užtikrina, kad tas pats video nebūtų siunčiamas antrą kartą,
-tad trigeris gali suktis nuolat.
+`--download-archive` užtikrina, kad tas pats video nebūtų siunčiamas antrą kartą.
 
 ### Saugumo detalė, kurios nepraleisk
 
 RSS feed'as yra išorinis, nepatikimas įvedimas, o jis keliauja į shell komandą.
 Code node priima **tik** kanoninį 11 simbolių YouTube ID (`[A-Za-z0-9_-]{11}`)
 ir URL susikonstruoja iš naujo — feed'o eilutė į komandą nepatenka niekada.
-Pavadinimai į shell'ą apskritai nekeliauja. Jei kada redaguosi tą node,
-neišmesk `q()` funkcijos ir ID regex'o.
+Pavadinimai į shell'ą apskritai nekeliauja. Jei redaguosi tą node, neišmesk
+`q()` funkcijos ir ID regex'o.
 
 ## Paleidimas
 
-**1. n8n su yt-dlp.** Standartiniame image nei yt-dlp, nei ffmpeg nėra, o
-Execute Command sukasi konteineryje:
+**1. Execute Command node.** Nuo **n8n 2.0 jis išjungtas pagal nutylėjimą** dėl
+saugumo — leidžia bet kam, kas gali redaguoti workflow'us, paleisti komandas tavo
+serveryje. Įjungiama per `NODES_EXCLUDE=[]`. Bendruomenėje netrūksta pranešimų,
+kad tai suveikia ne iš pirmo karto, tad pasitikrink, ar node atsirado sąraše.
+
+> **n8n Cloud šito node neturi visai.** Jei sukiesi Cloud'e, šis workflow'as
+> tau neveiks — reikia self-hosted.
+
+**2. yt-dlp ir ffmpeg.** Standartiniame image jų nėra. Du keliai:
+
+- `Dockerfile.n8n-ytdlp` šiame kataloge — yt-dlp atskirame venv, atnaujinamas
+  nepriklausomai nuo n8n.
+- Bendruomenės node **`n8n-nodes-youtube-dl`** — pats parsisiunčia yt-dlp binarą
+  instaliacijos metu ir susitvarko su Alpine/musl nesuderinamumu per LD_PRELOAD
+  shim'ą, tad jokio custom Dockerfile nereikia. Patogesnis startas, bet jis yra
+  apvalkalas su savo parametrais, ir SponsorBlock vėliavėlių jo aprašyme nėra —
+  jeigu segmentų kirpimas tau esminis, lik prie Execute Command.
 
 ```bash
-cd n8n
-docker build -f Dockerfile.n8n-ytdlp -t n8n-ytdlp .
+cd n8n && docker build -f Dockerfile.n8n-ytdlp -t n8n-ytdlp .
 ```
 
 ```yaml
-# docker-compose.yml
 services:
   n8n:
     image: n8n-ytdlp
     ports: ["5678:5678"]
     environment:
-      # Execute Command node pagal nutylėjimą išjungtas naujose versijose
       - NODES_EXCLUDE=[]
     volumes:
       - ./n8n-data:/home/node/.n8n
       - /srv/media/youtube:/data/youtube   # turi sutapti su OUTPUT_DIR
 ```
 
-**2. Importuok** `youtube-sponsorfree-library.json` (n8n → Workflows → Import from File).
+**3. Importuok** `youtube-sponsorfree-library.json` (Workflows → Import from File).
 
-**3. Pakeisk `channel_id`** RSS node'e. Jį rasi kanalo puslapio šaltinyje —
-ieškok `externalId`. Playlist'ui naudok `?playlist_id=...`.
+**4. Pakeisk `channel_id`** RSS node'e — rasi kanalo puslapio šaltinyje, ieškok
+`externalId`. Playlist'ui: `?playlist_id=...`.
 
-**4. Pasitikrink rankomis:** įrašyk `MANUAL_URL` reikšmę Code node viršuje ir
-paspausk Execute. Kai suveiks — išvalyk ir įjunk RSS trigerį.
+**5. Pasitikrink rankomis:** įrašyk `MANUAL_URL` Code node viršuje, paspausk
+Execute. Kai suveiks — išvalyk ir įjunk RSS trigerį.
 
-### Derinimas
+## Kur tai lūžta
 
-`REMOVE_SEGMENTS = true` fiziškai iškerpa segmentus. Su
-`--force-keyframes-at-cuts` pjūviai švarūs, bet aplink juos vyksta perkodavimas,
-tad lėčiau. Jei nori greičio — nustatyk `false`: segmentai bus įrašyti kaip
-skyriai (chapters), o mpv ar Jellyfin juos praleis pats.
+**Bot detekcija — didžiausia praktinė problema.** YouTube agresyviai blokuoja
+datacentrų IP. Skirtumas esminis:
 
-Kategorijas rinkis pagal skonį. `sponsor,selfpromo` yra saugus minimumas;
-`intro,outro,preview,music_offtopic` kartais nukerpa daugiau, nei norėtum.
+- **Namų serveris / NAS** (rezidencinis IP) — dažniausiai veikia be nieko.
+- **VPS, AWS, Hetzner ir pan.** — beveik garantuotai gausi
+  „Sign in to confirm you're not a bot". Reikės `COOKIES_FILE`: eksportuoti
+  cookies iš prisijungusios naršyklės Netscape formatu. Ir tai ne vienkartinis
+  darbas — YouTube naikina sesijas greičiau, kai mato jas iš datacentro.
 
-### Kai nustos veikti
+Todėl Code node'e pagal nutylėjimą įjungtas `--sleep-interval 3`. Jei vis tiek
+riboja — mažink lygiagretumą iki vieno parsiuntimo vienu metu. Rimtesnis
+sprendimas yra rezidenciniai proxy, bet tai jau kita kainų ir moralės kategorija;
+namų serveris paprastesnis ir pigesnis.
 
-Beveik visada priežastis viena: **yt-dlp paseno.** YouTube keičia playerį, o
-yt-dlp taisosi per dienas. Perbuild'ink image arba:
+**Pasenęs yt-dlp.** YouTube keičia playerį, yt-dlp taisosi per dienas.
+Perbuild'ink image arba:
 
 ```bash
 docker exec -u root <container> /opt/ytdlp/bin/pip install -U yt-dlp
 ```
 
-Verta pasidaryti atskirą n8n Schedule workflow, kuris tai daro kas savaitę.
+Verta pasidaryti atskirą n8n Schedule workflow'ą, kuris tai daro kas savaitę.
+
+**Derinimas.** `REMOVE_SEGMENTS = true` fiziškai iškerpa segmentus; su
+`--force-keyframes-at-cuts` pjūviai švarūs, bet aplink juos perkoduojama, tad
+lėčiau. Nori greičio — `false`, ir segmentai liks kaip chapter'iai, kuriuos mpv
+ar Jellyfin praleis pats. Kategorijose `sponsor,selfpromo` yra saugus minimumas;
+`intro,outro,preview,music_offtopic` kartais nukerpa daugiau, nei norėtum.
 
 ## Dėl taisyklių
 
-Blunt'as, be pamokslo: **YouTube naudojimosi sąlygos draudžia ir reklamų
-apėjimą, ir video atsisiuntimą** be jų leidimo. Praktikoje uBlock Origin ir
-SponsorBlock yra plačiai naudojami, legalūs įrankiai asmeniniam naudojimui, o
-yt-dlp — irgi. Bet nustatyk lūkesčius teisingai: tai ToS pažeidimas, YouTube
-periodiškai bando su tuo kovoti, ir šitas workflow'as *lūžinės*.
+Be pamokslo: **YouTube ToS draudžia ir reklamų apėjimą, ir video atsisiuntimą.**
+Praktikoje uBlock Origin, SponsorBlock ir yt-dlp yra plačiai naudojami įrankiai
+asmeniniam naudojimui. ReVanced atveju rizika šiek tiek konkretesnė — tai
+modifikuotas APK, ir paskyrų blokavimų būta, nors reti.
 
-Jei kanalus žiūri daug ir nori, kad kūrėjai gautų pinigų — Premium yra vienintelis
-variantas, kuris ir be reklamų, ir palaikomas. Šitas workflow'as tinka kitam
-scenarijui: susikurti offline archyvą to, ką ir taip žiūri.
+Nustatyk lūkesčius teisingai: visi šie sprendimai periodiškai lūžinės, nes
+kitoje pusėje sėdi komanda, kuriai mokama, kad jie lūžtų. Jei žiūri daug ir nori,
+kad kūrėjai gautų pinigų, Premium yra vienintelis variantas, kuris ir be reklamų,
+ir palaikomas. Šitas workflow'as tinka kitam scenarijui — offline archyvui to,
+ką ir taip žiūri.
 
 ## Failai
 
@@ -143,3 +197,12 @@ scenarijui: susikurti offline archyvą to, ką ir taip žiūri.
 |---|---|
 | `youtube-sponsorfree-library.json` | n8n workflow'as, importuojamas |
 | `Dockerfile.n8n-ytdlp` | n8n image su yt-dlp ir ffmpeg |
+
+## Šaltiniai
+
+- [uBlock Origin](https://ublockorigin.com/) · [uBlock Origin ir Chrome MV3](https://www.ghostery.com/blog/ublock-origin-not-supported-chrome) · [kas dar veikia 2026](https://adblock-tester.com/ad-blockers/youtube-ad-blockers-that-still-work-in-2025/)
+- [SponsorBlock](https://github.com/ajayyy/sponsorblock/wiki/Android) · [ReVanced](https://revanced.net/)
+- [Pinchflat](https://github.com/kieraneglin/pinchflat) · [TubeArchivist + Jellyfin apžvalga](https://www.xda-developers.com/this-app-turned-my-jellyfin-server-into-a-youtube-archive/)
+- [n8n Execute Command dokumentacija](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executecommand) · [n8n 2.0 issue #23439](https://github.com/n8n-io/n8n/issues/23439)
+- [n8n-nodes-youtube-dl](https://github.com/prakashmaheshwaran/n8n-nodes-youtube-dl)
+- [yt-dlp bot detekcija](https://github.com/yt-dlp/yt-dlp/issues/12264) · [cookies 2026](https://dev.to/osovsky/6-ways-to-get-youtube-cookies-for-yt-dlp-in-2026-only-1-works-2cnb)
