@@ -1,5 +1,10 @@
 # Fazė 53 — taryba: balsų žurnalas (matome) + turtinga santrauka už jungiklio (nekeičiam aklai). <14 min.
 
+> **PAKARTOTINIS SIUNTIMAS (2026-08-09 vakaras).** Ankstesnis paleidimas krito `rc=1` dar prieš pradedant darbą —
+> `OAuth session expired`. Autentikacija atstatyta. Turinys nepakeistas; ši pastraipa pridėta tik tam, kad
+> pasikeistų STATE dedup žymė (blob'as), nes infrastruktūrinio kritimo atveju ji buvo įrašyta ir užduotis
+> nebūtų pasileidusi savaime. **Jei šią eilutę skaitai — autentikacija veikia, pradėk nuo pradžių.**
+
 ## Kodėl — rasta kode, ne spėta
 
 `hera_council.py` funkcija `_juror_digest()` tarybos nariui (juror) siunčia **selektoriaus priežastį +
