@@ -1,0 +1,24 @@
+# n8n + yt-dlp + ffmpeg
+#
+# The Execute Command node runs on the n8n host, so the tools have to exist
+# inside the n8n container. The stock image has neither.
+#
+#   docker build -f Dockerfile.n8n-ytdlp -t n8n-ytdlp .
+#
+# yt-dlp breaks whenever YouTube changes its player, so rebuild regularly
+# (--no-cache, or `docker exec -u root <container> /opt/ytdlp/bin/pip install -U yt-dlp`).
+
+FROM n8nio/n8n:latest
+
+USER root
+
+# yt-dlp lives in its own venv so it can be upgraded without touching n8n's
+# Python or Alpine's package set.
+RUN apk add --no-cache ffmpeg python3 py3-pip \
+ && python3 -m venv /opt/ytdlp \
+ && /opt/ytdlp/bin/pip install --no-cache-dir --upgrade pip yt-dlp \
+ && ln -s /opt/ytdlp/bin/yt-dlp /usr/local/bin/yt-dlp \
+ && yt-dlp --version \
+ && ffmpeg -version | head -1
+
+USER node

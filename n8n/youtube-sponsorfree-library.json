@@ -1,0 +1,259 @@
+{
+  "name": "YouTube → sponsor-free local library",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 15,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UC_x5XG1OV2P6uZZ5FSM9Ttw",
+        "options": {}
+      },
+      "id": "b7f1a001-0001-4001-8001-b7f1a0010001",
+      "name": "New video on channel (RSS)",
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        260
+      ],
+      "notes": "Replace channel_id with your own. Find it in the channel page source (\"externalId\") or use ?playlist_id=... for a playlist."
+    },
+    {
+      "parameters": {},
+      "id": "b7f1a002-0002-4002-8002-b7f1a0020002",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        460
+      ],
+      "notes": "For a one-off: set MANUAL_URL in the next node, then execute."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─── Configuration ────────────────────────────────────────────────────────\n// Everything you normally tweak lives here.\n\nconst OUTPUT_DIR    = '/data/youtube';                 // must be a volume on the n8n host\nconst ARCHIVE_FILE  = '/data/youtube/.downloaded.txt'; // yt-dlp keeps ids here so nothing downloads twice\nconst MAX_HEIGHT    = 1080;\n\n// SponsorBlock categories to act on. Full list:\n// sponsor, selfpromo, interaction, intro, outro, preview, filler, music_offtopic\nconst SB_CATEGORIES = 'sponsor,selfpromo,interaction,intro,outro,preview,music_offtopic';\n\n// true  -> segments are cut out of the file (re-encodes around the cuts, slower)\n// false -> segments are only written as chapters, so a player can skip them\nconst REMOVE_SEGMENTS = true;\n\n// Paste a single URL here to try the workflow with the Manual trigger.\nconst MANUAL_URL = '';\n\n// ─── Safety: nothing from the feed reaches the shell verbatim ──────────────\n// POSIX single-quote escaping.\nconst q = (s) => \"'\" + String(s).replace(/'/g, \"'\\\\''\") + \"'\";\n\n// A YouTube video id is exactly 11 chars from this alphabet. We rebuild the URL\n// from the id we extracted, we never forward a string the feed gave us.\nconst VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;\nconst EMBEDDED = /(?:v=|\\/shorts\\/|\\/embed\\/|youtu\\.be\\/|yt:video:)([A-Za-z0-9_-]{11})/;\n\nfunction extractId(fields) {\n  for (const candidate of fields) {\n    if (!candidate) continue;\n    const s = String(candidate);\n    if (VIDEO_ID.test(s)) return s;\n    const m = s.match(EMBEDDED);\n    if (m) return m[1];\n  }\n  return null;\n}\n\nconst sbFlag = REMOVE_SEGMENTS\n  ? '--sponsorblock-remove ' + q(SB_CATEGORIES) + ' --force-keyframes-at-cuts'\n  : '--sponsorblock-mark ' + q(SB_CATEGORIES);\n\nconst results = [];\n\nfor (const item of $input.all()) {\n  const j = item.json || {};\n\n  const id = extractId([\n    j.videoId, j['yt:videoId'], j.id, j.link, j.url, j.guid, MANUAL_URL,\n  ]);\n\n  // An entry we cannot parse is skipped, not guessed at.\n  if (!id) continue;\n\n  const url = 'https://www.youtube.com/watch?v=' + id;\n\n  const command = [\n    'mkdir -p ' + q(OUTPUT_DIR) + ' &&',\n    'yt-dlp',\n    '--ignore-config',\n    '--download-archive ' + q(ARCHIVE_FILE),\n    '--quiet --no-progress --no-warnings',\n    '-f ' + q('bv*[height<=' + MAX_HEIGHT + ']+ba/b[height<=' + MAX_HEIGHT + ']'),\n    '--merge-output-format mkv',\n    sbFlag,\n    '--embed-metadata --embed-chapters --embed-thumbnail',\n    '-o ' + q(OUTPUT_DIR + '/%(uploader)s/%(upload_date)s - %(title)s [%(id)s].%(ext)s'),\n    '--print after_move:filepath',\n    q(url),\n  ].join(' ');\n\n  results.push({\n    json: {\n      videoId: id,\n      url,\n      title: j.title ?? null,\n      channel: j.author ?? j['media:group']?.['media:credit'] ?? null,\n      command,\n    },\n  });\n}\n\nreturn results;\n"
+      },
+      "id": "b7f1a003-0003-4003-8003-b7f1a0030003",
+      "name": "Build yt-dlp job",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        360
+      ],
+      "notes": "All configuration lives at the top of this node."
+    },
+    {
+      "parameters": {
+        "command": "={{ $json.command }}"
+      },
+      "id": "b7f1a004-0004-4004-8004-b7f1a0040004",
+      "name": "yt-dlp + SponsorBlock",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        440,
+        360
+      ],
+      "notes": "Runs on the n8n host, so yt-dlp and ffmpeg must be installed there. See Dockerfile.n8n-ytdlp."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "exit-code-zero",
+              "leftValue": "={{ $json.exitCode }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "b7f1a005-0005-4005-8005-b7f1a0050005",
+      "name": "Downloaded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "status",
+              "value": "ok",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "title",
+              "value": "={{ $('Build yt-dlp job').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "s3",
+              "name": "videoId",
+              "value": "={{ $('Build yt-dlp job').item.json.videoId }}",
+              "type": "string"
+            },
+            {
+              "id": "s4",
+              "name": "file",
+              "value": "={{ $json.stdout.trim() || 'already in library — skipped via --download-archive' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b7f1a006-0006-4006-8006-b7f1a0060006",
+      "name": "Ready in library",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        920,
+        240
+      ],
+      "notes": "Swap or chain a Telegram / Discord / email node here to get notified."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "status",
+              "value": "failed",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "title",
+              "value": "={{ $('Build yt-dlp job').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "url",
+              "value": "={{ $('Build yt-dlp job').item.json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "error",
+              "value": "={{ ($json.stderr || '').trim().slice(-800) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b7f1a007-0007-4007-8007-b7f1a0070007",
+      "name": "Failed",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        920,
+        480
+      ],
+      "notes": "Most common cause: yt-dlp is out of date. Rebuild the image."
+    }
+  ],
+  "connections": {
+    "New video on channel (RSS)": {
+      "main": [
+        [
+          {
+            "node": "Build yt-dlp job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run manually": {
+      "main": [
+        [
+          {
+            "node": "Build yt-dlp job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build yt-dlp job": {
+      "main": [
+        [
+          {
+            "node": "yt-dlp + SponsorBlock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "yt-dlp + SponsorBlock": {
+      "main": [
+        [
+          {
+            "node": "Downloaded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Downloaded?": {
+      "main": [
+        [
+          {
+            "node": "Ready in library",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}
