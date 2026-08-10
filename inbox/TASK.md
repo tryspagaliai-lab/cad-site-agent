@@ -1,9 +1,10 @@
 # Fazė 53 — taryba: balsų žurnalas (matome) + turtinga santrauka už jungiklio (nekeičiam aklai). <14 min.
 
-> **PAKARTOTINIS SIUNTIMAS (2026-08-09 vakaras).** Ankstesnis paleidimas krito `rc=1` dar prieš pradedant darbą —
-> `OAuth session expired`. Autentikacija atstatyta. Turinys nepakeistas; ši pastraipa pridėta tik tam, kad
-> pasikeistų STATE dedup žymė (blob'as), nes infrastruktūrinio kritimo atveju ji buvo įrašyta ir užduotis
-> nebūtų pasileidusi savaime. **Jei šią eilutę skaitai — autentikacija veikia, pradėk nuo pradžių.**
+> **TREČIAS SIUNTIMAS (2026-08-10, 12:00 UTC).** Du ankstesni paleidimai krito `rc=1` dar nepradėję darbo
+> (`OAuth session expired`) — 2026-08-09 15:54 ir 2026-08-10 00:04. **Autentikacija dabar patikrinta ir veikia**
+> (`claude -p` grąžino `ok`). Turinys nepakeistas; ši pastraipa keičia tik STATE dedup žymę, nes
+> infrastruktūrinis kritimas ją vis tiek įrašo ir užduotis pati nebepasileistų.
+> **Jei šią eilutę skaitai — pradėk nuo pradžių, viskas veikia.**
 
 ## Kodėl — rasta kode, ne spėta
 
