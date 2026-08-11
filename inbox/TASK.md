@@ -1,61 +1,64 @@
-# Fazė 55 — titrus imam iš laptopo per Tailscale (VPS IP blokuotas YouTube pusėje). <14 min.
+# Fazė 56 — nuimti struktūrinimo dienos lubas: pinas į `gemini-2.5-flash` + Groq atsarginis. <13 min.
 
-## Kodėl — įrodyta eksperimentu 2026-08-11, netikrink iš naujo
+## Kontekstas — jau padaryta, netikrink iš naujo
 
-**VPS IP YouTube pusėje blokuotas.** `yt-dlp` (2026.07.04, įdiegtas `/usr/local/bin/yt-dlp`) iš VPS grąžina:
-`ERROR: [youtube] Sign in to confirm you're not a bot.`
-Tas pats blokas paaiškina VISUS ankstesnius gedimus vienu ypu: Piped 502/ConnectionError, Invidious
-„titrų turinys tuščias (IP blokas)", transcript-api, ir kritimą į Gemini.
+Fazė 55 uždarė **titrų** gavimą: tiltas iš laptopo per Tailscale veikia, `[tiltas] OK lang=en 15676 sim.`,
+Gemini titrams nebekviečiamas. **Liko VIENINTELĖS lubos: `structure_text()` vis dar kviečia Gemini.**
 
-**Tas pats `yt-dlp` iš laptopo namų IP tą patį video paima be jokių kliūčių:**
-`{"ok": true, "lang": "en", "chars": 11584}` per sekundės dalį, 0 Gemini kvietimų.
+Fazė 54 turėjo tą piną padaryti, bet **krito `rc=124` (timeout)** — jai buvo užduota per daug darbų viename
+cikle. Ši užduotis sąmoningai maža, kad tilptų.
 
-**Tiltas jau pastatytas ir pasiekiamas iš VPS** (patikrinta `curl` iš `agentos-1`):
-```
-GET http://100.68.100.14:8790/health      -> {"ok": true, "service": "hera-transcript-bridge"}
-GET http://100.68.100.14:8790/transcript?url=<YouTube nuoroda>
-    -> {"ok": true, "lang": "en", "chars": 11584, "text": "..."}   (sėkmė)
-    -> {"ok": false, "error": "titru nerasta"}                      (nepavyko)
-```
-Tailscale gyvas abiejose mašinose: VPS `100.103.24.122`, laptopas `100.68.100.14`.
+**Kvotų faktas (išmatuotas 2026-08-11, ne prielaida):** `gemini-flash-latest` pseudonimas tiekėjo pusėje
+persuktas į `gemini-3.6-flash`, kurio nemokama riba = **20 užklausų PER PARĄ**
+(`GenerateRequestsPerDayPerProjectPerModel-FreeTier`). `gemini-2.5-flash` riba = **250 per parą**.
+Tas pats raktas, tas pats €0 lygis, **12,5× daugiau**.
+
+⚠️ **Vartotojas turi Gemini Pro prenumeratą (iki lapkričio), bet NEDARYK prielaidos, kad ji kelia API kvotą** —
+vartotojiška prenumerata ir API apmokestinimas Google'e atskiri. Nieko dėl jos nekeisk.
 
 ## Tikslas
 
-**1. Įstatyti tiltą kaip PIRMĄJĮ titrų šaltinį** — prieš yt-dlp-iš-VPS, prieš Piped/Invidious, prieš Gemini.
-Sėkmės atveju grandinė nutrūksta iškart ir Gemini titrams **nekviečiamas iš viso**.
+**1. Pinas.** Struktūrinimo kelyje (`structure_text()` ir kur dar naudojamas tas pats pseudonimas)
+`gemini-flash-latest` → **`gemini-2.5-flash`**.
+⚠️ Žinomas šio modelio elgesys, jau užfiksuotas: jis nukerta JSON dėl vidinio „thinking" — todėl
+**kartu privalo eiti `maxOutputTokens=2048`** (be jo pinas pablogins, ne pagerins). `thinkingBudget=0`
+**deprecated — NENAUDOTI**, jis laužė enrichment.
 
-**2. Fail-safe (privaloma):** jei tiltas nepasiekiamas (laptopas išjungtas, tinklo nėra, timeout) —
-**tyliai kristi į esamą grandinę**, lygiai kaip dabar. Laptopo nebuvimas negali lūžinti pipeline'o.
-Timeout tiltui: **180 s** (yt-dlp gali užtrukti), po jo — tolesni šaltiniai.
+**2. Groq kaip atsarginis struktūrintojas.** Raktas `GROQ_API_KEY` jau yra `/root/hera.env`.
+Groq → **tik kai Gemini grąžina kvotos klaidą (429 / RESOURCE_EXHAUSTED)**, ne visada.
+Tvarka: Gemini → (kvotos klaida) → Groq → (ir Groq krito) → esamas elgesys, kaip dabar.
+Naujas jungiklis **`HERA_STRUCT_GROQ_FALLBACK` — default 1**. Pagrindimas nukrypimui nuo „default 0":
+tai nėra naujas elgesys sistemoje, o atsarginis kelias, kuris įsijungia TIK ten, kur dabar yra
+garantuotas gedimas (kvota išsemta). Išjungus jungiklį elgesys grįžta bit-į-bitą į dabartinį.
 
-**3. Jungiklis `HERA_TRANSCRIPT_BRIDGE` — čia SĄMONINGA IŠIMTIS iš „default 0" konvencijos: default **1**.**
-Priežastis: dabartinis kelias veikia **0%**, tad def 0 reikštų palikti sistemą sugedusią. Rizika nulinė,
-nes gedimo atveju elgesys grįžta į dabartinį. Adresą imti iš aplinkos `HERA_BRIDGE_URL`
-(numatytoji `http://100.68.100.14:8790`), kad nebūtų įrašytas kietai.
+**3. Tilto patikra ataskaitoje.** `curl -s --max-time 10 http://100.68.100.14:8790/health` iš VPS.
+Rezultatą (OK / negyvas) įrašyk į ataskaitą. **Jei negyvas — NIEKO netaisyk ir nedispatch'ink**,
+tai laptopo pusė, tik pranešk. Fazės sėkmė nuo to nepriklauso.
 
-**4. Jei dar nepadaryta Fazėje 54 — kvotos klaidų atskyrimas.** `429`/`RESOURCE_EXHAUSTED` yra **paros**
-limitas (`limit: 20, model: gemini-3.6-flash`), tad kartoti tą pačią parą beprasmiška. Vienas nepavykęs video
-sugeneruoja ~54 Gemini kvietimus (3 keliai × 6 bandymai × 3 kartojimai) — **trigubai daugiau nei paros riba.**
+## Apribojimai
 
-## Apribojimai (nekintami)
+- **€0.** Jokio mokamo modelio, jokio naujo tiekėjo, jokio naujo rakto.
+- **BACKUP prieš keitimą** (`.bak` toje pačioje vietoje). **Backup'ų NETRINTI niekada** — nei valymo
+  komandoje, nei „nebereikalingas" pagrindu.
+- **Fail-safe:** bet kuri klaida naujame kelyje → grįžtam į dabartinį elgesį, ne crash.
+- Viešas `cad-site-agent` git-tvarkiškai **neliečiamas**. **Jokių raktų reikšmių** log'uose, ataskaitoje
+  ar commit'uose — tik vardai ir ilgiai.
+- Ataskaita ir kodo komentarai **lietuviškai; kiekvienas angliškas terminas su vertimu skliaustuose.**
 
-- €0 · fail-safe · **BACKUP prieš keitimą** (į privatų `hera-core-backup`) · HARD laiko biudžetas · NO retry.
-- Tiltas pasiekiamas **tik per Tailscale** — jokių viešų adresų, jokių naujų atvirų portų VPS'e.
-- `hera-processor` dabar **sustabdytas ranka**. Baigęs — paleisk atgal ir patikrink, kad startuoja švariai.
-- Nekurk naujo HTTP kliento, jei kode jau yra — naudok esamą.
+## Įrodymai (be jų fazė nelaikoma atlikta)
 
-## Sėkmės kriterijai (selftest)
+1. `--selftest` naujam/pakeistam keliui **PASS** (be pytest). Privalo apimti:
+   · Gemini grąžina 429 → **iškviečiamas Groq** · Groq grąžina rezultatą → jis grąžinamas toliau
+   · `HERA_STRUCT_GROQ_FALLBACK=0` → Groq **NEkviečiamas**, elgesys kaip dabar
+   · Groq irgi krito → **no-op, ne exception**
+2. `grep -rn "gemini-flash-latest"` struktūrinimo kelyje → **0 atitikmenų** (arba paaiškink kiekvieną likusį).
+3. Vienas **realus** struktūrinimo darbas su tikrais titrais — parodyk, kuris modelis atsakė ir kiek simbolių.
+4. `systemctl is-active hera-processor` po pakeitimo.
+5. Tilto `/health` rezultatas.
+6. Backup'as padarytas ir **push'intas į privatų `hera-core-backup`** (nurodyk commit).
 
-1. Realus YouTube video apdorotas nuo galo iki galo, titrai gauti **iš tilto** — parodyk žurnalo eilutę
-   su simbolių skaičiumi ir įrodyk, kad **Gemini titrams nekviestas nė karto**.
-2. Tiltas išjungtas (arba `HERA_BRIDGE_URL` nurodo į negyvą adresą) → pipeline **nelūžta**, tyliai pereina
-   prie senos grandinės. Parodyk žurnalu.
-3. `hera-processor` veikia (`systemctl is-active` = active), žurnale nėra klaidų audros.
-4. Backup commit'as `hera-core-backup`.
+## Ataskaita
 
-**ATASKAITOS TAISYKLĖ:** teiginys „neįmanoma / nepavyko patikrinti" galioja **tik kartu su sąrašu, KĄ BANDEI.**
-Negalimybė turi būti pagrįsta veiksmais, ne intuicija. Neapsimesk, kad patikrinai, jei tik pažiūrėjai.
-
-**BACKUP TAISYKLĖ:** backup failų NIEKADA netrinti.
-
-**KALBOS TAISYKLĖ:** ataskaitoje kiekvienas angliškas terminas privalo turėti lietuvišką vertimą skliaustuose.
+Per HERA botą. Formatas: kas pakeista (failai) · 6 įrodymai aukščiau · kas NEPADARYTA ir kodėl.
+Jei nespėji — **geriau padaryk tik dalį 1 (piną) pilnai su įrodymais**, negu abi dalis pusiau.
+Dalis 2 tada lieka kitai fazei. **Anti-rc124: nespėjus — stok ir pranešk, NEKARTOK.**
