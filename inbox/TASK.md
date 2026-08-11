@@ -1,73 +1,76 @@
-# Fazė 60 — išvesties sąžiningumas: kilmė, pavadinimas, ASR abejonės, formulės verbatim. <12 min.
+# Fazė 61 — nustoti daryti Groq kvietimus, kurie NEĮSISKAITO. <11 min.
 
-## ⚠️ Apimtis griežta. Pamatęs kitą defektą — UŽRAŠYK, NETAISYK. Nespėji — stok ir pranešk.
+## ⚠️ VIENAS tikslas. Pamatęs kitą defektą — UŽRAŠYK, NETAISYK. Nespėji — stok ir pranešk.
 
-## Kodėl — keturi defektai, rasti skaitant REALIĄ išvestį (ne testuose)
+## Pirma patikrink: ar Fazė 60 paliko necommit'intą darbą
 
-Fazės 57–59 sutvarkė, kad grandinė **veikia**. Ši fazė tvarko, kad jos rezultatas būtų **teisingas**.
-Visi keturi defektai rasti dviejose šiandienos ištraukose (Kestra ir HarnessOpt-Bench).
+`git -C /opt/hera-processor log --oneline -2` prieš pradedant. Jei viršuje **NĖRA** Fazės 60 —
+ji krito nespėjusi commit'inti (taip jau buvo su Faze 56). Darbiniame medyje gali gulėti geras kodas
+(`extractors/base.py.bak-1786458996` rodo, kad failas buvo keistas).
+⇒ **NEIŠMESK jo. Peržiūrėk, ir jei sveikas — commit'ink KARTU su savo darbu.** Jei sugadintas —
+pasakyk tai atvirai ataskaitoje ir grąžink į paskutinę gerą būseną.
 
-**1. 🔴 KILMĖ MELUOJA.** Kiekviena ištrauka pasirašyta „## Struktūrizuota ištrauka **(Gemini)**",
-nors log rodo `structure_text: Groq struktūrino pirmas (llama-3.3-70b-versatile)`, o Gemini tą parą
-buvo 429. **Tiekėjo vardas užkoduotas kietai antraštėje.**
-⇒ Žinių sistemai tai ne kosmetika — griauna kilmės (provenance) ir pasitikėjimo (`trust_level`) sluoksnį.
-⇒ **Taisyklė: kilmė IŠVEDAMA iš realiai įvykusio kvietimo, NIEKADA nerašoma ranka.**
-Antraštėje turi būti tikras tiekėjas + modelis.
+## Realybė (išmatuota šįvakar, netikrink iš naujo)
 
-**2. `PAVADINIMAS` — ne pavadinimas, o sakinys.** Realus pavyzdys:
-„Šis tekstas apie tai, kaip optimizuoti dirbtinio intelekto (AI) mašiną, ypač dėmesys skiriamas…"
-⇒ Telegram tema nukirsta per vidurį žodžio: **„ypač dėm"**.
-⇒ Reikia: trumpas dalykinis pavadinimas su **ilgio riba** (siūloma ≤80 simbolių), be „Šis tekstas apie…".
+Naujas Gemini raktas (`AQ.` priešdėlis — Google tyliai pakeitė formatą) veikia: `gemini_http=200`.
+**Taryba atgijo:** `6 balsai / 4 šeimos ['gemini','glm','groq','nvidia']`, darbas
+`20260811T162830Z-unsltd` praėjo `decision=pass conf=0.7`.
 
-**3. 🔴 ASR TRIUKŠMAS ĮRAŠOMAS KAIP FAKTAI.** `FAKTAI IR DUOMENYS` skiltyje surašyti sudarkyti tikriniai
-vardai kaip patvirtinti duomenys. Realiame transkripte: „Kimmy K3" (=Kimi), „GPT 5.6 **Soul**/**Tara**",
-**„entropic system"** (=Anthropic), „chimera system", „deep seek version for flash", „Grok build".
-Modelis to **nepažymėjo kaip abejotino — pateikė kaip duomenis.**
-⇒ Tai **užterštumas, ne paviršutiniškumas: sistema pasitikinčiai rašo triukšmą į savo atmintį.**
-⇒ Reikia: prompt'e aiškiai — tai **automatinė kalbos atpažinimo (ASR) transkripcija**; tikriniai vardai,
-modelių pavadinimai ir skaičiai gali būti iškraipyti. **Abejotinus žymėti kaip neaiškius
-(pvz. `[?]` arba „neaišku"), NE teigti kaip faktą.** Geriau praleisti nei prasimanyti.
+**Bet Groq muša 429 ties žetonų-per-minutę (TPM) riba.** Tiesioginis testas grąžino švarų atsakymą
+(`total_tokens: 41`) tuo pačiu metu, kai realūs darbai krito ⇒ **tai NE paros riba ir NE gedimas Groq
+pusėje. Tai mūsų pačių apkrova.**
 
-**4. PRALEIDŽIA VERTINGIAUSIA.** HarnessOpt-Bench video esmė buvo **formulė**
-`normalized gain = (H⁺ − H₀) / (1 − H₀)`. Ištraukoje jos **NĖRA** iš viso.
-Be to `CITATOS` skiltis parašė „čia nėra tiesioginių citatų" — **netiesa**, jų pilna.
-⇒ Reikia: formulės, specifikacijos, skaitiniai parametrai ir tikros citatos traukiamos **VERBATIM**.
+🔥 **Ir esminis dalykas — didelė tos apkrovos dalis yra GRYNAS ŠVAISTYMAS.**
+Fazė 33 įvedė tiekėjo ribą (cap) = 2 balsai, bet įgyvendino kaip **post-hoc apkarpymą**: taryba
+**vis tiek iškviečia 5 Groq juror'ius, o įsiskaito tik 2.** Tai užfiksuota tos fazės pastabose
+(„groq vis tiek daro 5 kvietimus, įsiskaito 2 … latency nesutaupo").
+Log patvirtina: `taryba: Groq sėkmingų balsų 5/5 bandymų` → `tiekėjo riba=2 … 3 apkarpyta`.
+⇒ **Trys iš penkių Groq kvietimų kiekvienoje taryboje neturi JOKIOS įtakos verdiktui**, bet degina
+TPM biudžetą, kurio tuo pačiu metu reikia struktūrinimui ir atrankai.
 
-## Tikslas
+## Tikslas — VIENAS
 
-Sutvarkyk struktūrinimo išvestį taip, kad visi keturi punktai būtų padengti.
-Kur taisyti — spręsk pats (antraštės sudarymas vs `STRUCT_INSTR` prompt'as `extractors/base.py`),
-bet **kilmė privalo būti išvesta iš kodo, ne iš prompt'o** — modeliu čia pasitikėti negalima.
+**Perkelk tiekėjo ribą iš post-hoc apkarpymo į PIRMINĘ ATRANKĄ:** taryba tekviečia tiek to paties
+tiekėjo juror'ių, kiek realiai įsiskaitys.
 
-## ĮRODYMAS — vienas, griežtas, natūralus
+Kodėl būtent taip, o ne kitaip:
+· **Verdiktas NESIKEIČIA** — įsiskaito lygiai tie patys 2 balsai kaip dabar.
+· **Šeimų įvairovė NENUKENČIA** — Groq lieka taryboje, tik nustoja siųsti balsus į šiukšlinę.
+· Groq kvietimų taryboje sumažėja ~60 % ⇒ TPM spaudimas atslūgsta be jokio backoff'o derinimo.
+· Užsidaro Fazės 33 skola, užrašyta prieš dvi savaites.
 
-**Perleisk video `32AK4b0eW04`** (HarnessOpt-Bench apžvalga, 20964 sim., dabar turi `sel 0`).
-Nauja ištrauka **PRIVALO** tenkinti visus keturis:
-1. kilmė sako **Groq + realų modelį** (ne „Gemini")
-2. `PAVADINIMAS` ≤80 sim., dalykinis, be „Šis tekstas apie…"
-3. bent vienas abejotinas ASR vardas **pažymėtas kaip neaiškus** (arba praleistas), ne teigiamas
-4. **formulė `(H⁺ − H₀) / (1 − H₀)` ARBA jos žodinis atitikmuo ištraukoje YRA**
+Jungiklis **`HERA_COUNCIL_PRESELECT_CAP`** — default **1** (nauja elgsena). Reikšmė 0 grąžina
+dabartinį post-hoc apkarpymą bit-į-bitą.
 
-Jei bent vienas netenkinamas — **fazė NEATLIKTA**, sakyk tai atvirai, nerašyk „iš dalies pavyko".
+⚠️ **Nepakeisk šeimų-atrankos logikos** — ji jautri ir turi žinomą defektą kitoje kopijoje
+(`test_live_check_nvidia_fabricated`). Keisk TIK kiek kvietimų daroma, ne kaip parenkamos šeimos.
 
-## Ko NEDARYTI
+## Ko NEDARYTI (pastebėta, bet atidėta)
 
-❌ Tarybos ir research kelio NELIESK. ❌ `gemini-flash-latest` iš `DEFAULT_MODELS` neišiminėk.
-❌ Dublių gaudyklės pagal `video_id` NEDARYK (kita fazė). ❌ Kitų senų darbų neperleidinėk.
-❌ Neliesk tilto, ASR modulio, digest'o, backoff'o, dispatcher'io.
+❌ **NVIDIA negyvi juror'iai** — 5 iš 7 grąžina HTTP 404 (`deepseek-coder-6.7b`, `kimi-k2.6`,
+`mistral-7b-v0.3`, `nemotron-4-340b`, `gemma-2b`). Realus defektas, bet **NE ši fazė.**
+❌ Backoff'o nederink. ❌ `gemini-flash-latest` iš `DEFAULT_MODELS` neišiminėk.
+❌ Neliesk tilto, struktūrinimo, atrankos, dispatcher'io, ASR, digest'o.
 
 ## Apribojimai
 
 €0 · **BACKUP prieš keitimą**, backup'ų NIEKADA netrinti · viešas `cad-site-agent` neliečiamas ·
-jokių raktų reikšmių · ataskaita ir komentarai **lietuviškai, angliški terminai su vertimu skliaustuose.**
+jokių raktų reikšmių log'uose/ataskaitoje/commit'uose · ataskaita ir komentarai **lietuviškai,
+angliški terminai su vertimu skliaustuose.**
 
-## Papildomi įrodymai
+## Įrodymai
 
-5. `--selftest` PASS (kilmės išvedimas + pavadinimo ilgio riba tikrinami be tinklo).
-6. `systemctl is-active hera-processor`.
-7. `git -C /opt/hera-processor log --oneline -2` + push į privatų `hera-core-backup`.
+1. `--selftest` PASS: su ribą=2 daromi **2, ne 5** to paties tiekėjo kvietimai ·
+   `HERA_COUNCIL_PRESELECT_CAP=0` grąžina seną elgesį · **verdiktas abiem atvejais tas pats** ·
+   tiekėjo gedimas → fail-safe kaip anksčiau (ne crash).
+2. **Reali taryba** su tikru darbu: log privalo rodyti `Groq sėkmingų balsų 2/2` (ne `5/5`)
+   ir `0 apkarpyta`. Parodyk abi eilutes pažodžiui.
+3. Šeimų skaičius tame pačiame darbe **nesumažėjo** (buvo 4 — palygink).
+4. `systemctl is-active hera-processor`.
+5. `git -C /opt/hera-processor log --oneline -3` — Fazė 61 (+ Fazės 60 darbas, jei buvo necommit'intas)
+   push'inta į privatų `hera-core-backup`.
 
 ## Ataskaita
 
-Per HERA botą: kas pakeista · **naujos ištraukos antraštė ir `PAVADINIMAS` cituojami pažodžiui** ·
-4 kriterijų atitikimas po vieną · ką pastebėjai, bet sąmoningai nelietei.
+Per HERA botą: kas pakeista · **Fazės 60 likimas atskirai** (rasta / necommit'inta / sugadinta) ·
+5 įrodymai · ką pastebėjai, bet sąmoningai nelietei.
