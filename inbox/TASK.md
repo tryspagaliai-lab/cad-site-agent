@@ -1,77 +1,73 @@
-# Fazė 59 — backoff ties TRUMPALAIKE Groq riba (ne ties paros kvota). +perleisti `z618ro`. <10 min.
+# Fazė 60 — išvesties sąžiningumas: kilmė, pavadinimas, ASR abejonės, formulės verbatim. <12 min.
 
-## ⚠️ Apimtis griežta. Fazės 54 ir 56 krito `rc=124`. Ši turi VIENĄ tikslą + vieną trumpą veiksmą.
+## ⚠️ Apimtis griežta. Pamatęs kitą defektą — UŽRAŠYK, NETAISYK. Nespėji — stok ir pranešk.
 
-**Pamatęs kitą defektą — UŽRAŠYK ataskaitoje, NETAISYK.** Nespėji — **stok ir pranešk.**
+## Kodėl — keturi defektai, rasti skaitant REALIĄ išvestį (ne testuose)
 
-## ⚠️ SĄMONINGA IŠIMTIS IŠ NEKINTANČIOS TAISYKLĖS — perskaityk atidžiai
+Fazės 57–59 sutvarkė, kad grandinė **veikia**. Ši fazė tvarko, kad jos rezultatas būtų **teisingas**.
+Visi keturi defektai rasti dviejose šiandienos ištraukose (Kestra ir HarnessOpt-Bench).
 
-HERA nekintanti taisyklė yra **„HARD timeout, NO retry"** (anti `rc=124`). Ši fazė daro **siaurą,
-sąmoningą išimtį**, ir ji leidžiama TIK tokiomis sąlygomis:
-· retry **TIK** ties trumpalaike (per-minutę) tiekėjo riba — 429 / `rate_limit` / `too many requests`
-· **NIEKADA** ties paros kvota (`RESOURCE_EXHAUSTED`, „quota", „limit: N per day") — ten laukimas
-  nepadeda, ir retry tik degina laiką iki `rc=124`
-· **NIEKADA** ties bet kokia kita klaida (tinklas, 4xx, 5xx, blogas atsakymas) — ten elgesys nesikeičia
-· griežtos lubos: **max 3 bandymai**, **bendras laukimas ≤ 20 s** viename kvietime
-Jei negali patikimai atskirti trumpalaikės ribos nuo paros kvotos — **geriau NEDARYK retry**, o pranešk.
-Klaidingas retry ties paros kvota yra blogiau nei jokio retry.
+**1. 🔴 KILMĖ MELUOJA.** Kiekviena ištrauka pasirašyta „## Struktūrizuota ištrauka **(Gemini)**",
+nors log rodo `structure_text: Groq struktūrino pirmas (llama-3.3-70b-versatile)`, o Gemini tą parą
+buvo 429. **Tiekėjo vardas užkoduotas kietai antraštėje.**
+⇒ Žinių sistemai tai ne kosmetika — griauna kilmės (provenance) ir pasitikėjimo (`trust_level`) sluoksnį.
+⇒ **Taisyklė: kilmė IŠVEDAMA iš realiai įvykusio kvietimo, NIEKADA nerašoma ranka.**
+Antraštėje turi būti tikras tiekėjas + modelis.
 
-## Realybė (išmatuota šiandien, netikrink iš naujo)
+**2. `PAVADINIMAS` — ne pavadinimas, o sakinys.** Realus pavyzdys:
+„Šis tekstas apie tai, kaip optimizuoti dirbtinio intelekto (AI) mašiną, ypač dėmesys skiriamas…"
+⇒ Telegram tema nukirsta per vidurį žodžio: **„ypač dėm"**.
+⇒ Reikia: trumpas dalykinis pavadinimas su **ilgio riba** (siūloma ≤80 simbolių), be „Šis tekstas apie…".
 
-Fazės 57 (`d87fe65`) ir 58 (`a4ab97b`) perkėlė **struktūrinimą** (`extractors/base.py`) ir
-**atranką** (`hera_select.py`) ant Groq. Grandinė veikia: `sel 0` → `sel=9/10`, growth failai rašomi.
+**3. 🔴 ASR TRIUKŠMAS ĮRAŠOMAS KAIP FAKTAI.** `FAKTAI IR DUOMENYS` skiltyje surašyti sudarkyti tikriniai
+vardai kaip patvirtinti duomenys. Realiame transkripte: „Kimmy K3" (=Kimi), „GPT 5.6 **Soul**/**Tara**",
+**„entropic system"** (=Anthropic), „chimera system", „deep seek version for flash", „Grok build".
+Modelis to **nepažymėjo kaip abejotino — pateikė kaip duomenis.**
+⇒ Tai **užterštumas, ne paviršutiniškumas: sistema pasitikinčiai rašo triukšmą į savo atmintį.**
+⇒ Reikia: prompt'e aiškiai — tai **automatinė kalbos atpažinimo (ASR) transkripcija**; tikriniai vardai,
+modelių pavadinimai ir skaičiai gali būti iškraipyti. **Abejotinus žymėti kaip neaiškius
+(pvz. `[?]` arba „neaišku"), NE teigti kaip faktą.** Geriau praleisti nei prasimanyti.
 
-**Naujas gedimas, kurį tai sukūrė:** darbas `20260811T090630Z-z618ro` krito, nes **du Groq kvietimai
-iš eilės** (struktūrinimas + atranka) pramušė Groq **trumpalaikę** ribą. Fail-safe atlaikė — švarus
-no-op, ne crash — bet darbas liko be atrankos.
-⇒ Tai **struktūriška, ne atsitiktinumas**: po 57+58 KIEKVIENAS darbas daro ≥2 Groq kvietimus paeiliui.
-Kartosis kaskart, kai vartotojas mes kelis video iš eilės.
-
-📌 **Skirtumas, kuris yra visos šios fazės esmė:**
-· **Paros kvota** (Gemini 20/parą): laukimas NEPADEDA ⇒ sprendimas = kitas tiekėjas (jau padaryta).
-· **Trumpalaikė riba** (Groq): atsistato per sekundes ⇒ sprendimas = **backoff**. Tai vienintelis atvejis,
-  kur laukimas yra teisingas vaistas.
-
-✅ Groq raktas gyvas. ✅ Titrų tiltas gyvas. ✅ `hera-processor` active.
+**4. PRALEIDŽIA VERTINGIAUSIA.** HarnessOpt-Bench video esmė buvo **formulė**
+`normalized gain = (H⁺ − H₀) / (1 − H₀)`. Ištraukoje jos **NĖRA** iš viso.
+Be to `CITATOS` skiltis parašė „čia nėra tiesioginių citatų" — **netiesa**, jų pilna.
+⇒ Reikia: formulės, specifikacijos, skaitiniai parametrai ir tikros citatos traukiamos **VERBATIM**.
 
 ## Tikslas
 
-**1. Eksponentinis backoff ties trumpalaike Groq riba** — abiejuose keliuose:
-`extractors/base.py` (struktūrinimas) ir `hera_select.py` (atranka).
-Siūloma: 2 s → 4 s → 8 s, max 3 bandymai. Jei Groq atsakyme yra `Retry-After` arba nurodytas laukimo
-laikas — **naudok jį**, jis tikslesnis už spėjimą (bet vis tiek ribok ≤ 20 s).
-Jungiklis `HERA_GROQ_BACKOFF` — default **1**. Reikšmė 0 = elgesys tiksliai kaip dabar.
-Išnaudojus bandymus — **dabartinis elgesys nesikeičia**: krentam į Gemini, paskui į no-op. Ne crash.
+Sutvarkyk struktūrinimo išvestį taip, kad visi keturi punktai būtų padengti.
+Kur taisyti — spręsk pats (antraštės sudarymas vs `STRUCT_INSTR` prompt'as `extractors/base.py`),
+bet **kilmė privalo būti išvesta iš kodo, ne iš prompt'o** — modeliu čia pasitikėti negalima.
 
-**2. Perleisk darbą `20260811T090630Z-z618ro`** — jis liko be atrankos. Parodyk rezultatą.
+## ĮRODYMAS — vienas, griežtas, natūralus
 
-## Ko NEDARYTI (sąmoningai atidėta)
+**Perleisk video `32AK4b0eW04`** (HarnessOpt-Bench apžvalga, 20964 sim., dabar turi `sel 0`).
+Nauja ištrauka **PRIVALO** tenkinti visus keturis:
+1. kilmė sako **Groq + realų modelį** (ne „Gemini")
+2. `PAVADINIMAS` ≤80 sim., dalykinis, be „Šis tekstas apie…"
+3. bent vienas abejotinas ASR vardas **pažymėtas kaip neaiškus** (arba praleistas), ne teigiamas
+4. **formulė `(H⁺ − H₀) / (1 − H₀)` ARBA jos žodinis atitikmuo ištraukoje YRA**
 
-❌ **Tarybos (council) ir research kelio NELIESK** — jie tebėra Gemini kalėjime, tai atskira fazė.
-❌ Neišiminėk `gemini-flash-latest` iš `DEFAULT_MODELS`.
-❌ Nedaryk bendro „€0 tiekėjo maršrutizatoriaus".
-❌ Neperbėginėk senų sustabarėjusių darbų — tik `z618ro`.
-❌ Neliesk titrų tilto, ASR, digest'o, dispatcher'io kvotos varto.
+Jei bent vienas netenkinamas — **fazė NEATLIKTA**, sakyk tai atvirai, nerašyk „iš dalies pavyko".
+
+## Ko NEDARYTI
+
+❌ Tarybos ir research kelio NELIESK. ❌ `gemini-flash-latest` iš `DEFAULT_MODELS` neišiminėk.
+❌ Dublių gaudyklės pagal `video_id` NEDARYK (kita fazė). ❌ Kitų senų darbų neperleidinėk.
+❌ Neliesk tilto, ASR modulio, digest'o, backoff'o, dispatcher'io.
 
 ## Apribojimai
 
-€0 · **BACKUP prieš keitimą**, backup'ų **NIEKADA netrinti** · viešas `cad-site-agent` neliečiamas ·
-**jokių raktų reikšmių** log'uose / ataskaitoje / commit'uose · ataskaita ir komentarai **lietuviškai,
-kiekvienas angliškas terminas su vertimu skliaustuose.**
+€0 · **BACKUP prieš keitimą**, backup'ų NIEKADA netrinti · viešas `cad-site-agent` neliečiamas ·
+jokių raktų reikšmių · ataskaita ir komentarai **lietuviškai, angliški terminai su vertimu skliaustuose.**
 
-## Įrodymai (be jų fazė nelaikoma atlikta)
+## Papildomi įrodymai
 
-1. `--selftest` PASS, privalomai apimantis **abu klaidų tipus atskirai**:
-   · trumpalaikė riba → **backoff įvyksta**, bandymų skaičius teisingas
-   · **paros kvota → backoff NEĮVYKSTA**, krentam iškart (tai svarbiausias testas šioje fazėje)
-   · `HERA_GROQ_BACKOFF=0` → elgesys kaip dabar
-   · išnaudoti bandymai → **no-op, ne exception**
-2. `z618ro` perleistas — parodyk `sel=N` ir ar parašytas growth failas.
-3. Log'o eilutė, rodanti realų backoff (kiek laukta, kelintas bandymas).
-4. `systemctl is-active hera-processor`.
-5. `git -C /opt/hera-processor log --oneline -2` — commit'inta ir push'inta į privatų `hera-core-backup`.
+5. `--selftest` PASS (kilmės išvedimas + pavadinimo ilgio riba tikrinami be tinklo).
+6. `systemctl is-active hera-processor`.
+7. `git -C /opt/hera-processor log --oneline -2` + push į privatų `hera-core-backup`.
 
 ## Ataskaita
 
-Per HERA botą: kas pakeista (failai) · 5 įrodymai · **ką pastebėjai, bet SĄMONINGAI nelietei.**
-Jei spėji tik 1 punktą pilnai su įrodymais — daryk jį, o `z618ro` palik kitai fazei ir pasakyk aiškiai.
+Per HERA botą: kas pakeista · **naujos ištraukos antraštė ir `PAVADINIMAS` cituojami pažodžiui** ·
+4 kriterijų atitikimas po vieną · ką pastebėjai, bet sąmoningai nelietei.
