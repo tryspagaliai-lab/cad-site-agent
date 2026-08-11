@@ -1,64 +1,67 @@
-# Fazė 56 — nuimti struktūrinimo dienos lubas: pinas į `gemini-2.5-flash` + Groq atsarginis. <13 min.
+# Fazė 57 — Groq tampa PAGRINDINIU struktūrintoju. Trys eilėje kabantys darbai turi baigtis ŠIANDIEN. <10 min.
 
-## Kontekstas — jau padaryta, netikrink iš naujo
+## ⚠️ SKAITYK PIRMA: dvi fazės iš eilės krito `rc=124`. Ši sąmoningai maža.
 
-Fazė 55 uždarė **titrų** gavimą: tiltas iš laptopo per Tailscale veikia, `[tiltas] OK lang=en 15676 sim.`,
-Gemini titrams nebekviečiamas. **Liko VIENINTELĖS lubos: `structure_text()` vis dar kviečia Gemini.**
+**Griežta apimtis: TIK tai, kas žemiau. Jokių papildomų patobulinimų, jokio refaktoringo,
+jokio „pakeliui pataisiau". Pamatęs kitą defektą — UŽRAŠYK ataskaitoje, NETAISYK.**
+Nespėji — **stok ir pranešk, NEKARTOK** (anti rc=124).
 
-Fazė 54 turėjo tą piną padaryti, bet **krito `rc=124` (timeout)** — jai buvo užduota per daug darbų viename
-cikle. Ši užduotis sąmoningai maža, kad tilptų.
+## Realybė (išmatuota, netikrink iš naujo)
 
-**Kvotų faktas (išmatuotas 2026-08-11, ne prielaida):** `gemini-flash-latest` pseudonimas tiekėjo pusėje
-persuktas į `gemini-3.6-flash`, kurio nemokama riba = **20 užklausų PER PARĄ**
-(`GenerateRequestsPerDayPerProjectPerModel-FreeTier`). `gemini-2.5-flash` riba = **250 per parą**.
-Tas pats raktas, tas pats €0 lygis, **12,5× daugiau**.
+Tavo pirmtakas Fazėje 56 gavo tikrą 429 ir teisingai užfiksavo kode:
+**šio projekto raktui `gemini-2.5-flash` riba irgi = 20 užklausų per parą, ne 250.**
+⇒ Planavimo prielaida buvo klaidinga. **Gemini negali būti struktūrintojas** — 20/parą tai 3–4 video.
 
-⚠️ **Vartotojas turi Gemini Pro prenumeratą (iki lapkričio), bet NEDARYK prielaidos, kad ji kelia API kvotą** —
-vartotojiška prenumerata ir API apmokestinimas Google'e atskiri. Nieko dėl jos nekeisk.
+**Fazė 56 paliko darbą NEUŽBAIGTĄ ir NEĮRAŠYTĄ:**
+· `extractors/base.py` — `_groq_structure_fallback()` ir `_is_quota_error()` **parašyti ir geri**
+  (fail-safe, Cloudflare WAF apėjimas per `User-Agent`). **NEPERRAŠINĖK jų — panaudok.**
+· ❌ Neaišku, ar jie apskritai kviečiami iš `structure_text()`.
+· ❌ `git -C /opt/hera-processor log` rodo tik Fazę 55 — **Fazės 56 pakeitimai NECOMMIT'INTI.**
+  Jie guli darbiniame medyje. **NEIŠMESK jų** — commit'ink kartu su savo darbu.
+· ✅ Groq raktas gyvas (`groq_http=200`). ✅ Titrų tiltas iš VPS `{"ok": true}`.
 
-## Tikslas
+**Blokatorius, dėl kurio vartotojo darbai kabo ~4 val.:** `dispatcher.py:486` praleidžia darbus su
+žinute „Gemini dienos kvota išsemta (bandysiu kitą parą)". Servisas perkrautas 12:12:01, o darbai
+praleisti po **8 ms** ⇒ žymė išlieka tarp perkrovimų (ne tik `gemini.LAST_QUOTA_EXHAUSTED` globalas).
+**Kol ji galioja, Groq nebus iškviestas net prijungtas — darbai neprieina iki struktūrinimo.**
 
-**1. Pinas.** Struktūrinimo kelyje (`structure_text()` ir kur dar naudojamas tas pats pseudonimas)
-`gemini-flash-latest` → **`gemini-2.5-flash`**.
-⚠️ Žinomas šio modelio elgesys, jau užfiksuotas: jis nukerta JSON dėl vidinio „thinking" — todėl
-**kartu privalo eiti `maxOutputTokens=2048`** (be jo pinas pablogins, ne pagerins). `thinkingBudget=0`
-**deprecated — NENAUDOTI**, jis laužė enrichment.
+## Tikslas — TIK ŠIE TRYS DALYKAI
 
-**2. Groq kaip atsarginis struktūrintojas.** Raktas `GROQ_API_KEY` jau yra `/root/hera.env`.
-Groq → **tik kai Gemini grąžina kvotos klaidą (429 / RESOURCE_EXHAUSTED)**, ne visada.
-Tvarka: Gemini → (kvotos klaida) → Groq → (ir Groq krito) → esamas elgesys, kaip dabar.
-Naujas jungiklis **`HERA_STRUCT_GROQ_FALLBACK` — default 1**. Pagrindimas nukrypimui nuo „default 0":
-tai nėra naujas elgesys sistemoje, o atsarginis kelias, kuris įsijungia TIK ten, kur dabar yra
-garantuotas gedimas (kvota išsemta). Išjungus jungiklį elgesys grįžta bit-į-bitą į dabartinį.
+**1. Apversk pirmumą `structure_text()`: Groq PIRMAS, Gemini ATSARGINIS.**
+Jungiklis `HERA_STRUCT_PRIMARY` — default **`groq`**; reikšmė `gemini` grąžina seną tvarką.
+Fail-safe nesikeičia: Groq krito → Gemini → abu krito → dabartinis elgesys (ne crash).
 
-**3. Tilto patikra ataskaitoje.** `curl -s --max-time 10 http://100.68.100.14:8790/health` iš VPS.
-Rezultatą (OK / negyvas) įrašyk į ataskaitą. **Jei negyvas — NIEKO netaisyk ir nedispatch'ink**,
-tai laptopo pusė, tik pranešk. Fazės sėkmė nuo to nepriklauso.
+**2. Sutvarkyk kvotos vartus `dispatcher.py`:** darbas **NEBEPRALEIDŽIAMAS**, kai struktūrinimas
+turi neišsemtą kelią. Gemini kvota nebėra pakankama priežastis atidėti darbą iki kitos paros,
+nes Gemini nebėra pagrindinis kelias. Kaip tiksliai — spręsk pats, bet elgesys privalo būti:
+**yra Groq → darbas vykdomas dabar.**
+
+**3. Paleisk tris kabančius darbus ir įsitikink, kad jie BAIGIASI:**
+`20260811T080700Z-h32yf2` · `20260811T090630Z-z618ro` · `20260811T110030Z-olvxdw`
+
+## Ko NEDARYTI šioje fazėje (sąmoningai atidėta)
+
+❌ Neišiminėk `gemini-flash-latest` iš `DEFAULT_MODELS` — atskira fazė.
+❌ Nekeisk titrų tilto, ASR, tarybos, digest'o, `hera_hygiene`, nieko kito.
+❌ Nerašyk naujų testų failų daugiau nei reikia 1 punktui. `test_struct_groq_fallback.py` jau yra — panaudok.
 
 ## Apribojimai
 
-- **€0.** Jokio mokamo modelio, jokio naujo tiekėjo, jokio naujo rakto.
-- **BACKUP prieš keitimą** (`.bak` toje pačioje vietoje). **Backup'ų NETRINTI niekada** — nei valymo
-  komandoje, nei „nebereikalingas" pagrindu.
-- **Fail-safe:** bet kuri klaida naujame kelyje → grįžtam į dabartinį elgesį, ne crash.
-- Viešas `cad-site-agent` git-tvarkiškai **neliečiamas**. **Jokių raktų reikšmių** log'uose, ataskaitoje
-  ar commit'uose — tik vardai ir ilgiai.
-- Ataskaita ir kodo komentarai **lietuviškai; kiekvienas angliškas terminas su vertimu skliaustuose.**
+€0 · **BACKUP prieš keitimą**, backup'ų **NIEKADA netrinti** · viešas `cad-site-agent` git-tvarkiškai
+neliečiamas · **jokių raktų reikšmių** log'uose/ataskaitoje/commit'uose — tik vardai, ilgiai, http kodai ·
+ataskaita ir komentarai **lietuviškai, kiekvienas angliškas terminas su vertimu skliaustuose.**
 
 ## Įrodymai (be jų fazė nelaikoma atlikta)
 
-1. `--selftest` naujam/pakeistam keliui **PASS** (be pytest). Privalo apimti:
-   · Gemini grąžina 429 → **iškviečiamas Groq** · Groq grąžina rezultatą → jis grąžinamas toliau
-   · `HERA_STRUCT_GROQ_FALLBACK=0` → Groq **NEkviečiamas**, elgesys kaip dabar
-   · Groq irgi krito → **no-op, ne exception**
-2. `grep -rn "gemini-flash-latest"` struktūrinimo kelyje → **0 atitikmenų** (arba paaiškink kiekvieną likusį).
-3. Vienas **realus** struktūrinimo darbas su tikrais titrais — parodyk, kuris modelis atsakė ir kiek simbolių.
-4. `systemctl is-active hera-processor` po pakeitimo.
-5. Tilto `/health` rezultatas.
-6. Backup'as padarytas ir **push'intas į privatų `hera-core-backup`** (nurodyk commit).
+1. `--selftest` PASS: Groq kviečiamas pirmas · `HERA_STRUCT_PRIMARY=gemini` grąžina seną tvarką ·
+   Groq krito → Gemini bandomas · abu krito → **no-op, ne exception**.
+2. **Trijų darbų ID būsena** — parodyk, kad jie nebe „praleidžiu", o baigti (arba nurodyk tikslią kliūtį).
+3. Log'o eilutė iš realaus darbo, rodanti **kuris tiekėjas struktūrino** ir kiek simbolių išėjo.
+4. `systemctl is-active hera-processor`.
+5. **`git -C /opt/hera-processor log --oneline -2`** — Fazės 56+57 pakeitimai commit'inti ir
+   **push'inti į privatų `hera-core-backup`** (nurodyk commit).
 
 ## Ataskaita
 
-Per HERA botą. Formatas: kas pakeista (failai) · 6 įrodymai aukščiau · kas NEPADARYTA ir kodėl.
-Jei nespėji — **geriau padaryk tik dalį 1 (piną) pilnai su įrodymais**, negu abi dalis pusiau.
-Dalis 2 tada lieka kitai fazei. **Anti-rc124: nespėjus — stok ir pranešk, NEKARTOK.**
+Per HERA botą: kas pakeista (failai) · 5 įrodymai · **ką pastebėjai, bet SĄMONINGAI nelietei.**
+Jei spėji tik 1+3 punktus — daryk juos pilnai su įrodymais, o 2 palik kitai fazei ir pasakyk tai aiškiai.
