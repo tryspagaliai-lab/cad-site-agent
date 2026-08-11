@@ -1,64 +1,77 @@
-# Fazė 58 — selektorius ant Groq. `sel 0` turi virsti realiu skaičiumi. <10 min.
+# Fazė 59 — backoff ties TRUMPALAIKE Groq riba (ne ties paros kvota). +perleisti `z618ro`. <10 min.
 
-## ⚠️ Apimtis griežta. Fazės 54 ir 56 krito `rc=124`, nes turėjo po kelis darbus. Ši turi VIENĄ.
+## ⚠️ Apimtis griežta. Fazės 54 ir 56 krito `rc=124`. Ši turi VIENĄ tikslą + vieną trumpą veiksmą.
 
-**Daryk TIK selektorių. Pamatęs kitą defektą — UŽRAŠYK ataskaitoje, NETAISYK.**
-Nespėji — **stok ir pranešk, NEKARTOK.**
+**Pamatęs kitą defektą — UŽRAŠYK ataskaitoje, NETAISYK.** Nespėji — **stok ir pranešk.**
+
+## ⚠️ SĄMONINGA IŠIMTIS IŠ NEKINTANČIOS TAISYKLĖS — perskaityk atidžiai
+
+HERA nekintanti taisyklė yra **„HARD timeout, NO retry"** (anti `rc=124`). Ši fazė daro **siaurą,
+sąmoningą išimtį**, ir ji leidžiama TIK tokiomis sąlygomis:
+· retry **TIK** ties trumpalaike (per-minutę) tiekėjo riba — 429 / `rate_limit` / `too many requests`
+· **NIEKADA** ties paros kvota (`RESOURCE_EXHAUSTED`, „quota", „limit: N per day") — ten laukimas
+  nepadeda, ir retry tik degina laiką iki `rc=124`
+· **NIEKADA** ties bet kokia kita klaida (tinklas, 4xx, 5xx, blogas atsakymas) — ten elgesys nesikeičia
+· griežtos lubos: **max 3 bandymai**, **bendras laukimas ≤ 20 s** viename kvietime
+Jei negali patikimai atskirti trumpalaikės ribos nuo paros kvotos — **geriau NEDARYK retry**, o pranešk.
+Klaidingas retry ties paros kvota yra blogiau nei jokio retry.
 
 ## Realybė (išmatuota šiandien, netikrink iš naujo)
 
-Šio projekto Gemini raktui **abu modeliai = 20 užklausų per parą** (tikras 429, ne dokumentacija).
-Fazė 57 (`d87fe65`) tai jau apėjo **struktūrinimo** kelyje: Groq pagrindinis, Gemini atsarginis,
-jungiklis `HERA_STRUCT_PRIMARY`, `dispatcher._has_struct_fallback()` atrakina `quota_skip` vartą.
-Selftest 9/9, trys darbai baigti, Groq struktūrino.
+Fazės 57 (`d87fe65`) ir 58 (`a4ab97b`) perkėlė **struktūrinimą** (`extractors/base.py`) ir
+**atranką** (`hera_select.py`) ant Groq. Grandinė veikia: `sel 0` → `sel=9/10`, growth failai rašomi.
 
-**Bet problema tik persikėlė.** Tavo pirmtakas pats užfiksavo: taryba / **selektorius** / research
-**nenaudoja `structure_text` kelio**, todėl liko Gemini kalėjime — log'e `selektoriaus klaida`,
-`research: kvietimas krito`, o ingest ataskaitose **`sel 0`**.
-⇒ Pasekmė matoma Loop B: **`+0 skills · +0 growth` per parą.** Tekstą gaunam ir struktūrizuojam,
-bet **žinių iš jo neišsitraukiam** — medžiaga sustoja ties `stage_for_review`.
+**Naujas gedimas, kurį tai sukūrė:** darbas `20260811T090630Z-z618ro` krito, nes **du Groq kvietimai
+iš eilės** (struktūrinimas + atranka) pramušė Groq **trumpalaikę** ribą. Fail-safe atlaikė — švarus
+no-op, ne crash — bet darbas liko be atrankos.
+⇒ Tai **struktūriška, ne atsitiktinumas**: po 57+58 KIEKVIENAS darbas daro ≥2 Groq kvietimus paeiliui.
+Kartosis kaskart, kai vartotojas mes kelis video iš eilės.
 
-✅ Groq raktas gyvas (`GROQ_API_KEY` iš `/root/hera.env`, patikrinta `groq_http=200`).
-✅ Titrų tiltas gyvas.
+📌 **Skirtumas, kuris yra visos šios fazės esmė:**
+· **Paros kvota** (Gemini 20/parą): laukimas NEPADEDA ⇒ sprendimas = kitas tiekėjas (jau padaryta).
+· **Trumpalaikė riba** (Groq): atsistato per sekundes ⇒ sprendimas = **backoff**. Tai vienintelis atvejis,
+  kur laukimas yra teisingas vaistas.
 
-## Tikslas — VIENAS
+✅ Groq raktas gyvas. ✅ Titrų tiltas gyvas. ✅ `hera-processor` active.
 
-**Perkelk SELEKTORIŲ ant Groq tuo pačiu šablonu, kurį Fazė 57 jau įrodė veikiantį.**
-Nesugalvok naujo dizaino — **pakartok `extractors/base.py` sprendimą**: Groq pirmas, Gemini atsarginis,
-jungiklis (siūlomas vardas `HERA_SEL_PRIMARY`, default **`groq`**, reikšmė `gemini` = sena tvarka),
-fail-safe (abu krito → dabartinis elgesys, **ne crash**).
+## Tikslas
 
-⚠️ **Panaudok jau egzistuojantį kodą, neperrašinėk:** `extractors/base.py` turi
-`_groq_structure_fallback()`, `_is_quota_error()` ir **Cloudflare WAF apėjimą per `User-Agent`**
-(`GROQ_STRUCT_HEADERS`) — be to apėjimo Groq grąžina `403 error code: 1010`. Jei prasminga —
-iškelk bendrą pagalbinį, bet **tik jei tai NEPAREIKALAUS liesti kitų failų daugiau nei būtina.**
-Abejoji — geriau pakartok lokaliai, negu daryk platų refaktoringą.
+**1. Eksponentinis backoff ties trumpalaike Groq riba** — abiejuose keliuose:
+`extractors/base.py` (struktūrinimas) ir `hera_select.py` (atranka).
+Siūloma: 2 s → 4 s → 8 s, max 3 bandymai. Jei Groq atsakyme yra `Retry-After` arba nurodytas laukimo
+laikas — **naudok jį**, jis tikslesnis už spėjimą (bet vis tiek ribok ≤ 20 s).
+Jungiklis `HERA_GROQ_BACKOFF` — default **1**. Reikšmė 0 = elgesys tiksliai kaip dabar.
+Išnaudojus bandymus — **dabartinis elgesys nesikeičia**: krentam į Gemini, paskui į no-op. Ne crash.
 
-## Ko NEDARYTI (sąmoningai atidėta kitoms fazėms)
+**2. Perleisk darbą `20260811T090630Z-z618ro`** — jis liko be atrankos. Parodyk rezultatą.
 
-❌ **Tarybos (council) NELIESK.** ❌ **Research kelio NELIESK.**
+## Ko NEDARYTI (sąmoningai atidėta)
+
+❌ **Tarybos (council) ir research kelio NELIESK** — jie tebėra Gemini kalėjime, tai atskira fazė.
 ❌ Neišiminėk `gemini-flash-latest` iš `DEFAULT_MODELS`.
-❌ Nedaryk bendro „€0 tiekėjo maršrutizatoriaus" — tai suplanuota, bet NE dabar.
-❌ Neliesk titrų tilto, ASR, digest'o, `hera_hygiene`, dispatcher'io kvotos varto (jau sutvarkytas).
+❌ Nedaryk bendro „€0 tiekėjo maršrutizatoriaus".
+❌ Neperbėginėk senų sustabarėjusių darbų — tik `z618ro`.
+❌ Neliesk titrų tilto, ASR, digest'o, dispatcher'io kvotos varto.
 
 ## Apribojimai
 
-€0 · **BACKUP prieš keitimą**, backup'ų **NIEKADA netrinti** · viešas `cad-site-agent` git-tvarkiškai
-neliečiamas · **jokių raktų reikšmių** log'uose / ataskaitoje / commit'uose — tik vardai, ilgiai, http kodai ·
-ataskaita ir kodo komentarai **lietuviškai, kiekvienas angliškas terminas su vertimu skliaustuose.**
+€0 · **BACKUP prieš keitimą**, backup'ų **NIEKADA netrinti** · viešas `cad-site-agent` neliečiamas ·
+**jokių raktų reikšmių** log'uose / ataskaitoje / commit'uose · ataskaita ir komentarai **lietuviškai,
+kiekvienas angliškas terminas su vertimu skliaustuose.**
 
 ## Įrodymai (be jų fazė nelaikoma atlikta)
 
-1. `--selftest` PASS: Groq kviečiamas pirmas · `HERA_SEL_PRIMARY=gemini` grąžina seną tvarką ·
-   Groq krito → Gemini bandomas · **abu krito → no-op, ne exception**.
-2. **Realus ingest darbas, kuriame `sel` NEBE 0** — parodyk ataskaitos eilutę ir kiek atrinkta.
-   Jei po perkėlimo `sel` vis tiek 0, bet **be klaidos** — tai irgi galiojantis rezultatas,
-   tik aiškiai pasakyk: „selektorius veikė, tiesiog nieko neatrinko", ir parodyk log'ą.
-3. Log'o eilutė, rodanti **kuris tiekėjas atrinko**.
+1. `--selftest` PASS, privalomai apimantis **abu klaidų tipus atskirai**:
+   · trumpalaikė riba → **backoff įvyksta**, bandymų skaičius teisingas
+   · **paros kvota → backoff NEĮVYKSTA**, krentam iškart (tai svarbiausias testas šioje fazėje)
+   · `HERA_GROQ_BACKOFF=0` → elgesys kaip dabar
+   · išnaudoti bandymai → **no-op, ne exception**
+2. `z618ro` perleistas — parodyk `sel=N` ir ar parašytas growth failas.
+3. Log'o eilutė, rodanti realų backoff (kiek laukta, kelintas bandymas).
 4. `systemctl is-active hera-processor`.
-5. `git -C /opt/hera-processor log --oneline -2` — commit'inta ir **push'inta į privatų
-   `hera-core-backup`** (nurodyk commit).
+5. `git -C /opt/hera-processor log --oneline -2` — commit'inta ir push'inta į privatų `hera-core-backup`.
 
 ## Ataskaita
 
 Per HERA botą: kas pakeista (failai) · 5 įrodymai · **ką pastebėjai, bet SĄMONINGAI nelietei.**
+Jei spėji tik 1 punktą pilnai su įrodymais — daryk jį, o `z618ro` palik kitai fazei ir pasakyk aiškiai.
