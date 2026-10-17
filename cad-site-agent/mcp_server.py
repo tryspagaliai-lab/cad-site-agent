@@ -5,6 +5,11 @@ Exposes the cad-site-agent pipeline as MCP tools so Claude.ai chat can:
   - list DXF files and reports in the workspace
   - read report contents
   - run analyze, classify, hatch-candidates, and full process commands
+  - measure a DXF (per-layer counts / lengths / areas) and render it to PNG,
+    so the agent can check its own output by numbers and by eye
+
+Paths are restricted to the repo root plus directories listed in
+CAD_AGENT_ALLOW_PATHS (os.pathsep-separated), e.g. a raw-data disk.
 
 Usage (stdio transport, for Claude Desktop / claude.ai MCP):
     python mcp_server.py
@@ -28,7 +33,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Image
 
 # ── workspace root ─────────────────────────────────────────────────────────────
 REPO_ROOT = Path(__file__).parent.resolve()
@@ -37,6 +42,8 @@ SRC_DIR   = REPO_ROOT / "src"
 # Ensure src/ is on the path so cad_site_agent imports work
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+
+from cad_site_agent import agent_tools  # noqa: E402
 
 mcp = FastMCP("cad-site-agent")
 
@@ -61,11 +68,8 @@ def _run_cli(*args: str, cwd: Path | None = None) -> str:
 
 
 def _abs(path: str) -> Path:
-    """Resolve a path relative to REPO_ROOT if not absolute."""
-    p = Path(path)
-    if not p.is_absolute():
-        p = REPO_ROOT / p
-    return p
+    """Resolve a path relative to REPO_ROOT; raise PathNotAllowed outside the allowlist."""
+    return agent_tools.resolve_allowed(path, REPO_ROOT)
 
 
 # ── tools ──────────────────────────────────────────────────────────────────────
@@ -136,9 +140,8 @@ def read_report(report_name: str) -> str:
     """
     # Try reports/analysis/ first, then repo root, then absolute
     candidates = [
-        REPO_ROOT / "reports" / "analysis" / report_name,
-        REPO_ROOT / report_name,
-        Path(report_name),
+        _abs(str(Path("reports") / "analysis" / report_name)),
+        _abs(report_name),
     ]
     for p in candidates:
         if p.exists():
@@ -252,6 +255,42 @@ def process_dxf(
         args.append("--keep-noise")
 
     return _run_cli(*args)
+
+
+@mcp.tool()
+def measure_dxf(dxf_path: str, layer: str = "") -> str:
+    """Measure a DXF: units, extents, and per layer the entity counts by type,
+    total curve length, closed-curve count + area, and open polylines.
+
+    Use it to verify a result by numbers (e.g. after process_dxf: did the
+    hatch layer get the expected area? are there open polylines left?).
+
+    Args:
+        dxf_path: Path to the DXF file.
+        layer:    Only measure this layer (default: all layers).
+    """
+    abs_dxf = _abs(dxf_path)
+    if not abs_dxf.exists():
+        return f"File not found: {abs_dxf}"
+    return json.dumps(agent_tools.measure_dxf(abs_dxf, layer=layer), indent=2, ensure_ascii=False)
+
+
+@mcp.tool()
+def render_dxf(dxf_path: str, output_png: str = "", size_in: float = 10.0) -> list:
+    """Render a DXF to a layer-coloured PNG and return the image, so the agent
+    can look at its own output (e.g. right after process_dxf).
+
+    Args:
+        dxf_path:   Path to the DXF file.
+        output_png: Where to write the PNG (default: reports/renders/<name>.png).
+        size_in:    Figure size in inches (larger = sharper, slower).
+    """
+    abs_dxf = _abs(dxf_path)
+    if not abs_dxf.exists():
+        return [f"File not found: {abs_dxf}"]
+    png = _abs(output_png) if output_png else _abs(f"reports/renders/{abs_dxf.stem}.png")
+    agent_tools.render_dxf_png(abs_dxf, png, size_in=size_in)
+    return [f"PNG: {png}", Image(path=str(png))]
 
 
 @mcp.tool()
