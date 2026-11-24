@@ -3,3 +3,6 @@ cad-site-agent/data/
 
 # Per-machine Claude Code settings
 .claude/settings.local.json
+
+# Tandem review packages: local only (contain local paths and client object names; repo is public)
+cad-site-agent/reports/tandem/
