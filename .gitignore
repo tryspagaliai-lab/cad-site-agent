@@ -1,0 +1,5 @@
+# Client DXF pipeline outputs (local only, ~61 MB)
+cad-site-agent/data/
+
+# Per-machine Claude Code settings
+.claude/settings.local.json
